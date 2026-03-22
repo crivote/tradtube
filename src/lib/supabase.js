@@ -96,6 +96,22 @@ export async function castVote(entryId, vote, isReport = false) {
  * ── Admin ────────────────────────────────────────────────────────────────────
  */
 
+export async function getAllVideos() {
+  const { data, error } = await supabase
+    .from('tune_videos')
+    .select(`
+      id, youtube_id, source_type, status, title, added_by, created_at,
+      tune_video_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) { console.error(error); return []; }
+  return (data || []).map(v => ({
+    ...v,
+    tune_video_entries: [...(v.tune_video_entries || [])].sort((a, b) => a.position - b.position),
+  }));
+}
+
 export async function getPendingVideos() {
   const { data, error } = await supabase
     .from('tune_videos')
