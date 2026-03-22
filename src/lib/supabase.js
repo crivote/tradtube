@@ -112,6 +112,73 @@ export async function getAllVideos() {
   }));
 }
 
+export async function getLatestApprovedVideos() {
+  const { data, error } = await supabase
+    .from('tune_videos')
+    .select(`
+      id, youtube_id, source_type, status, title, added_by, created_at,
+      tune_video_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
+    `)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error) { console.error(error); return []; }
+  return (data || []).map(v => ({
+    ...v,
+    tune_video_entries: [...(v.tune_video_entries || [])].sort((a, b) => a.position - b.position),
+  }));
+}
+
+export async function getPendingCount() {
+  const { count, error } = await supabase
+    .from('tune_videos')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'pending');
+  if (error) { console.error(error); return 0; }
+  return count || 0;
+}
+
+/** Returns array of tune_ids that appear in at least one approved video */
+export async function getTunesWithVideos() {
+  const { data, error } = await supabase
+    .from('tune_video_entries')
+    .select('tune_id, tune_videos!inner(status)')
+    .eq('tune_videos.status', 'approved');
+
+  if (error) { console.error(error); return []; }
+  return [...new Set((data || []).map(e => e.tune_id))];
+}
+
+export async function getVideosByTune(tuneId) {
+  // Step 1: find video IDs that have an approved entry for this tune
+  const { data: entryData, error: e1 } = await supabase
+    .from('tune_video_entries')
+    .select('video_id, tune_videos!inner(status)')
+    .eq('tune_id', tuneId)
+    .eq('tune_videos.status', 'approved');
+
+  if (e1) { console.error(e1); return []; }
+  const videoIds = [...new Set((entryData || []).map(e => e.video_id))];
+  if (videoIds.length === 0) return [];
+
+  // Step 2: fetch full video data with all entries
+  const { data, error: e2 } = await supabase
+    .from('tune_videos')
+    .select(`
+      id, youtube_id, source_type, status, title, added_by, created_at,
+      tune_video_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
+    `)
+    .in('id', videoIds)
+    .order('created_at', { ascending: false });
+
+  if (e2) { console.error(e2); return []; }
+  return (data || []).map(v => ({
+    ...v,
+    tune_video_entries: [...(v.tune_video_entries || [])].sort((a, b) => a.position - b.position),
+  }));
+}
+
 export async function getPendingVideos() {
   const { data, error } = await supabase
     .from('tune_videos')

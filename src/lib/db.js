@@ -31,7 +31,6 @@ export async function initDB() {
     sqlite3.capi.SQLITE_DESERIALIZE_RESIZEABLE
   );
 
-  console.log('[TradTube] thesession.db cargada en memoria');
   return db;
 }
 
