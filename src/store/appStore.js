@@ -5,11 +5,13 @@
 
 import { createSignal, createEffect } from 'solid-js';
 import { initDB, searchTunes } from '../lib/db';
-import { getEntriesForTune, onAuthChange } from '../lib/supabase';
+import { getEntriesForTune, getVideoCountsByTune, onAuthChange } from '../lib/supabase';
 import { SEARCH_LIMIT } from '../constants';
 
 // ── DB ──────────────────────────────────────────────────────────────────────
 const [dbReady, setDbReady] = createSignal(false);
+const [videoCountsByTune, setVideoCountsByTune] = createSignal(new Map());
+const [videoDataReady, setVideoDataReady] = createSignal(false);
 
 // ── Auth ────────────────────────────────────────────────────────────────────
 const [currentUser, setCurrentUser] = createSignal(null);
@@ -32,6 +34,11 @@ export function useAppStore() {
   const loadDB = async () => {
     await initDB();
     setDbReady(true);
+    // Carga en paralelo los conteos de vídeos por tune (no bloquea la UI)
+    getVideoCountsByTune().then(counts => {
+      setVideoCountsByTune(counts);
+      setVideoDataReady(true);
+    });
   };
 
   // Escuchar cambios de auth
@@ -84,6 +91,7 @@ export function useAppStore() {
   return {
     // Estado
     dbReady, currentUser,
+    videoCountsByTune, videoDataReady,
     searchQuery, setSearchQuery,
     searchResults,
     selectedTune, tuneEntries, loadingEntries,

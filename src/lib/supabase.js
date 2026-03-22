@@ -93,6 +93,27 @@ export async function castVote(entryId, vote, isReport = false) {
 }
 
 /**
+ * Devuelve un Map<tune_id, clipCount> para todos los tunes con vídeos aprobados.
+ * Se carga una vez al inicio para mostrar badges en los resultados de búsqueda.
+ */
+export async function getVideoCountsByTune() {
+  const { data, error } = await supabase
+    .from('tune_videos')
+    .select('tune_video_entries(tune_id)')
+    .eq('status', 'approved');
+
+  if (error) { console.error(error); return new Map(); }
+
+  const counts = new Map();
+  for (const video of data || []) {
+    for (const entry of video.tune_video_entries || []) {
+      counts.set(entry.tune_id, (counts.get(entry.tune_id) || 0) + 1);
+    }
+  }
+  return counts;
+}
+
+/**
  * Auth — Google OAuth
  */
 export async function loginWithGoogle() {
