@@ -7,8 +7,8 @@
  */
 
 import { createSignal, createMemo, For, Show } from 'solid-js';
-import { searchTunes } from '../lib/db';
-import { addVideoWithEntries } from '../lib/supabase';
+import { searchTunes, getTuneById } from '../lib/db';
+import { addVideoWithEntries, updateVideoWithEntries } from '../lib/supabase';
 import { SOURCE_TYPES } from '../constants';
 
 // Extrae el ID de YouTube de una URL o devuelve el input si ya es un ID
@@ -45,9 +45,22 @@ function formatSec(sec) {
 }
 
 function AddVideoForm(props) {
-  const [youtubeUrl, setYoutubeUrl] = createSignal('');
-  const [sourceType, setSourceType] = createSignal('session');
-  const [entries, setEntries] = createSignal([]);
+  // Modo edición: props.editVideo contiene el vídeo existente
+  const isEdit = () => !!props.editVideo;
+
+  const initialEntries = props.editVideo
+    ? [...(props.editVideo.tune_video_entries ?? [])]
+        .sort((a, b) => a.position - b.position)
+        .map(e => ({
+          tune: getTuneById(e.tune_id) ?? { tune_id: e.tune_id, name: `Tune #${e.tune_id}`, type: '', meter: '' },
+          startSec: formatSec(e.start_sec ?? 0),
+          endSec: e.end_sec != null ? formatSec(e.end_sec) : '',
+        }))
+    : [];
+
+  const [youtubeUrl, setYoutubeUrl] = createSignal(props.editVideo?.youtube_id ?? '');
+  const [sourceType, setSourceType] = createSignal(props.editVideo?.source_type ?? 'session');
+  const [entries, setEntries] = createSignal(initialEntries);
   const [tuneSearch, setTuneSearch] = createSignal('');
   const [submitting, setSubmitting] = createSignal(false);
   const [error, setError] = createSignal('');
@@ -83,16 +96,25 @@ function AddVideoForm(props) {
     setSubmitting(true);
     setError('');
     try {
-      await addVideoWithEntries({
-        youtube_id: youtubeId(),
-        source_type: sourceType(),
-        entries: entries().map((e, i) => ({
-          tune_id: e.tune.tune_id,
-          start_sec: parseSec(e.startSec) ?? 0,
-          end_sec: parseSec(e.endSec) ?? null,
-          position: i,
-        })),
-      });
+      const entryPayload = entries().map((e, i) => ({
+        tune_id: e.tune.tune_id,
+        start_sec: parseSec(e.startSec) ?? 0,
+        end_sec: parseSec(e.endSec) ?? null,
+        position: i,
+      }));
+
+      if (isEdit()) {
+        await updateVideoWithEntries(props.editVideo.id, {
+          source_type: sourceType(),
+          entries: entryPayload,
+        });
+      } else {
+        await addVideoWithEntries({
+          youtube_id: youtubeId(),
+          source_type: sourceType(),
+          entries: entryPayload,
+        });
+      }
       setSuccess(true);
     } catch (err) {
       setError(err.message ?? 'Error al guardar. ¿Está el vídeo ya registrado?');
@@ -116,9 +138,13 @@ function AddVideoForm(props) {
       {/* Header */}
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-2xl font-black text-white">Add a video</h2>
+          <h2 class="text-2xl font-black text-white">
+            {isEdit() ? 'Edit video' : 'Add a video'}
+          </h2>
           <p class="text-sm text-[var(--color-muted)] mt-0.5">
-            Link a YouTube video to the tunes it contains
+            {isEdit()
+              ? `Editing ${props.editVideo.youtube_id}`
+              : 'Link a YouTube video to the tunes it contains'}
           </p>
         </div>
         <button
@@ -133,7 +159,7 @@ function AddVideoForm(props) {
       <Show when={success()}>
         <div class="rounded-xl border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/10 px-4 py-4 flex items-center justify-between gap-4">
           <p class="text-sm text-[var(--color-primary)] font-semibold">
-            ✓ Video saved — pending approval
+            ✓ {isEdit() ? 'Video updated' : 'Video saved — pending approval'}
           </p>
           <button
             onClick={handleReset}
@@ -156,7 +182,8 @@ function AddVideoForm(props) {
             placeholder="https://www.youtube.com/watch?v=… or video ID"
             value={youtubeUrl()}
             onInput={e => setYoutubeUrl(e.target.value)}
-            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
+            disabled={isEdit()}
+            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <Show when={youtubeUrl() && !youtubeId()}>
             <p class="text-xs text-red-400">Can't extract a valid video ID from this URL.</p>
@@ -309,7 +336,7 @@ function AddVideoForm(props) {
             bg-[var(--color-primary)] text-black hover:opacity-90
             disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          {submitting() ? 'Saving…' : 'Save video'}
+          {submitting() ? 'Saving…' : isEdit() ? 'Update video' : 'Save video'}
         </button>
 
       </Show>

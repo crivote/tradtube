@@ -4,12 +4,14 @@ import { loginWithGoogle, logout } from './lib/supabase';
 import SearchView from './components/SearchView';
 import TuneView from './components/TuneView';
 import AddVideoForm from './components/AddVideoForm';
+import AdminView from './components/AdminView';
 
 function App() {
   const {
     loadDB, initAuth, dbReady,
     selectedTune, currentUser,
     showAddForm, setShowAddForm,
+    showAdminView, setShowAdminView,
   } = useAppStore();
 
   onMount(async () => {
@@ -46,7 +48,7 @@ function App() {
           >
             <div class="flex items-center gap-3">
               <button
-                onClick={() => setShowAddForm(v => !v)}
+                onClick={() => { setShowAdminView(false); setShowAddForm(v => !v); }}
                 class={`text-xs px-3 py-1.5 rounded-lg border transition-colors
                   ${showAddForm()
                     ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
@@ -54,6 +56,16 @@ function App() {
                   }`}
               >
                 + Add video
+              </button>
+              <button
+                onClick={() => { setShowAddForm(false); setShowAdminView(v => !v); }}
+                class={`text-xs px-3 py-1.5 rounded-lg border transition-colors
+                  ${showAdminView()
+                    ? 'border-amber-500/60 bg-amber-500/10 text-amber-400'
+                    : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:text-white hover:border-amber-500/30'
+                  }`}
+              >
+                Admin
               </button>
               <span class="text-xs text-[var(--color-muted)] hidden sm:inline truncate max-w-[160px]">
                 {currentUser().email}
@@ -81,6 +93,9 @@ function App() {
           }
         >
           <Switch>
+            <Match when={showAdminView()}>
+              <AdminView onClose={() => setShowAdminView(false)} />
+            </Match>
             <Match when={showAddForm()}>
               <AddVideoForm onClose={() => setShowAddForm(false)} />
             </Match>

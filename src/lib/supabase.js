@@ -93,6 +93,62 @@ export async function castVote(entryId, vote, isReport = false) {
 }
 
 /**
+ * ── Admin ────────────────────────────────────────────────────────────────────
+ */
+
+export async function getPendingVideos() {
+  const { data, error } = await supabase
+    .from('tune_videos')
+    .select(`
+      id, youtube_id, source_type, status, added_by, created_at,
+      tune_video_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
+    `)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+
+  if (error) { console.error(error); return []; }
+  return (data || []).map(v => ({
+    ...v,
+    tune_video_entries: [...(v.tune_video_entries || [])].sort((a, b) => a.position - b.position),
+  }));
+}
+
+export async function approveVideo(videoId) {
+  const { error } = await supabase
+    .from('tune_videos').update({ status: 'approved' }).eq('id', videoId);
+  if (error) throw error;
+}
+
+export async function deleteVideo(videoId) {
+  const { error } = await supabase
+    .from('tune_videos').delete().eq('id', videoId);
+  if (error) throw error;
+}
+
+export async function updateVideoWithEntries(videoId, { source_type, entries }) {
+  const { error: ve } = await supabase
+    .from('tune_videos').update({ source_type }).eq('id', videoId);
+  if (ve) throw ve;
+
+  const { error: de } = await supabase
+    .from('tune_video_entries').delete().eq('video_id', videoId);
+  if (de) throw de;
+
+  if (entries.length === 0) return;
+  const { error: ie } = await supabase
+    .from('tune_video_entries')
+    .insert(entries.map((e, i) => ({
+      video_id: videoId,
+      tune_id: e.tune_id,
+      setting_id: e.setting_id ?? null,
+      start_sec: e.start_sec ?? 0,
+      end_sec: e.end_sec ?? null,
+      position: i,
+    })));
+  if (ie) throw ie;
+}
+
+/**
  * Devuelve un Map<tune_id, clipCount> para todos los tunes con vídeos aprobados.
  * Se carga una vez al inicio para mostrar badges en los resultados de búsqueda.
  */

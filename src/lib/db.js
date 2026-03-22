@@ -75,6 +75,20 @@ export function getSettings(tuneId) {
 }
 
 /**
+ * Obtiene un tune por su ID
+ */
+export function getTuneById(tuneId) {
+  if (!db) return null;
+  const results = db.exec({
+    sql: `SELECT tune_id, name, type, meter FROM tunes WHERE tune_id = ? LIMIT 1`,
+    bind: [tuneId],
+    returnValue: 'resultRows',
+    rowMode: 'object',
+  });
+  return results[0] ?? null;
+}
+
+/**
  * Obtiene tunes similares precalculados
  */
 export function getSimilarTunes(tuneId, limit = 5) {

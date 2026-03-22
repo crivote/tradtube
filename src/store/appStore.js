@@ -31,6 +31,9 @@ const [activeEntry, setActiveEntry] = createSignal(null);
 // ── Formulario de aportación ─────────────────────────────────────────────────
 const [showAddForm, setShowAddForm] = createSignal(false);
 
+// ── Vista de administración ───────────────────────────────────────────────────
+const [showAdminView, setShowAdminView] = createSignal(false);
+
 export function useAppStore() {
 
   // Inicializar DB al montar la app
@@ -100,6 +103,7 @@ export function useAppStore() {
     selectedTune, tuneEntries, loadingEntries,
     activeEntry, setActiveEntry,
     showAddForm, setShowAddForm,
+    showAdminView, setShowAdminView,
     // Acciones
     loadDB, initAuth,
     selectTune, backToSearch,
