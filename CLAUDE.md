@@ -1,5 +1,7 @@
 # TradTube — Contexto para Claude Code
 
+> Para arquitectura general, schema completo y plan de trabajo ver **INTERNAL.md** (local, no commiteado).
+
 ## Qué es este proyecto
 App web que conecta el catálogo de tunes de TheSession.org con vídeos reales de YouTube.
 El usuario busca una tune por nombre y obtiene clips de vídeo listos para reproducir,
@@ -12,33 +14,25 @@ con timestamps exactos de inicio y fin (imprescindible para sets donde la tune e
 - **Auth**: Google OAuth via Supabase
 - **Deploy**: Netlify (netlify.toml configurado con headers COOP/COEP para sqlite-wasm)
 
-## Estado actual
+## Estado actual — Fase 1 completada
 - [x] SearchView.jsx — buscador FTS5 funcionando contra SQLite local
-- [x] TuneView.jsx — placeholder vacío, hay que construirlo
+- [x] TuneView.jsx — vista completa: lista de entries, reproductor activo, votos
+- [x] YoutubePlayer.jsx — IFrame Player API con polling de timestamps (pauseVideo en end_sec)
 - [x] lib/db.js — initDB, searchTunes, getSettings, getSimilarTunes
 - [x] lib/supabase.js — getEntriesForTune, addVideoWithEntries, castVote, auth
 - [x] store/appStore.js — signals globales, lógica de búsqueda y autoplay
 
-## Siguiente tarea: TuneView.jsx + YoutubePlayer.jsx
+## Siguiente tarea: Fase 2 — Panel de aportación
 
-### TuneView.jsx
-Debe mostrar:
-1. Nombre del tune + metadatos (type, meter) del SQLite
-2. Lista de entries (vídeos) obtenidas de Supabase via `getEntriesForTune`
-3. Reproductor activo para la entry seleccionada (autoplay del primero)
-4. Botones upvote / report por entry (requiere auth)
-5. Badge de source_type por entry
-6. Botón "back to search"
+### AddVideoForm.jsx
+Formulario para añadir un vídeo con su set completo:
+1. Input URL de YouTube → previsualización
+2. Selector de source_type
+3. Añadir tunes del set: búsqueda FTS5 + campos start_sec / end_sec
+4. Reordenación de entries
+5. Envío via `addVideoWithEntries` (lib/supabase.js)
 
-### YoutubePlayer.jsx
-IMPORTANTE: usar YouTube IFrame Player API via JS, NO parámetros de URL para el end timestamp.
-La lógica correcta es:
-- Cargar la IFrame API dinámicamente (una sola vez)
-- Crear el player con `start` en la URL del embed
-- Escuchar `onStateChange` y hacer `player.pauseVideo()` cuando `player.getCurrentTime() >= end_sec`
-- Usar `setInterval` para el polling de currentTime (cada 500ms es suficiente)
-
-Props esperadas: `{ youtubeId, startSec, endSec, autoplay }`
+Acceso restringido — solo usuarios autenticados con rol autorizado.
 
 ## Convenciones
 - Componentes en `src/components/`, lógica en `src/store/` y `src/lib/`
@@ -61,6 +55,7 @@ tune_video_votes   → id, entry_id, user_id, vote (1/-1), is_report
 
 ## Archivos clave
 - `src/store/appStore.js` — estado global: `tuneEntries`, `activeEntry`, `selectedTune`
+- `src/components/YoutubePlayer.jsx` — player con polling de end_sec
 - `src/lib/db.js` — acceso a SQLite
 - `src/lib/supabase.js` — acceso a Supabase
 - `src/constants.js` — SOURCE_TYPES, SEARCH_LIMIT
