@@ -28,6 +28,9 @@ const [loadingEntries, setLoadingEntries] = createSignal(false);
 // ── Vídeo activo en el reproductor ──────────────────────────────────────────
 const [activeEntry, setActiveEntry] = createSignal(null);
 
+// ── Formulario de aportación ─────────────────────────────────────────────────
+const [showAddForm, setShowAddForm] = createSignal(false);
+
 export function useAppStore() {
 
   // Inicializar DB al montar la app
@@ -96,6 +99,7 @@ export function useAppStore() {
     searchResults,
     selectedTune, tuneEntries, loadingEntries,
     activeEntry, setActiveEntry,
+    showAddForm, setShowAddForm,
     // Acciones
     loadDB, initAuth,
     selectTune, backToSearch,
