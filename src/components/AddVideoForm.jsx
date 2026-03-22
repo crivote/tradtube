@@ -7,6 +7,7 @@
  */
 
 import { createSignal, createMemo, For, Show } from 'solid-js';
+import { createStore, produce } from 'solid-js/store';
 import { searchTunes, getTuneById } from '../lib/db';
 import { addVideoWithEntries, updateVideoWithEntries } from '../lib/supabase';
 import { SOURCE_TYPES } from '../constants';
@@ -60,7 +61,7 @@ function AddVideoForm(props) {
 
   const [youtubeUrl, setYoutubeUrl] = createSignal(props.editVideo?.youtube_id ?? '');
   const [sourceType, setSourceType] = createSignal(props.editVideo?.source_type ?? 'session');
-  const [entries, setEntries] = createSignal(initialEntries);
+  const [entries, setEntries] = createStore(initialEntries);
   const [tuneSearch, setTuneSearch] = createSignal('');
   const [submitting, setSubmitting] = createSignal(false);
   const [error, setError] = createSignal('');
@@ -72,31 +73,32 @@ function AddVideoForm(props) {
     const q = tuneSearch().trim();
     if (q.length < 2) return [];
     // Excluir tunes ya añadidas
-    const added = new Set(entries().map(e => e.tune.tune_id));
+    const added = new Set(entries.map(e => e.tune.tune_id));
     return searchTunes(q, 8).filter(t => !added.has(t.tune_id));
   });
 
   const addEntry = (tune) => {
-    setEntries(prev => [...prev, { tune, startSec: '', endSec: '' }]);
+    setEntries(produce(e => e.push({ tune, startSec: '', endSec: '' })));
     setTuneSearch('');
   };
 
   const removeEntry = (i) => {
-    setEntries(prev => prev.filter((_, idx) => idx !== i));
+    setEntries(produce(e => e.splice(i, 1)));
   };
 
+  // Actualiza un campo concreto de una entry sin recrear el objeto → el input no pierde el foco
   const updateEntry = (i, field, value) => {
-    setEntries(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: value } : e));
+    setEntries(i, field, value);
   };
 
   const handleSubmit = async () => {
     if (!youtubeId()) { setError('URL de YouTube no válida.'); return; }
-    if (entries().length === 0) { setError('Añade al menos una tune.'); return; }
+    if (entries.length === 0) { setError('Añade al menos una tune.'); return; }
 
     setSubmitting(true);
     setError('');
     try {
-      const entryPayload = entries().map((e, i) => ({
+      const entryPayload = entries.map((e, i) => ({
         tune_id: e.tune.tune_id,
         start_sec: parseSec(e.startSec) ?? 0,
         end_sec: parseSec(e.endSec) ?? null,
@@ -126,7 +128,7 @@ function AddVideoForm(props) {
   const handleReset = () => {
     setYoutubeUrl('');
     setSourceType('session');
-    setEntries([]);
+    setEntries(produce(e => { e.splice(0, e.length); }));
     setTuneSearch('');
     setError('');
     setSuccess(false);
@@ -256,9 +258,9 @@ function AddVideoForm(props) {
           </div>
 
           {/* Entries list */}
-          <Show when={entries().length > 0}>
+          <Show when={entries.length > 0}>
             <div class="flex flex-col gap-2">
-              <For each={entries()}>
+              <For each={entries}>
                 {(entry, i) => (
                   <div class="flex items-center gap-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3">
 
@@ -314,7 +316,7 @@ function AddVideoForm(props) {
             </div>
           </Show>
 
-          <Show when={entries().length === 0}>
+          <Show when={entries.length === 0}>
             <p class="text-xs text-[var(--color-muted)] py-2">
               Search and add the tunes that appear in this video, in order.
             </p>
@@ -331,7 +333,7 @@ function AddVideoForm(props) {
         {/* ── Submit ───────────────────────────────────────────────────── */}
         <button
           onClick={handleSubmit}
-          disabled={submitting() || !youtubeId() || entries().length === 0}
+          disabled={submitting() || !youtubeId() || entries.length === 0}
           class="w-full py-3 rounded-xl font-semibold text-sm transition-all
             bg-[var(--color-primary)] text-black hover:opacity-90
             disabled:opacity-30 disabled:cursor-not-allowed"
