@@ -2,12 +2,13 @@
   command = "npm run build"
   publish = "dist"
 
-# Headers COOP/COEP necesarios para sqlite-wasm (SharedArrayBuffer)
+# COOP: same-origin — seguridad cross-window sin bloquear iframes externos
+# COEP eliminado: sqlite-wasm usa sqlite3_deserialize con ArrayBuffer normal,
+# no necesita SharedArrayBuffer, y COEP bloqueaba los iframes de YouTube.
 [[headers]]
   for = "/*"
   [headers.values]
     Cross-Origin-Opener-Policy = "same-origin"
-    Cross-Origin-Embedder-Policy = "credentialless"
 
 # SPA routing: todas las rutas apuntan a index.html
 [[redirects]]
