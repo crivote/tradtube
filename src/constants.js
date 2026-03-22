@@ -8,6 +8,7 @@ export const DB_PATH = '/thesession.db';
 /* Tipos de fuente de vídeo */
 export const SOURCE_TYPES = {
   studio:         'Grabación de estudio',
+  album:          'Álbum / disco',
   live_concert:   'Concierto en directo',
   tv_broadcast:   'Emisión TV / radio',
   session:        'Session / pub session',

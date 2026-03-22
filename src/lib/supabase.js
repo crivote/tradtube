@@ -19,7 +19,7 @@ export async function getEntriesForTune(tuneId) {
     .select(`
       id, tune_id, setting_id, start_sec, end_sec, position,
       tune_videos (
-        id, youtube_id, source_type, status, created_at
+        id, youtube_id, source_type, status, title, created_at
       ),
       tune_video_votes ( vote )
     `)
@@ -49,11 +49,11 @@ export async function getEntriesForTune(tuneId) {
  * }
  * Solo accesible con service_role (fase 1: restringido)
  */
-export async function addVideoWithEntries({ youtube_id, source_type, entries }) {
+export async function addVideoWithEntries({ youtube_id, source_type, title, entries }) {
   // 1. Insertar el vídeo
   const { data: video, error: videoError } = await supabase
     .from('tune_videos')
-    .insert([{ youtube_id, source_type }])
+    .insert([{ youtube_id, source_type, title: title ?? null }])
     .select()
     .single();
 
@@ -100,7 +100,7 @@ export async function getPendingVideos() {
   const { data, error } = await supabase
     .from('tune_videos')
     .select(`
-      id, youtube_id, source_type, status, added_by, created_at,
+      id, youtube_id, source_type, status, title, added_by, created_at,
       tune_video_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
     `)
     .eq('status', 'pending')
@@ -125,9 +125,9 @@ export async function deleteVideo(videoId) {
   if (error) throw error;
 }
 
-export async function updateVideoWithEntries(videoId, { source_type, entries }) {
+export async function updateVideoWithEntries(videoId, { source_type, title, entries }) {
   const { error: ve } = await supabase
-    .from('tune_videos').update({ source_type }).eq('id', videoId);
+    .from('tune_videos').update({ source_type, title: title ?? null }).eq('id', videoId);
   if (ve) throw ve;
 
   const { error: de } = await supabase

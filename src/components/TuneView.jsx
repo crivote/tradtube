@@ -113,14 +113,21 @@ function TuneView() {
 
                   {/* Metadatos */}
                   <div class="flex-grow min-w-0 flex flex-col gap-1">
-                    <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-border)] text-[var(--color-muted)] w-fit">
-                      {label}
-                    </span>
-                    <Show when={startFmt}>
-                      <span class="text-xs text-[var(--color-muted)] font-mono">
-                        {startFmt}{endFmt ? ` – ${endFmt}` : ''}
+                    <Show when={entry.tune_videos?.title}>
+                      <span class="text-sm text-white font-medium truncate">
+                        {entry.tune_videos.title}
                       </span>
                     </Show>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-border)] text-[var(--color-muted)] w-fit">
+                        {label}
+                      </span>
+                      <Show when={startFmt}>
+                        <span class="text-xs text-[var(--color-muted)] font-mono">
+                          {startFmt}{endFmt ? ` – ${endFmt}` : ''}
+                        </span>
+                      </Show>
+                    </div>
                   </div>
 
                   {/* Votos */}

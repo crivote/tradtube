@@ -161,8 +161,11 @@ function AdminView(props) {
 
                       {/* Info */}
                       <div class="flex-grow min-w-0">
+                        <Show when={video.title}>
+                          <p class="text-sm text-white font-semibold truncate">{video.title}</p>
+                        </Show>
                         <div class="flex items-center gap-2 flex-wrap">
-                          <span class="text-xs font-mono text-white">{video.youtube_id}</span>
+                          <span class="text-xs font-mono text-[var(--color-muted)]">{video.youtube_id}</span>
                           <span class="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-muted)]">
                             {SOURCE_TYPES[video.source_type] ?? video.source_type}
                           </span>

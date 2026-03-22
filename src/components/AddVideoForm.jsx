@@ -6,7 +6,7 @@
  * Props: { onClose }
  */
 
-import { createSignal, createMemo, For, Show } from 'solid-js';
+import { createSignal, createMemo, createEffect, For, Show } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
 import { searchTunes, getTuneById } from '../lib/db';
 import { addVideoWithEntries, updateVideoWithEntries } from '../lib/supabase';
@@ -39,6 +39,20 @@ function parseSec(val) {
   return null;
 }
 
+// Obtiene el título del vídeo via YouTube oEmbed (sin API key)
+async function fetchYoutubeTitle(videoId) {
+  try {
+    const res = await fetch(
+      `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.title ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // Formatea segundos a "m:ss"
 function formatSec(sec) {
   if (sec == null) return '';
@@ -61,6 +75,7 @@ function AddVideoForm(props) {
 
   const [youtubeUrl, setYoutubeUrl] = createSignal(props.editVideo?.youtube_id ?? '');
   const [sourceType, setSourceType] = createSignal(props.editVideo?.source_type ?? 'session');
+  const [title, setTitle] = createSignal(props.editVideo?.title ?? '');
   const [entries, setEntries] = createStore(initialEntries);
   const [tuneSearch, setTuneSearch] = createSignal('');
   const [submitting, setSubmitting] = createSignal(false);
@@ -68,6 +83,14 @@ function AddVideoForm(props) {
   const [success, setSuccess] = createSignal(false);
 
   const youtubeId = createMemo(() => extractYoutubeId(youtubeUrl()));
+
+  // Auto-fetch título desde YouTube oEmbed al detectar un ID válido
+  createEffect(async () => {
+    const id = youtubeId();
+    if (!id || isEdit()) return;
+    const t = await fetchYoutubeTitle(id);
+    if (t) setTitle(t);
+  });
 
   const tuneResults = createMemo(() => {
     const q = tuneSearch().trim();
@@ -108,12 +131,14 @@ function AddVideoForm(props) {
       if (isEdit()) {
         await updateVideoWithEntries(props.editVideo.id, {
           source_type: sourceType(),
+          title: title().trim() || null,
           entries: entryPayload,
         });
       } else {
         await addVideoWithEntries({
           youtube_id: youtubeId(),
           source_type: sourceType(),
+          title: title().trim() || null,
           entries: entryPayload,
         });
       }
@@ -129,6 +154,7 @@ function AddVideoForm(props) {
     setYoutubeUrl('');
     setSourceType('session');
     setEntries(produce(e => { e.splice(0, e.length); }));
+    setTitle('');
     setTuneSearch('');
     setError('');
     setSuccess(false);
@@ -202,6 +228,23 @@ function AddVideoForm(props) {
             />
           </div>
         </Show>
+
+        {/* ── Título ───────────────────────────────────────────────────── */}
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">
+            Title
+            <Show when={youtubeId() && !title()}>
+              <span class="ml-2 text-[var(--color-muted)]/50 normal-case font-normal">fetching…</span>
+            </Show>
+          </label>
+          <input
+            type="text"
+            placeholder="Video title (auto-filled from YouTube)"
+            value={title()}
+            onInput={e => setTitle(e.target.value)}
+            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
+          />
+        </div>
 
         {/* ── Source type ──────────────────────────────────────────────── */}
         <div class="flex flex-col gap-2">
