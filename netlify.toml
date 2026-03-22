@@ -1,0 +1,16 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Headers COOP/COEP necesarios para sqlite-wasm (SharedArrayBuffer)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Embedder-Policy = "require-corp"
+
+# SPA routing: todas las rutas apuntan a index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

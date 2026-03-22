@@ -1,0 +1,19 @@
+/* index.css — reset mínimo + variables */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #0f0f0f;
+  --color-surface: #1a1a1a;
+  --color-border: #2a2a2a;
+  --color-primary: #22c55e;    /* green-500 — verde folk */
+  --color-text: #e5e5e5;
+  --color-muted: #71717a;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Inter', system-ui, sans-serif;
+}

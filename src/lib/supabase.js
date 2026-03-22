@@ -1,0 +1,111 @@
+/**
+ * lib/supabase.js
+ * Cliente Supabase singleton
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../constants';
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/**
+ * Obtiene las entries aprobadas para un tune_id
+ * Cada entry incluye los datos del vídeo padre y el score de votos
+ * Ordenadas por score descendente
+ */
+export async function getEntriesForTune(tuneId) {
+  const { data, error } = await supabase
+    .from('tune_video_entries')
+    .select(`
+      id, tune_id, setting_id, start_sec, end_sec, position,
+      tune_videos (
+        id, youtube_id, source_type, status, created_at
+      ),
+      tune_video_votes ( vote )
+    `)
+    .eq('tune_id', tuneId)
+    .order('position', { ascending: true });
+
+  if (error) { console.error(error); return []; }
+
+  // Filtrar solo las que pertenecen a vídeos aprobados (RLS lo controla,
+  // pero filtramos en cliente también por seguridad)
+  const approved = (data || []).filter(e => e.tune_videos?.status === 'approved');
+
+  // Calcular score de votos y ordenar
+  return approved
+    .map(e => ({
+      ...e,
+      voteScore: (e.tune_video_votes || []).reduce((acc, r) => acc + r.vote, 0),
+    }))
+    .sort((a, b) => b.voteScore - a.voteScore);
+}
+
+/**
+ * Añade un vídeo completo con sus entries (set de tunes)
+ * payload = {
+ *   youtube_id, source_type,
+ *   entries: [{ tune_id, setting_id?, start_sec, end_sec?, position }]
+ * }
+ * Solo accesible con service_role (fase 1: restringido)
+ */
+export async function addVideoWithEntries({ youtube_id, source_type, entries }) {
+  // 1. Insertar el vídeo
+  const { data: video, error: videoError } = await supabase
+    .from('tune_videos')
+    .insert([{ youtube_id, source_type }])
+    .select()
+    .single();
+
+  if (videoError) throw videoError;
+
+  // 2. Insertar las entries con el video_id
+  const entryRows = entries.map((e, i) => ({
+    video_id: video.id,
+    tune_id: e.tune_id,
+    setting_id: e.setting_id ?? null,
+    start_sec: e.start_sec ?? 0,
+    end_sec: e.end_sec ?? null,
+    position: e.position ?? i,
+  }));
+
+  const { error: entriesError } = await supabase
+    .from('tune_video_entries')
+    .insert(entryRows);
+
+  if (entriesError) throw entriesError;
+
+  return video;
+}
+
+/**
+ * Registra un voto o report sobre una entry concreta
+ */
+export async function castVote(entryId, vote, isReport = false) {
+  const { error } = await supabase
+    .from('tune_video_votes')
+    .upsert(
+      { entry_id: entryId, vote, is_report: isReport },
+      { onConflict: 'entry_id,user_id' }
+    );
+
+  if (error) throw error;
+}
+
+/**
+ * Auth — Google OAuth
+ */
+export async function loginWithGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+  if (error) throw error;
+}
+
+export async function logout() {
+  await supabase.auth.signOut();
+}
+
+export function onAuthChange(callback) {
+  return supabase.auth.onAuthStateChange((_event, session) => {
+    callback(session?.user ?? null);
+  });
+}
