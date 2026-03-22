@@ -9,6 +9,7 @@
 import { createSignal, onMount, For, Show } from 'solid-js';
 import { getPendingVideos, approveVideo, deleteVideo } from '../lib/supabase';
 import { getTuneById } from '../lib/db';
+import { useAppStore } from '../store/appStore';
 import { SOURCE_TYPES } from '../constants';
 import YoutubePlayer from './YoutubePlayer';
 import AddVideoForm from './AddVideoForm';
@@ -25,6 +26,7 @@ function formatDate(iso) {
 }
 
 function AdminView(props) {
+  const { loadVideoData } = useAppStore();
   const [videos, setVideos] = createSignal([]);
   const [loading, setLoading] = createSignal(true);
   const [expandedId, setExpandedId] = createSignal(null);
@@ -68,6 +70,7 @@ function AdminView(props) {
       await approveVideo(video.id);
       setVideos(prev => prev.filter(v => v.id !== video.id));
       if (expandedId() === video.id) { setExpandedId(null); setPreviewEntry(null); }
+      loadVideoData();
     } catch (e) { console.error(e); }
     finally { setActionId(null); }
   };

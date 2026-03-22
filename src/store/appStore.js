@@ -37,14 +37,17 @@ const [showAdminView, setShowAdminView] = createSignal(false);
 export function useAppStore() {
 
   // Inicializar DB al montar la app
-  const loadDB = async () => {
-    await initDB();
-    setDbReady(true);
-    // Carga en paralelo los conteos de vídeos por tune (no bloquea la UI)
+  const loadVideoData = () => {
     getVideoCountsByTune().then(counts => {
       setVideoCountsByTune(counts);
       setVideoDataReady(true);
     });
+  };
+
+  const loadDB = async () => {
+    await initDB();
+    setDbReady(true);
+    loadVideoData();
   };
 
   // Escuchar cambios de auth
@@ -105,7 +108,7 @@ export function useAppStore() {
     showAddForm, setShowAddForm,
     showAdminView, setShowAdminView,
     // Acciones
-    loadDB, initAuth,
+    loadDB, initAuth, loadVideoData,
     selectTune, backToSearch,
   };
 }
