@@ -41,8 +41,8 @@ export async function initDB() {
 export function searchTunes(query, limit = 10) {
   if (!db || !query?.trim()) return [];
 
-  // Escapar comillas para FTS5
-  const safe = query.trim().replace(/"/g, '""');
+  // Escapar comillas para FTS5 (dobles y simples)
+  const safe = query.trim().replace(/"/g, '""').replace(/'/g, "''");
 
   return db.exec({
     sql: `
