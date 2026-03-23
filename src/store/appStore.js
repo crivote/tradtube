@@ -4,13 +4,14 @@
  */
 
 import { createSignal, createEffect } from 'solid-js';
-import { initDB, searchTunes } from '../lib/db';
+import { initDB, searchTunes, searchTunesByType } from '../lib/db';
 import { getEntriesForTune, getVideoCountsByTune, onAuthChange } from '../lib/supabase';
 import { SEARCH_LIMIT } from '../constants';
 
 // ── DB ──────────────────────────────────────────────────────────────────────
 const [dbReady, setDbReady] = createSignal(false);
 const [videoCountsByTune, setVideoCountsByTune] = createSignal(new Map());
+const [videoThumbnailsByTune, setVideoThumbnailsByTune] = createSignal(new Map());
 const [videoDataReady, setVideoDataReady] = createSignal(false);
 
 // ── Auth ────────────────────────────────────────────────────────────────────
@@ -19,6 +20,7 @@ const [currentUser, setCurrentUser] = createSignal(null);
 // ── Búsqueda ────────────────────────────────────────────────────────────────
 const [searchQuery, setSearchQuery] = createSignal('');
 const [searchResults, setSearchResults] = createSignal([]);
+const [filterType, setFilterType] = createSignal(null);
 
 // ── Tune seleccionado ───────────────────────────────────────────────────────
 const [selectedTune, setSelectedTune] = createSignal(null);
@@ -38,8 +40,9 @@ export function useAppStore() {
 
   // Inicializar DB al montar la app
   const loadVideoData = () => {
-    getVideoCountsByTune().then(counts => {
+    getVideoCountsByTune().then(({ counts, thumbnails }) => {
       setVideoCountsByTune(counts);
+      setVideoThumbnailsByTune(thumbnails);
       setVideoDataReady(true);
     });
   };
@@ -56,15 +59,25 @@ export function useAppStore() {
     return () => subscription.unsubscribe();
   };
 
-  // Buscar tunes cuando cambia el query
+  // Buscar tunes cuando cambia el query (texto)
   createEffect(() => {
     const q = searchQuery();
     if (!dbReady() || q.trim().length < 2) {
       setSearchResults([]);
       return;
     }
+    setFilterType(null);
     const results = searchTunes(q, SEARCH_LIMIT);
     setSearchResults(results);
+  });
+
+  // Filtrar por tipo — solo tunes con vídeos
+  createEffect(() => {
+    const type = filterType();
+    if (!type || !dbReady() || !videoDataReady()) return;
+    const all = searchTunesByType(type, 500);
+    const counts = videoCountsByTune();
+    setSearchResults(all.filter(t => counts.has(t.tune_id)));
   });
 
   // Cargar entries cuando se selecciona un tune
@@ -88,6 +101,7 @@ export function useAppStore() {
   const selectTune = (tune) => {
     setSelectedTune(tune);
     setSearchQuery('');
+    setFilterType(null);
     setSearchResults([]);
   };
 
@@ -100,8 +114,9 @@ export function useAppStore() {
   return {
     // Estado
     dbReady, currentUser,
-    videoCountsByTune, videoDataReady,
+    videoCountsByTune, videoThumbnailsByTune, videoDataReady,
     searchQuery, setSearchQuery,
+    filterType, setFilterType,
     searchResults,
     selectedTune, tuneEntries, loadingEntries,
     activeEntry, setActiveEntry,

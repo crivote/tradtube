@@ -60,6 +60,24 @@ export function searchTunes(query, limit = 10) {
 }
 
 /**
+ * Devuelve tunes de un tipo concreto ordenados por popularidad
+ * Devuelve array de { tune_id, name, type, meter, tunebooks, popularity_score }
+ */
+export function searchTunesByType(type, limit = 500) {
+  if (!db || !type) return [];
+
+  return db.exec({
+    sql: `
+      SELECT tune_id, name, type, meter, tunebooks, popularity_score
+      FROM tunes WHERE type = ? ORDER BY tunebooks DESC LIMIT ?
+    `,
+    bind: [type, limit],
+    returnValue: 'resultRows',
+    rowMode: 'object',
+  });
+}
+
+/**
  * Obtiene los settings (variaciones ABC) de un tune
  */
 export function getSettings(tuneId) {

@@ -238,18 +238,22 @@ export async function updateVideoWithEntries(videoId, { source_type, title, entr
 export async function getVideoCountsByTune() {
   const { data, error } = await supabase
     .from('tune_videos')
-    .select('tune_video_entries(tune_id)')
+    .select('id, youtube_id, tune_video_entries(tune_id)')
     .eq('status', 'approved');
 
-  if (error) { console.error(error); return new Map(); }
+  if (error) { console.error(error); return { counts: new Map(), thumbnails: new Map() }; }
 
   const counts = new Map();
+  const thumbnails = new Map();
   for (const video of data || []) {
     for (const entry of video.tune_video_entries || []) {
       counts.set(entry.tune_id, (counts.get(entry.tune_id) || 0) + 1);
+      if (!thumbnails.has(entry.tune_id)) {
+        thumbnails.set(entry.tune_id, video.youtube_id);
+      }
     }
   }
-  return counts;
+  return { counts, thumbnails };
 }
 
 /**

@@ -9,25 +9,28 @@ const TYPE_COLOR = {
   slide:      'text-violet-400',
   waltz:      'text-cyan-400',
   march:      'text-orange-400',
-  strathspey: 'text-yellow-400',
+  'slip jig': 'text-pink-400',
 };
 
-const TUNE_TYPES = ['jig', 'reel', 'hornpipe', 'polka', 'slide', 'waltz', 'march', 'strathspey'];
+const TUNE_TYPES = ['jig', 'reel', 'hornpipe', 'polka', 'slide', 'waltz', 'march', 'slip jig'];
 
 function SearchView() {
   const {
     searchQuery, setSearchQuery,
+    filterType, setFilterType,
     searchResults, selectTune,
     videoCountsByTune, videoDataReady,
   } = useAppStore();
 
   const isSearching = () => searchQuery().trim().length >= 2;
+  const isFiltering = () => !!filterType();
+  const isActive = () => isSearching() || isFiltering();
 
   return (
     <div class="flex flex-col items-center gap-6">
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <Show when={!isSearching()}>
+      <Show when={!isActive()}>
         <div class="text-center flex flex-col items-center gap-4 py-10">
           <div class="text-6xl text-[var(--color-muted)]/30 select-none leading-none">♫</div>
           <div>
@@ -66,17 +69,27 @@ function SearchView() {
         </Show>
       </div>
 
-      {/* ── Type chips (idle) ─────────────────────────────────────────── */}
+      {/* ── Type chips ────────────────────────────────────────────────── */}
       <Show when={!isSearching()}>
         <div class="flex flex-wrap gap-2 justify-center">
-          {TUNE_TYPES.map(type => (
-            <button
-              onClick={() => setSearchQuery(type)}
-              class="text-xs px-3 py-1.5 rounded-full border border-[var(--color-primary)]/40 text-white/70 hover:border-[var(--color-primary)] hover:text-white transition-colors"
-            >
-              {type}
-            </button>
-          ))}
+          {TUNE_TYPES.map(type => {
+            const active = () => filterType() === type;
+            return (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilterType(active() ? null : type);
+                }}
+                class={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                  active()
+                    ? `border-[var(--color-primary)] ${TYPE_COLOR[type] ?? 'text-white'} bg-[var(--color-primary)]/10`
+                    : 'border-[var(--color-primary)]/40 text-white/70 hover:border-[var(--color-primary)] hover:text-white'
+                }`}
+              >
+                {type}
+              </button>
+            );
+          })}
         </div>
       </Show>
 

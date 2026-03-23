@@ -8,6 +8,7 @@ import { useAppStore } from '../store/appStore';
 import { castVote, loginWithGoogle } from '../lib/supabase';
 import { SOURCE_TYPES } from '../constants';
 import YoutubePlayer from './YoutubePlayer';
+import SameTypeTunes from './SameTypeTunes';
 
 function formatTime(sec) {
   if (sec == null) return null;
@@ -161,6 +162,9 @@ function TuneView() {
           </For>
         </div>
       </Show>
+
+      {/* Más tunes del mismo tipo */}
+      <SameTypeTunes />
 
     </div>
   );
