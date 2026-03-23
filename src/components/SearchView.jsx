@@ -29,9 +29,7 @@ function SearchView() {
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <Show when={!isSearching()}>
         <div class="text-center flex flex-col items-center gap-4 py-10">
-          <div class="w-16 h-16 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center text-3xl select-none">
-            ♪
-          </div>
+          <div class="text-6xl text-[var(--color-muted)]/30 select-none leading-none">♫</div>
           <div>
             <h2 class="text-4xl font-black text-white tracking-tight">Find any tune</h2>
             <p class="text-[var(--color-muted)] text-sm mt-2 max-w-sm leading-relaxed">
@@ -42,6 +40,13 @@ function SearchView() {
         </div>
       </Show>
 
+      {/* ── Stats ────────────────────────────────────────────────────── */}
+      <Show when={videoDataReady()}>
+        <p class="text-xs text-[var(--color-muted)] -mb-3">
+          <span class="text-[var(--color-primary)] font-semibold">{videoCountsByTune().size}</span> tunes with videos
+        </p>
+      </Show>
+
       {/* ── Search input ─────────────────────────────────────────────── */}
       <div class="w-full max-w-xl relative">
         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)] select-none">♪</span>
@@ -50,7 +55,7 @@ function SearchView() {
           placeholder="e.g. Strayaway Child, The Morning Dew…"
           value={searchQuery()}
           onInput={(e) => setSearchQuery(e.target.value)}
-          class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl pl-10 pr-10 py-3.5 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
+          class="w-full bg-[var(--color-surface)] border border-[var(--color-primary)]/50 rounded-xl pl-10 pr-10 py-3.5 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_20px_rgba(34,197,94,0.12)] transition-all text-sm"
           autofocus
         />
         <Show when={searchQuery().length > 0}>
@@ -67,7 +72,7 @@ function SearchView() {
           {TUNE_TYPES.map(type => (
             <button
               onClick={() => setSearchQuery(type)}
-              class={`text-xs px-3 py-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 transition-colors ${TYPE_COLOR[type] ?? 'text-[var(--color-muted)]'}`}
+              class="text-xs px-3 py-1.5 rounded-full border border-[var(--color-primary)]/40 text-white/70 hover:border-[var(--color-primary)] hover:text-white transition-colors"
             >
               {type}
             </button>
@@ -87,10 +92,10 @@ function SearchView() {
               return (
                 <button
                   onClick={() => selectTune(tune)}
-                  class={`w-full bg-[var(--color-surface)] border rounded-xl px-4 py-3 text-left transition-all group
+                  class={`w-full border rounded-xl px-4 py-3 text-left transition-all group
                     ${hasVideos()
-                      ? 'border-[var(--color-border)] hover:border-[var(--color-primary)]'
-                      : 'border-[var(--color-border)] hover:border-[var(--color-muted)]/40'
+                      ? 'bg-green-500/10 border-green-500/20 hover:border-[var(--color-primary)]'
+                      : 'bg-[var(--color-surface)] border-[var(--color-border)]'
                     }`}
                 >
                   <div class="flex items-center justify-between gap-3">
@@ -109,7 +114,7 @@ function SearchView() {
                         <span class={`font-semibold block leading-snug truncate transition-colors
                           ${hasVideos()
                             ? 'text-white group-hover:text-[var(--color-primary)]'
-                            : 'text-[var(--color-muted)] group-hover:text-white'
+                            : 'text-[var(--color-muted)]'
                           }`}
                         >
                           {tune.name}

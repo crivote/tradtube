@@ -6,13 +6,13 @@
  *   - Search by tune: vídeos filtrados por tune
  */
 
-import { createSignal, onMount, For, Show } from 'solid-js';
+import { createSignal, createEffect, onMount, For, Show } from 'solid-js';
 import {
   getPendingVideos, getPendingCount,
-  getLatestApprovedVideos, getTunesWithVideos, getVideosByTune,
+  getLatestApprovedVideos, getVideosByTune,
   approveVideo, deleteVideo,
 } from '../lib/supabase';
-import { getTuneById } from '../lib/db';
+import { getTuneById, searchTunes } from '../lib/db';
 import { SOURCE_TYPES } from '../constants';
 import YoutubePlayer from './YoutubePlayer';
 import AddVideoForm from './AddVideoForm';
@@ -331,37 +331,35 @@ function LatestApprovedTab(props) {
 
 // ── Tab: Search by Tune ───────────────────────────────────────────────────────
 function SearchByTuneTab(props) {
-  const [tunes, setTunes] = createSignal([]);
-  const [tunesLoading, setTunesLoading] = createSignal(true);
-  const [selectedTuneId, setSelectedTuneId] = createSignal('');
+  const { videoCountsByTune } = useAppStore();
+  const [query, setQuery] = createSignal('');
+  const [results, setResults] = createSignal([]);
+  const [selectedTune, setSelectedTune] = createSignal(null);
   const [videos, setVideos] = createSignal([]);
   const [videosLoading, setVideosLoading] = createSignal(false);
   const [actionId, setActionId] = createSignal(null);
 
-  onMount(async () => {
-    setTunesLoading(true);
-    const ids = await getTunesWithVideos();
-    const enriched = ids
-      .map(id => ({ tune_id: id, tune: getTuneById(id) }))
-      .filter(t => t.tune)
-      .sort((a, b) => a.tune.name.localeCompare(b.tune.name));
-    setTunes(enriched);
-    setTunesLoading(false);
+  createEffect(() => {
+    const q = query().trim();
+    if (q.length < 2) { setResults([]); return; }
+    const raw = searchTunes(q, 20);
+    setResults(raw.filter(t => videoCountsByTune().has(t.tune_id)));
   });
 
-  const handleTuneChange = async (tuneId) => {
-    setSelectedTuneId(tuneId);
+  const handleSelect = async (tune) => {
+    setSelectedTune(tune);
+    setQuery('');
+    setResults([]);
     setVideos([]);
-    if (!tuneId) return;
     setVideosLoading(true);
-    setVideos(enrichVideos(await getVideosByTune(Number(tuneId))));
+    setVideos(enrichVideos(await getVideosByTune(tune.tune_id)));
     setVideosLoading(false);
   };
 
   props.onRegisterRefresh(async () => {
-    if (!selectedTuneId()) return;
+    if (!selectedTune()) return;
     setVideosLoading(true);
-    setVideos(enrichVideos(await getVideosByTune(Number(selectedTuneId()))));
+    setVideos(enrichVideos(await getVideosByTune(selectedTune().tune_id)));
     setVideosLoading(false);
   });
 
@@ -376,26 +374,39 @@ function SearchByTuneTab(props) {
 
   return (
     <div class="flex flex-col gap-4">
-      <div>
-        <Show when={tunesLoading()}>
-          <div class="flex items-center gap-2 text-sm text-[var(--color-muted)]">
-            <div class="w-4 h-4 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
-            Loading tunes…
+
+      {/* ── Search input with dropdown ───────────────────────────── */}
+      <div class="relative">
+        <input
+          type="text"
+          placeholder="Search tunes with videos…"
+          value={query()}
+          onInput={e => setQuery(e.target.value)}
+          class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
+        />
+        <Show when={results().length > 0}>
+          <div class="absolute top-full left-0 right-0 mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden z-10 flex flex-col shadow-lg">
+            <For each={results()}>
+              {(tune) => (
+                <button
+                  onClick={() => handleSelect(tune)}
+                  class="text-left px-4 py-2.5 text-sm text-white hover:bg-[var(--color-primary)]/10 transition-colors border-b border-[var(--color-border)] last:border-0"
+                >
+                  {tune.name}
+                  <span class="text-[10px] text-[var(--color-muted)] ml-2 uppercase tracking-wider">{tune.type}</span>
+                </button>
+              )}
+            </For>
           </div>
         </Show>
-        <Show when={!tunesLoading()}>
-          <select
-            value={selectedTuneId()}
-            onChange={e => handleTuneChange(e.target.value)}
-            class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-white focus:outline-none focus:border-[var(--color-primary)]/60"
-          >
-            <option value="">Select a tune…</option>
-            <For each={tunes()}>
-              {(t) => <option value={t.tune_id}>{t.tune.name}</option>}
-            </For>
-          </select>
-        </Show>
       </div>
+
+      {/* ── Selected tune label ──────────────────────────────────── */}
+      <Show when={selectedTune()}>
+        <p class="text-xs text-[var(--color-muted)] -mt-2">
+          Videos for <span class="text-white font-semibold">{selectedTune().name}</span>
+        </p>
+      </Show>
 
       <Show when={videosLoading()}>
         <div class="flex items-center gap-3 py-10 justify-center">
@@ -404,7 +415,7 @@ function SearchByTuneTab(props) {
         </div>
       </Show>
 
-      <Show when={!videosLoading() && selectedTuneId() && videos().length === 0}>
+      <Show when={!videosLoading() && selectedTune() && videos().length === 0}>
         <div class="text-center py-10 border border-dashed border-[var(--color-border)] rounded-xl">
           <p class="text-[var(--color-muted)] text-sm">No approved videos for this tune.</p>
         </div>

@@ -26,12 +26,13 @@ function App() {
         <div class="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
 
           {/* Logo */}
-          <div class="flex items-center gap-2 flex-shrink-0">
-            <span class="text-[var(--color-primary)] text-xl">♪</span>
-            <h1 class="font-bold text-lg tracking-tight">TradTube</h1>
-            <span class="text-xs text-[var(--color-muted)] hidden sm:inline">
-              Traditional tunes on video
-            </span>
+          <div class="flex items-center gap-2.5 flex-shrink-0">
+            <div class="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center flex-shrink-0">
+              <img src="/favicon.png" alt="TradTube" class="w-6 h-6 object-contain" />
+            </div>
+            <h1 class="font-black text-base tracking-tight uppercase">
+              <span class="text-white">Trad</span><span class="text-[var(--color-primary)] font-light">Tube</span>
+            </h1>
           </div>
 
           {/* Auth */}
@@ -40,19 +41,19 @@ function App() {
             fallback={
               <button
                 onClick={loginWithGoogle}
-                class="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:text-white hover:border-[var(--color-primary)]/50 transition-colors"
+                class="text-xs px-4 py-1.5 rounded-lg border border-[var(--color-border)] text-white hover:border-[var(--color-primary)]/50 transition-colors"
               >
-                Sign in with Google
+                Login
               </button>
             }
           >
             <div class="flex items-center gap-3">
               <button
                 onClick={() => { setShowAdminView(false); setShowAddForm(v => !v); }}
-                class={`text-xs px-3 py-1.5 rounded-lg border transition-colors
+                class={`text-xs px-4 py-1.5 rounded-lg font-semibold transition-colors
                   ${showAddForm()
-                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
-                    : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:text-white hover:border-[var(--color-primary)]/50'
+                    ? 'bg-green-400 text-black'
+                    : 'bg-[var(--color-primary)] text-black hover:bg-green-400'
                   }`}
               >
                 + Add video
