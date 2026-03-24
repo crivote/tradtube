@@ -3,7 +3,8 @@
  * Vista de detalle de una tune: reproductor + lista de entries con votos.
  */
 
-import { Show, For } from 'solid-js';
+import { Show, For, createEffect } from 'solid-js';
+import { useParams, useNavigate } from '@solidjs/router';
 import { useAppStore } from '../store/appStore';
 import { castVote, loginWithGoogle } from '../lib/supabase';
 import { SOURCE_TYPES } from '../constants';
@@ -18,11 +19,19 @@ function formatTime(sec) {
 }
 
 function TuneView() {
+  const params = useParams();
+  const navigate = useNavigate();
   const {
+    dbReady,
     selectedTune, tuneEntries, loadingEntries,
     activeEntry, setActiveEntry,
-    backToSearch, currentUser,
+    currentUser, loadTuneById,
   } = useAppStore();
+
+  // Sync selectedTune from URL param — handles both in-app nav and direct links
+  createEffect(() => {
+    if (dbReady()) loadTuneById(params.tuneId);
+  });
 
   const handleVote = async (e, entry, vote, isReport = false) => {
     e.stopPropagation();
@@ -39,7 +48,7 @@ function TuneView() {
 
       {/* Back */}
       <button
-        onClick={backToSearch}
+        onClick={() => navigate('/')}
         class="flex items-center gap-2 text-sm text-[var(--color-muted)] hover:text-white transition-colors w-fit"
       >
         ← Back to search

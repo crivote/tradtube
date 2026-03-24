@@ -1,24 +1,26 @@
-import { onMount, Show, Switch, Match } from 'solid-js';
+import { onMount, Show } from 'solid-js';
+import { useNavigate, useLocation } from '@solidjs/router';
 import { useAppStore } from './store/appStore';
 import { loginWithGoogle, logout } from './lib/supabase';
-import SearchView from './components/SearchView';
-import TuneView from './components/TuneView';
 import AddVideoForm from './components/AddVideoForm';
-import AdminView from './components/AdminView';
 
-function App() {
+function App(props) {
   const {
     loadDB, initAuth, dbReady,
-    selectedTune, currentUser,
+    currentUser,
     showAddForm, setShowAddForm,
     addFormInitialTune, setAddFormInitialTune,
-    showAdminView, setShowAdminView,
   } = useAppStore();
+
+  const navigate = useNavigate();
+  const location = useLocation();
 
   onMount(async () => {
     initAuth();
     await loadDB();
   });
+
+  const isAdmin = () => location.pathname === '/admin';
 
   return (
     <div class="min-h-screen flex flex-col">
@@ -27,14 +29,17 @@ function App() {
         <div class="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
 
           {/* Logo */}
-          <div class="flex items-center gap-2.5 flex-shrink-0">
+          <button
+            onClick={() => navigate('/')}
+            class="flex items-center gap-2.5 flex-shrink-0 hover:opacity-80 transition-opacity"
+          >
             <div class="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center flex-shrink-0">
               <img src="/favicon.png" alt="TradTube" class="w-6 h-6 object-contain" />
             </div>
             <h1 class="font-black text-base tracking-tight uppercase">
               <span class="text-white">Trad</span><span class="text-[var(--color-primary)] font-light">Tube</span>
             </h1>
-          </div>
+          </button>
 
           {/* Auth */}
           <Show
@@ -50,7 +55,7 @@ function App() {
           >
             <div class="flex items-center gap-3">
               <button
-                onClick={() => { setShowAdminView(false); setAddFormInitialTune(null); setShowAddForm(v => !v); }}
+                onClick={() => { setAddFormInitialTune(null); setShowAddForm(v => !v); }}
                 class={`text-xs px-4 py-1.5 rounded-lg font-semibold transition-colors
                   ${showAddForm()
                     ? 'bg-green-400 text-black'
@@ -60,14 +65,14 @@ function App() {
                 + Add video
               </button>
               <button
-                onClick={() => { setShowAddForm(false); setShowAdminView(v => !v); }}
+                onClick={() => { setShowAddForm(false); navigate(isAdmin() ? '/' : '/admin'); }}
                 class={`text-xs px-3 py-1.5 rounded-lg border transition-colors
-                  ${showAdminView()
+                  ${isAdmin()
                     ? 'border-amber-500/60 bg-amber-500/10 text-amber-400'
                     : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:text-white hover:border-amber-500/30'
                   }`}
               >
-                Admin
+                {isAdmin() ? '← Back' : 'Admin'}
               </button>
               <span class="text-xs text-[var(--color-muted)] hidden sm:inline truncate max-w-[160px]">
                 {currentUser().email}
@@ -94,23 +99,15 @@ function App() {
             </div>
           }
         >
-          <Switch>
-            <Match when={showAdminView()}>
-              <AdminView onClose={() => setShowAdminView(false)} />
-            </Match>
-            <Match when={showAddForm()}>
-              <AddVideoForm
-                initialTune={addFormInitialTune()}
-                onClose={() => { setShowAddForm(false); setAddFormInitialTune(null); }}
-              />
-            </Match>
-            <Match when={!selectedTune()}>
-              <SearchView />
-            </Match>
-            <Match when={selectedTune()}>
-              <TuneView />
-            </Match>
-          </Switch>
+          <Show
+            when={showAddForm()}
+            fallback={props.children}
+          >
+            <AddVideoForm
+              initialTune={addFormInitialTune()}
+              onClose={() => { setShowAddForm(false); setAddFormInitialTune(null); }}
+            />
+          </Show>
         </Show>
       </main>
 

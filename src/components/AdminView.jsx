@@ -7,6 +7,7 @@
  */
 
 import { createSignal, createEffect, onMount, For, Show } from 'solid-js';
+import { useNavigate } from '@solidjs/router';
 import {
   getPendingVideos, getPendingCount,
   getLatestApprovedVideos, getVideosByTune,
@@ -440,7 +441,8 @@ function SearchByTuneTab(props) {
 }
 
 // ── AdminView principal ──────────────────────────────────────────────────────
-function AdminView(props) {
+function AdminView() {
+  const navigate = useNavigate();
   const [tab, setTab] = createSignal('pending');
   const [editingVideo, setEditingVideo] = createSignal(null);
   const [pendingCount, setPendingCount] = createSignal(null);
@@ -479,7 +481,7 @@ function AdminView(props) {
         <div class="flex items-center justify-between">
           <h2 class="text-2xl font-black text-white">Admin</h2>
           <button
-            onClick={props.onClose}
+            onClick={() => navigate('/')}
             class="text-sm text-[var(--color-muted)] hover:text-white transition-colors"
           >✕ Close</button>
         </div>

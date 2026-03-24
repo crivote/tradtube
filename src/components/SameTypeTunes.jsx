@@ -4,14 +4,16 @@
  */
 
 import { createMemo, For, Show } from 'solid-js';
+import { useNavigate } from '@solidjs/router';
 import { useAppStore } from '../store/appStore';
 import { searchTunesByType } from '../lib/db';
 
 function SameTypeTunes() {
   const {
-    selectedTune, selectTune,
+    selectedTune,
     videoCountsByTune, videoThumbnailsByTune, videoDataReady,
   } = useAppStore();
+  const navigate = useNavigate();
 
   const related = createMemo(() => {
     const tune = selectedTune();
@@ -35,7 +37,7 @@ function SameTypeTunes() {
               const youtubeId = () => videoThumbnailsByTune().get(tune.tune_id);
               return (
                 <button
-                  onClick={() => selectTune(tune)}
+                  onClick={() => navigate('/tune/' + tune.tune_id)}
                   class="flex-shrink-0 w-36 flex flex-col gap-1.5 text-left group"
                 >
                   <div class="w-36 h-20 rounded-lg overflow-hidden bg-[var(--color-surface)] border border-[var(--color-border)] group-hover:border-[var(--color-primary)]/60 transition-colors relative">

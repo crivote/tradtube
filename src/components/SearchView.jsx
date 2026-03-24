@@ -1,4 +1,5 @@
 import { For, Show } from 'solid-js';
+import { useNavigate } from '@solidjs/router';
 import { useAppStore } from '../store/appStore';
 import { loginWithGoogle } from '../lib/supabase';
 
@@ -19,10 +20,12 @@ function SearchView() {
   const {
     searchQuery, setSearchQuery,
     filterType, setFilterType,
-    searchResults, selectTune,
+    searchResults,
     videoCountsByTune, videoDataReady,
     currentUser, openAddFormForTune,
   } = useAppStore();
+
+  const navigate = useNavigate();
 
   const isSearching = () => searchQuery().trim().length >= 2;
   const isFiltering = () => !!filterType();
@@ -106,7 +109,7 @@ function SearchView() {
 
               return (
                 <div
-                  onClick={() => selectTune(tune)}
+                  onClick={() => navigate('/tune/' + tune.tune_id)}
                   class={`w-full border rounded-xl px-4 py-3 text-left transition-all group cursor-pointer
                     ${hasVideos()
                       ? 'bg-green-500/10 border-green-500/20 hover:border-[var(--color-primary)]'

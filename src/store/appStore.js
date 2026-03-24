@@ -4,7 +4,7 @@
  */
 
 import { createSignal, createEffect } from 'solid-js';
-import { initDB, searchTunes, searchTunesByType } from '../lib/db';
+import { initDB, searchTunes, searchTunesByType, getTuneById } from '../lib/db';
 import { getEntriesForTune, getVideoCountsByTune, onAuthChange } from '../lib/supabase';
 import { SEARCH_LIMIT } from '../constants';
 
@@ -33,9 +33,6 @@ const [activeEntry, setActiveEntry] = createSignal(null);
 // ── Formulario de aportación ─────────────────────────────────────────────────
 const [showAddForm, setShowAddForm] = createSignal(false);
 const [addFormInitialTune, setAddFormInitialTune] = createSignal(null);
-
-// ── Vista de administración ───────────────────────────────────────────────────
-const [showAdminView, setShowAdminView] = createSignal(false);
 
 export function useAppStore() {
 
@@ -99,17 +96,13 @@ export function useAppStore() {
     setLoadingEntries(false);
   });
 
-  const selectTune = (tune) => {
-    setSelectedTune(tune);
-    setSearchQuery('');
-    setFilterType(null);
-    setSearchResults([]);
-  };
-
-  const backToSearch = () => {
-    setSelectedTune(null);
-    setActiveEntry(null);
-    setTuneEntries([]);
+  // Carga un tune por ID desde SQLite y lo establece como seleccionado.
+  // Llamado por TuneView al montar o cuando cambia el param de URL.
+  const loadTuneById = (tuneId) => {
+    const id = parseInt(tuneId, 10);
+    if (!dbReady() || !id) return;
+    const tune = getTuneById(id);
+    if (tune) setSelectedTune(tune);
   };
 
   return {
@@ -123,13 +116,11 @@ export function useAppStore() {
     activeEntry, setActiveEntry,
     showAddForm, setShowAddForm,
     addFormInitialTune, setAddFormInitialTune,
-    showAdminView, setShowAdminView,
     // Acciones
     loadDB, initAuth, loadVideoData,
-    selectTune, backToSearch,
+    loadTuneById,
     openAddFormForTune: (tune) => {
       setAddFormInitialTune(tune);
-      setShowAdminView(false);
       setShowAddForm(true);
     },
   };
