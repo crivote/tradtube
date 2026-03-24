@@ -32,6 +32,7 @@ const [activeEntry, setActiveEntry] = createSignal(null);
 
 // ── Formulario de aportación ─────────────────────────────────────────────────
 const [showAddForm, setShowAddForm] = createSignal(false);
+const [addFormInitialTune, setAddFormInitialTune] = createSignal(null);
 
 // ── Vista de administración ───────────────────────────────────────────────────
 const [showAdminView, setShowAdminView] = createSignal(false);
@@ -121,9 +122,15 @@ export function useAppStore() {
     selectedTune, tuneEntries, loadingEntries,
     activeEntry, setActiveEntry,
     showAddForm, setShowAddForm,
+    addFormInitialTune, setAddFormInitialTune,
     showAdminView, setShowAdminView,
     // Acciones
     loadDB, initAuth, loadVideoData,
     selectTune, backToSearch,
+    openAddFormForTune: (tune) => {
+      setAddFormInitialTune(tune);
+      setShowAdminView(false);
+      setShowAddForm(true);
+    },
   };
 }

@@ -72,7 +72,9 @@ function AddVideoForm(props) {
           startSec: formatSec(e.start_sec ?? 0),
           endSec: e.end_sec != null ? formatSec(e.end_sec) : '',
         }))
-    : [];
+    : props.initialTune
+      ? [{ tune: props.initialTune, startSec: '', endSec: '' }]
+      : [];
 
   const [youtubeUrl, setYoutubeUrl] = createSignal(props.editVideo?.youtube_id ?? '');
   const [sourceType, setSourceType] = createSignal(props.editVideo?.source_type ?? 'session');

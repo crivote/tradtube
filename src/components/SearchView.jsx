@@ -1,5 +1,6 @@
 import { For, Show } from 'solid-js';
 import { useAppStore } from '../store/appStore';
+import { loginWithGoogle } from '../lib/supabase';
 
 const TYPE_COLOR = {
   jig:        'text-[var(--color-primary)]',
@@ -20,6 +21,7 @@ function SearchView() {
     filterType, setFilterType,
     searchResults, selectTune,
     videoCountsByTune, videoDataReady,
+    currentUser, openAddFormForTune,
   } = useAppStore();
 
   const isSearching = () => searchQuery().trim().length >= 2;
@@ -103,12 +105,12 @@ function SearchView() {
               const typeColor = TYPE_COLOR[tune.type] ?? 'text-[var(--color-muted)]';
 
               return (
-                <button
+                <div
                   onClick={() => selectTune(tune)}
-                  class={`w-full border rounded-xl px-4 py-3 text-left transition-all group
+                  class={`w-full border rounded-xl px-4 py-3 text-left transition-all group cursor-pointer
                     ${hasVideos()
                       ? 'bg-green-500/10 border-green-500/20 hover:border-[var(--color-primary)]'
-                      : 'bg-[var(--color-surface)] border-[var(--color-border)]'
+                      : 'bg-[var(--color-surface)] border-[var(--color-border)] hover:border-[var(--color-muted)]/40'
                     }`}
                 >
                   <div class="flex items-center justify-between gap-3">
@@ -146,14 +148,26 @@ function SearchView() {
                       </div>
                     </div>
 
-                    {/* Badge de vídeos */}
+                    {/* Badge de vídeos / Add button */}
                     <Show when={videoDataReady()}>
                       <Show
                         when={hasVideos()}
                         fallback={
-                          <span class="text-[10px] text-[var(--color-muted)]/40 whitespace-nowrap flex-shrink-0">
-                            no videos
-                          </span>
+                          <Show
+                            when={currentUser()}
+                            fallback={
+                              <span class="text-[10px] text-[var(--color-muted)]/40 whitespace-nowrap flex-shrink-0">
+                                no videos
+                              </span>
+                            }
+                          >
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openAddFormForTune(tune); }}
+                              class="text-[10px] font-semibold whitespace-nowrap flex-shrink-0 px-2.5 py-1 rounded-full border border-dashed border-[var(--color-muted)]/30 text-[var(--color-muted)]/60 hover:border-[var(--color-primary)]/60 hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-colors"
+                            >
+                              + Add video
+                            </button>
+                          </Show>
                         }
                       >
                         <span class="text-[10px] font-semibold whitespace-nowrap flex-shrink-0 px-2 py-0.5 rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)]">
@@ -162,7 +176,7 @@ function SearchView() {
                       </Show>
                     </Show>
                   </div>
-                </button>
+                </div>
               );
             }}
           </For>

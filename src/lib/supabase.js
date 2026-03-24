@@ -50,10 +50,13 @@ export async function getEntriesForTune(tuneId) {
  * Solo accesible con service_role (fase 1: restringido)
  */
 export async function addVideoWithEntries({ youtube_id, source_type, title, entries }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Must be logged in to add a video');
+
   // 1. Insertar el vídeo
   const { data: video, error: videoError } = await supabase
     .from('tune_videos')
-    .insert([{ youtube_id, source_type, title: title ?? null }])
+    .insert([{ youtube_id, source_type, title: title ?? null, added_by: user.id }])
     .select()
     .single();
 
@@ -82,10 +85,13 @@ export async function addVideoWithEntries({ youtube_id, source_type, title, entr
  * Registra un voto o report sobre una entry concreta
  */
 export async function castVote(entryId, vote, isReport = false) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Must be logged in to vote');
+
   const { error } = await supabase
     .from('tune_video_votes')
     .upsert(
-      { entry_id: entryId, vote, is_report: isReport },
+      { entry_id: entryId, user_id: user.id, vote, is_report: isReport },
       { onConflict: 'entry_id,user_id' }
     );
 

@@ -11,6 +11,7 @@ function App() {
     loadDB, initAuth, dbReady,
     selectedTune, currentUser,
     showAddForm, setShowAddForm,
+    addFormInitialTune, setAddFormInitialTune,
     showAdminView, setShowAdminView,
   } = useAppStore();
 
@@ -49,7 +50,7 @@ function App() {
           >
             <div class="flex items-center gap-3">
               <button
-                onClick={() => { setShowAdminView(false); setShowAddForm(v => !v); }}
+                onClick={() => { setShowAdminView(false); setAddFormInitialTune(null); setShowAddForm(v => !v); }}
                 class={`text-xs px-4 py-1.5 rounded-lg font-semibold transition-colors
                   ${showAddForm()
                     ? 'bg-green-400 text-black'
@@ -98,7 +99,10 @@ function App() {
               <AdminView onClose={() => setShowAdminView(false)} />
             </Match>
             <Match when={showAddForm()}>
-              <AddVideoForm onClose={() => setShowAddForm(false)} />
+              <AddVideoForm
+                initialTune={addFormInitialTune()}
+                onClose={() => { setShowAddForm(false); setAddFormInitialTune(null); }}
+              />
             </Match>
             <Match when={!selectedTune()}>
               <SearchView />
