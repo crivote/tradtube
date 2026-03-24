@@ -9,7 +9,7 @@
 import { createSignal, createMemo, createEffect, For, Show } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
 import { searchTunes, getTuneById } from '../lib/db';
-import { addVideoWithEntries, updateVideoWithEntries } from '../lib/supabase';
+import { addVideoWithEntries, updateVideoWithEntries, checkYoutubeIdExists } from '../lib/supabase';
 import { parseRecordingUrl, fetchRecording, resolveTrackTunes, formatTrackLabel } from '../lib/thesession';
 import { SOURCE_TYPES } from '../constants';
 
@@ -84,6 +84,7 @@ function AddVideoForm(props) {
   const [submitting, setSubmitting] = createSignal(false);
   const [error, setError] = createSignal('');
   const [success, setSuccess] = createSignal(false);
+  const [duplicate, setDuplicate] = createSignal(null); // null | { id, title, status }
 
   // ── TheSession recording import ──────────────────────────────────────────
   const [recordingUrl, setRecordingUrl] = createSignal('');
@@ -94,12 +95,13 @@ function AddVideoForm(props) {
 
   const youtubeId = createMemo(() => extractYoutubeId(youtubeUrl()));
 
-  // Auto-fetch título desde YouTube oEmbed al detectar un ID válido
+  // Auto-fetch título + duplicate check al detectar un ID válido
   createEffect(async () => {
     const id = youtubeId();
-    if (!id || isEdit()) return;
-    const t = await fetchYoutubeTitle(id);
+    if (!id || isEdit()) { setDuplicate(null); return; }
+    const [t, existing] = await Promise.all([fetchYoutubeTitle(id), checkYoutubeIdExists(id)]);
     if (t) setTitle(t);
+    setDuplicate(existing ?? null);
   });
 
   // Auto-fetch recording desde TheSession al detectar una URL/ID válida
@@ -212,6 +214,7 @@ function AddVideoForm(props) {
     setRecording(null);
     setRecordingError('');
     setSkippedTuneNames([]);
+    setDuplicate(null);
   };
 
   return (
@@ -271,6 +274,23 @@ function AddVideoForm(props) {
             <p class="text-xs text-red-400">Can't extract a valid video ID from this URL.</p>
           </Show>
         </div>
+
+        {/* Duplicate warning */}
+        <Show when={duplicate()}>
+          <div class="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 flex items-start gap-3">
+            <span class="text-amber-400 text-base flex-shrink-0">⚠</span>
+            <div class="text-sm">
+              <p class="text-amber-300 font-semibold">This video is already in the database</p>
+              <p class="text-amber-400/80 text-xs mt-0.5">
+                "{duplicate().title || duplicate().id}" —{' '}
+                <span class={`font-medium ${duplicate().status === 'approved' ? 'text-green-400' : 'text-amber-400'}`}>
+                  {duplicate().status}
+                </span>
+              </p>
+              <p class="text-[var(--color-muted)] text-xs mt-1">You can still submit, but it may be rejected as a duplicate.</p>
+            </div>
+          </div>
+        </Show>
 
         {/* Preview */}
         <Show when={youtubeId()}>

@@ -82,6 +82,21 @@ export async function addVideoWithEntries({ youtube_id, source_type, title, entr
 }
 
 /**
+ * Comprueba si un youtube_id ya existe en tune_videos.
+ * Devuelve el vídeo existente (con status y title) o null.
+ */
+export async function checkYoutubeIdExists(youtubeId) {
+  const { data, error } = await supabase
+    .from('tune_videos')
+    .select('id, youtube_id, title, status')
+    .eq('youtube_id', youtubeId)
+    .maybeSingle();
+
+  if (error) return null;
+  return data;
+}
+
+/**
  * Registra un voto o report sobre una entry concreta
  */
 export async function castVote(entryId, vote, isReport = false) {
