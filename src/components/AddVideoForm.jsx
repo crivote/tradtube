@@ -273,7 +273,7 @@ function AddVideoForm(props) {
                   {duplicate().status}
                 </span>
               </p>
-              <p class="text-[var(--color-muted)] text-xs mt-1">You can still submit, but it may be rejected as a duplicate.</p>
+              <p class="text-[var(--color-muted)] text-xs mt-1">Submission is blocked — this video is already in the database.</p>
             </div>
           </div>
         </Show>
@@ -467,7 +467,7 @@ function AddVideoForm(props) {
         {/* ── Submit ───────────────────────────────────────────────────── */}
         <button
           onClick={handleSubmit}
-          disabled={submitting() || !youtubeId() || entries.length === 0}
+          disabled={submitting() || !youtubeId() || entries.length === 0 || !!duplicate()}
           class="w-full py-3 rounded-xl font-semibold text-sm transition-all
             bg-[var(--color-primary)] text-black hover:opacity-90
             disabled:opacity-30 disabled:cursor-not-allowed"
