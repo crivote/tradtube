@@ -35,16 +35,16 @@ function SameTypeTunes() {
         <h3 class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider capitalize">
           More {selectedTune()?.type}s with videos
         </h3>
-        <div class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin scrollbar-thumb-[var(--color-border)] scrollbar-track-transparent">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           <For each={related()}>
             {(tune) => {
               const youtubeId = () => videoThumbnailsByTune().get(tune.tune_id);
               return (
                 <button
                   onClick={() => navigate('/tune/' + tune.tune_id)}
-                  class="flex-shrink-0 w-36 flex flex-col gap-1.5 text-left group"
+                  class="flex flex-col gap-1.5 text-left group w-full"
                 >
-                  <div class="w-36 h-20 rounded-lg overflow-hidden bg-[var(--color-surface)] border border-[var(--color-border)] group-hover:border-[var(--color-primary)]/60 transition-colors relative">
+                  <div class="w-full aspect-video rounded-lg overflow-hidden bg-[var(--color-surface)] border border-[var(--color-border)] group-hover:border-[var(--color-primary)]/60 transition-colors">
                     <Show when={youtubeId()} fallback={
                       <div class="w-full h-full flex items-center justify-center text-[var(--color-muted)] text-xl">♪</div>
                     }>

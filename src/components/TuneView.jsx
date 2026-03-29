@@ -3,7 +3,7 @@
  * Vista de detalle de una tune: reproductor + lista de entries con votos.
  */
 
-import { Show, For, createEffect, createSignal } from 'solid-js';
+import { Show, For, createEffect, createSignal, onCleanup } from 'solid-js';
 import { useParams, useNavigate } from '@solidjs/router';
 import { useAppStore } from '../store/appStore';
 import { castVote, loginWithGoogle } from '../lib/supabase';
@@ -35,6 +35,38 @@ function TuneView() {
   });
 
   const [showSheet, setShowSheet] = createSignal(true);
+  const [splitPct, setSplitPct] = createSignal(25);
+
+  let containerRef;
+  let cleanupDrag = null;
+  onCleanup(() => cleanupDrag?.());
+
+  const startDrag = (e) => {
+    e.preventDefault();
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMove = (ev) => {
+      const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+      const rect = containerRef.getBoundingClientRect();
+      const pct = (clientX - rect.left) / rect.width * 100;
+      setSplitPct(Math.min(Math.max(pct, 10), 70));
+    };
+    const onUp = () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+      cleanupDrag = null;
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onUp);
+    cleanupDrag = onUp;
+  };
 
   const handleVideoEnd = () => {
     const entries = tuneEntries();
@@ -98,23 +130,47 @@ function TuneView() {
 
       {/* Reproductor activo */}
       <Show when={activeEntry()}>
-        <div class={showSheet()
-          ? 'grid grid-cols-1 md:grid-cols-[55%_45%] gap-4 items-start'
-          : ''
-        }>
-          <YoutubePlayer
-            youtubeId={activeEntry()?.tune_videos?.youtube_id}
-            startSec={activeEntry()?.start_sec}
-            endSec={activeEntry()?.end_sec}
-            autoplay={true}
-            onEnd={handleVideoEnd}
-          />
-          <Show when={showSheet()}>
-            <SheetMusic
-              tune={selectedTune()}
-              settingId={activeEntry()?.setting_id ?? null}
+        <div ref={el => { containerRef = el; }} class="flex items-start">
+
+          {/* Video panel */}
+          <div style={showSheet()
+            ? { flex: `0 0 ${splitPct()}%`, 'min-width': '160px' }
+            : { width: '100%' }
+          }>
+            <YoutubePlayer
+              youtubeId={activeEntry()?.tune_videos?.youtube_id}
+              startSec={activeEntry()?.start_sec}
+              endSec={activeEntry()?.end_sec}
+              autoplay={true}
+              onEnd={handleVideoEnd}
             />
+          </div>
+
+          {/* Draggable divider */}
+          <Show when={showSheet()}>
+            <div
+              onMouseDown={startDrag}
+              onTouchStart={startDrag}
+              class="flex-none self-stretch cursor-col-resize flex items-center justify-center px-1.5 select-none group"
+            >
+              <div class="flex flex-col gap-[3px] opacity-40 group-hover:opacity-100 transition-opacity">
+                <div class="w-[3px] h-[3px] rounded-full bg-[var(--color-muted)] group-hover:bg-[var(--color-primary)] transition-colors" />
+                <div class="w-[3px] h-[3px] rounded-full bg-[var(--color-muted)] group-hover:bg-[var(--color-primary)] transition-colors" />
+                <div class="w-[3px] h-[3px] rounded-full bg-[var(--color-muted)] group-hover:bg-[var(--color-primary)] transition-colors" />
+                <div class="w-[3px] h-[3px] rounded-full bg-[var(--color-muted)] group-hover:bg-[var(--color-primary)] transition-colors" />
+                <div class="w-[3px] h-[3px] rounded-full bg-[var(--color-muted)] group-hover:bg-[var(--color-primary)] transition-colors" />
+              </div>
+            </div>
+
+            {/* Sheet panel */}
+            <div class="flex-1 min-w-0">
+              <SheetMusic
+                tune={selectedTune()}
+                settingId={activeEntry()?.setting_id ?? null}
+              />
+            </div>
           </Show>
+
         </div>
       </Show>
 
