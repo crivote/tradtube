@@ -75,7 +75,7 @@ function TuneView() {
           autoplay={true}
         />
         <SheetMusic
-          tuneId={activeEntry()?.tune_id}
+          tune={selectedTune()}
           settingId={activeEntry()?.setting_id ?? null}
         />
       </Show>
