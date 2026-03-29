@@ -9,6 +9,7 @@ import { useAppStore } from '../store/appStore';
 import { castVote, loginWithGoogle } from '../lib/supabase';
 import { SOURCE_TYPES, INSTRUMENTS } from '../constants';
 import YoutubePlayer from './YoutubePlayer';
+import SheetMusic from './SheetMusic';
 import SameTypeTunes from './SameTypeTunes';
 
 function formatTime(sec) {
@@ -72,6 +73,10 @@ function TuneView() {
           startSec={activeEntry()?.start_sec}
           endSec={activeEntry()?.end_sec}
           autoplay={true}
+        />
+        <SheetMusic
+          tuneId={activeEntry()?.tune_id}
+          settingId={activeEntry()?.setting_id ?? null}
         />
       </Show>
 
