@@ -89,6 +89,7 @@ function AddVideoForm(props) {
   const [duplicate, setDuplicate] = createSignal(null); // null | { id, title, status }
   const [showImportModal, setShowImportModal] = createSignal(false);
   const [skippedTuneNames, setSkippedTuneNames] = createSignal([]);
+  const [recordingId, setRecordingId] = createSignal(props.editVideo?.thesession_recording_id ?? null);
 
   const youtubeId = createMemo(() => extractYoutubeId(youtubeUrl()));
 
@@ -137,6 +138,7 @@ function AddVideoForm(props) {
     const parts  = [artist, album, `Track ${trackIdx + 1}`].filter(Boolean);
     setTitle(parts.join(' - '));
     setSourceType('album');
+    setRecordingId(recordingData?.id ?? null);
 
     setShowImportModal(false);
   };
@@ -173,6 +175,7 @@ function AddVideoForm(props) {
         await updateVideoWithEntries(props.editVideo.id, {
           source_type: sourceType(),
           title: title().trim() || null,
+          thesession_recording_id: recordingId(),
           entries: entryPayload,
         });
       } else {
@@ -180,6 +183,7 @@ function AddVideoForm(props) {
           youtube_id: youtubeId(),
           source_type: sourceType(),
           title: title().trim() || null,
+          thesession_recording_id: recordingId(),
           entries: entryPayload,
         });
       }
@@ -200,6 +204,7 @@ function AddVideoForm(props) {
     setError('');
     setSuccess(false);
     setSkippedTuneNames([]);
+    setRecordingId(null);
     setDuplicate(null);
   };
 

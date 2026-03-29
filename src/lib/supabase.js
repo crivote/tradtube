@@ -49,14 +49,14 @@ export async function getEntriesForTune(tuneId) {
  * }
  * Solo accesible con service_role (fase 1: restringido)
  */
-export async function addVideoWithEntries({ youtube_id, source_type, title, entries }) {
+export async function addVideoWithEntries({ youtube_id, source_type, title, thesession_recording_id, entries }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Must be logged in to add a video');
 
   // 1. Insertar el vídeo
   const { data: video, error: videoError } = await supabase
     .from('tune_videos')
-    .insert([{ youtube_id, source_type, title: title ?? null, added_by: user.id }])
+    .insert([{ youtube_id, source_type, title: title ?? null, thesession_recording_id: thesession_recording_id ?? null, added_by: user.id }])
     .select()
     .single();
 
@@ -230,9 +230,9 @@ export async function deleteVideo(videoId) {
   if (error) throw error;
 }
 
-export async function updateVideoWithEntries(videoId, { source_type, title, entries }) {
+export async function updateVideoWithEntries(videoId, { source_type, title, thesession_recording_id, entries }) {
   const { error: ve } = await supabase
-    .from('tune_videos').update({ source_type, title: title ?? null }).eq('id', videoId);
+    .from('tune_videos').update({ source_type, title: title ?? null, thesession_recording_id: thesession_recording_id ?? null }).eq('id', videoId);
   if (ve) throw ve;
 
   const { error: de } = await supabase
