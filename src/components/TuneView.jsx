@@ -7,7 +7,7 @@ import { Show, For, createEffect } from 'solid-js';
 import { useParams, useNavigate } from '@solidjs/router';
 import { useAppStore } from '../store/appStore';
 import { castVote, loginWithGoogle } from '../lib/supabase';
-import { SOURCE_TYPES } from '../constants';
+import { SOURCE_TYPES, INSTRUMENTS } from '../constants';
 import YoutubePlayer from './YoutubePlayer';
 import SameTypeTunes from './SameTypeTunes';
 
@@ -132,6 +132,11 @@ function TuneView() {
                       <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-border)] text-[var(--color-muted)] w-fit">
                         {label}
                       </span>
+                      <Show when={entry.main_instrument}>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-border)] text-[var(--color-muted)] w-fit">
+                          {INSTRUMENTS[entry.main_instrument] ?? entry.main_instrument}
+                        </span>
+                      </Show>
                       <Show when={startFmt}>
                         <span class="text-xs text-[var(--color-muted)] font-mono">
                           {startFmt}{endFmt ? ` – ${endFmt}` : ''}

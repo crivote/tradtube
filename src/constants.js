@@ -16,5 +16,19 @@ export const SOURCE_TYPES = {
   casual:         'Vídeo casero',
 };
 
+/* Instrumentos principales */
+export const INSTRUMENTS = {
+  fiddle:        'Fiddle',
+  flute:         'Flute',
+  uileann_pipes: 'Uilleann pipes',
+  whistle:       'Whistle',
+  banjo:         'Banjo',
+  concertina:    'Concertina',
+  melodeon:      'Melodeon',
+  mandolin:      'Mandolin',
+  mandola:       'Mandola',
+  various:       'Various',
+};
+
 /* Número máximo de resultados de búsqueda de tunes */
 export const SEARCH_LIMIT = 10;

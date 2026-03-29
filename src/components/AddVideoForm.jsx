@@ -10,8 +10,9 @@ import { createSignal, createMemo, createEffect, For, Show } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
 import { searchTunes, getTuneById } from '../lib/db';
 import { addVideoWithEntries, updateVideoWithEntries, checkYoutubeIdExists } from '../lib/supabase';
-import { parseRecordingUrl, fetchRecording, resolveTrackTunes, formatTrackLabel } from '../lib/thesession';
-import { SOURCE_TYPES } from '../constants';
+import { resolveTrackTunes } from '../lib/thesession';
+import { SOURCE_TYPES, INSTRUMENTS } from '../constants';
+import TheSessionImportModal from './TheSessionImportModal';
 
 // Extrae el ID de YouTube de una URL o devuelve el input si ya es un ID
 function extractYoutubeId(input) {
@@ -71,9 +72,10 @@ function AddVideoForm(props) {
           tune: getTuneById(e.tune_id) ?? { tune_id: e.tune_id, name: `Tune #${e.tune_id}`, type: '', meter: '' },
           startSec: formatSec(e.start_sec ?? 0),
           endSec: e.end_sec != null ? formatSec(e.end_sec) : '',
+          instrument: e.main_instrument ?? '',
         }))
     : props.initialTune
-      ? [{ tune: props.initialTune, startSec: '', endSec: '' }]
+      ? [{ tune: props.initialTune, startSec: '', endSec: '', instrument: '' }]
       : [];
 
   const [youtubeUrl, setYoutubeUrl] = createSignal(props.editVideo?.youtube_id ?? '');
@@ -85,12 +87,7 @@ function AddVideoForm(props) {
   const [error, setError] = createSignal('');
   const [success, setSuccess] = createSignal(false);
   const [duplicate, setDuplicate] = createSignal(null); // null | { id, title, status }
-
-  // ── TheSession recording import ──────────────────────────────────────────
-  const [recordingUrl, setRecordingUrl] = createSignal('');
-  const [recording, setRecording] = createSignal(null);
-  const [recordingLoading, setRecordingLoading] = createSignal(false);
-  const [recordingError, setRecordingError] = createSignal('');
+  const [showImportModal, setShowImportModal] = createSignal(false);
   const [skippedTuneNames, setSkippedTuneNames] = createSignal([]);
 
   const youtubeId = createMemo(() => extractYoutubeId(youtubeUrl()));
@@ -104,28 +101,6 @@ function AddVideoForm(props) {
     setDuplicate(existing ?? null);
   });
 
-  // Auto-fetch recording desde TheSession al detectar una URL/ID válida
-  createEffect(async () => {
-    const id = parseRecordingUrl(recordingUrl());
-    if (!id) { setRecording(null); setRecordingError(''); return; }
-    setRecordingLoading(true);
-    setRecordingError('');
-    setRecording(null);
-    setSkippedTuneNames([]);
-    try {
-      setRecording(await fetchRecording(id));
-    } catch (e) {
-      setRecordingError(e.message);
-    } finally {
-      setRecordingLoading(false);
-    }
-  });
-
-  // Auto-set source type a 'album' cuando se carga un recording
-  createEffect(() => {
-    if (recording()) setSourceType('album');
-  });
-
   const tuneResults = createMemo(() => {
     const q = tuneSearch().trim();
     if (q.length < 2) return [];
@@ -135,26 +110,35 @@ function AddVideoForm(props) {
   });
 
   const addEntry = (tune) => {
-    setEntries(produce(e => e.push({ tune, startSec: '', endSec: '' })));
+    setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instrument: '' })));
     setTuneSearch('');
   };
 
-  const handleImportTrack = (trackIdx) => {
-    const track = recording()?.tracks?.[trackIdx];
+  const handleImportFromModal = (trackIdx, recordingData) => {
+    const track = recordingData?.tracks?.[trackIdx];
     if (!track) return;
+
+    // Add entries from track
     const resolved = resolveTrackTunes(track, getTuneById);
     const existing = new Set(entries.map(e => e.tune.tune_id));
     const skipped = [];
-    let added = 0;
     for (const r of resolved) {
       if (r.unresolvable) { skipped.push(r.name); continue; }
       if (existing.has(r.tune.tune_id)) continue;
-      setEntries(produce(e => e.push({ tune: r.tune, startSec: '', endSec: '' })));
+      setEntries(produce(e => e.push({ tune: r.tune, startSec: '', endSec: '', instrument: '' })));
       existing.add(r.tune.tune_id);
-      added++;
     }
     setSkippedTuneNames(skipped);
     setTuneSearch('');
+
+    // Set title and source type
+    const artist = recordingData?.artist?.name ?? '';
+    const album  = recordingData?.name ?? '';
+    const parts  = [artist, album, `Track ${trackIdx + 1}`].filter(Boolean);
+    setTitle(parts.join(' - '));
+    setSourceType('album');
+
+    setShowImportModal(false);
   };
 
   const removeEntry = (i) => {
@@ -178,6 +162,7 @@ function AddVideoForm(props) {
         start_sec: parseSec(e.startSec) ?? 0,
         end_sec: parseSec(e.endSec) ?? null,
         position: i,
+        main_instrument: e.instrument || null,
       }));
 
       if (isEdit()) {
@@ -210,9 +195,6 @@ function AddVideoForm(props) {
     setTuneSearch('');
     setError('');
     setSuccess(false);
-    setRecordingUrl('');
-    setRecording(null);
-    setRecordingError('');
     setSkippedTuneNames([]);
     setDuplicate(null);
   };
@@ -339,66 +321,17 @@ function AddVideoForm(props) {
         {/* ── TheSession recording import ──────────────────────────────── */}
         <Show when={!isEdit()}>
           <div class="flex flex-col gap-2">
-            <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">
-              Import tracklist from TheSession
-              <span class="ml-2 normal-case font-normal text-[var(--color-muted)]/50">optional</span>
-            </label>
-            <div class="relative">
-              <input
-                type="text"
-                placeholder="https://thesession.org/recordings/158 or recording ID"
-                value={recordingUrl()}
-                onInput={e => setRecordingUrl(e.target.value)}
-                class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
-              />
-              <Show when={recordingLoading()}>
-                <div class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
-              </Show>
-            </div>
-
-            <Show when={recordingError()}>
-              <p class="text-xs text-red-400">{recordingError()}</p>
-            </Show>
-
-            <Show when={recording()}>
-              <div class="border border-[var(--color-border)] rounded-xl overflow-hidden">
-                {/* Album header */}
-                <div class="px-4 py-3 bg-[var(--color-surface)] border-b border-[var(--color-border)]">
-                  <p class="text-xs text-[var(--color-muted)]">{recording().artist?.name}</p>
-                  <p class="text-sm font-semibold text-white">{recording().name}</p>
-                </div>
-                {/* Tracklist */}
-                <Show when={recording().tracks?.length > 0} fallback={
-                  <p class="text-xs text-[var(--color-muted)] px-4 py-3">No tracklist data available.</p>
-                }>
-                  <div class="flex flex-col divide-y divide-[var(--color-border)]">
-                    <For each={recording().tracks}>
-                      {(track, i) => (
-                        <div class="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--color-surface)] transition-colors">
-                          <span class="text-[10px] text-[var(--color-muted)] w-4 flex-shrink-0 text-right">
-                            {i() + 1}
-                          </span>
-                          <span class="text-sm text-[var(--color-text)] flex-grow min-w-0 truncate">
-                            {formatTrackLabel(track)}
-                          </span>
-                          <button
-                            onClick={() => handleImportTrack(i())}
-                            class="text-[10px] px-2.5 py-1 rounded-lg border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20 transition-colors flex-shrink-0"
-                          >
-                            Import
-                          </button>
-                        </div>
-                      )}
-                    </For>
-                  </div>
-                </Show>
-              </div>
-
-              <Show when={skippedTuneNames().length > 0}>
-                <p class="text-xs text-amber-400/80 bg-amber-400/5 border border-amber-400/20 rounded-lg px-3 py-2">
-                  Skipped (not in database): {skippedTuneNames().join(', ')}
-                </p>
-              </Show>
+            <button
+              type="button"
+              onClick={() => setShowImportModal(true)}
+              class="w-full py-2.5 rounded-xl text-sm border border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-primary)]/50 hover:text-[var(--color-primary)] transition-colors"
+            >
+              Import tracklist from TheSession…
+            </button>
+            <Show when={skippedTuneNames().length > 0}>
+              <p class="text-xs text-amber-400/80 bg-amber-400/5 border border-amber-400/20 rounded-lg px-3 py-2">
+                Skipped (not in database): {skippedTuneNames().join(', ')}
+              </p>
             </Show>
           </div>
         </Show>
@@ -488,6 +421,19 @@ function AddVideoForm(props) {
                       </div>
                     </div>
 
+                    {/* Instrument */}
+                    <select
+                      value={entry.instrument}
+                      onChange={e => updateEntry(i(), 'instrument', e.target.value)}
+                      class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[var(--color-primary)] transition-colors flex-shrink-0 appearance-none cursor-pointer"
+                      title="Main instrument"
+                    >
+                      <option value="">— instrument</option>
+                      <For each={Object.entries(INSTRUMENTS)}>
+                        {([key, label]) => <option value={key}>{label}</option>}
+                      </For>
+                    </select>
+
                     {/* Remove */}
                     <button
                       onClick={() => removeEntry(i())}
@@ -525,6 +471,12 @@ function AddVideoForm(props) {
           {submitting() ? 'Saving…' : isEdit() ? 'Update video' : 'Save video'}
         </button>
 
+      </Show>
+      <Show when={showImportModal()}>
+        <TheSessionImportModal
+          onImport={handleImportFromModal}
+          onClose={() => setShowImportModal(false)}
+        />
       </Show>
     </div>
   );
