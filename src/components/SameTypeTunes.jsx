@@ -19,10 +19,14 @@ function SameTypeTunes() {
     const tune = selectedTune();
     if (!tune || !videoDataReady()) return [];
     const counts = videoCountsByTune();
-    const all = searchTunesByType(tune.type, 300);
-    return all
-      .filter(t => t.tune_id !== tune.tune_id && counts.has(t.tune_id))
-      .slice(0, 24);
+    const pool = searchTunesByType(tune.type, 500)
+      .filter(t => t.tune_id !== tune.tune_id && counts.has(t.tune_id));
+    // Fisher-Yates shuffle then take 5
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return pool.slice(0, 5);
   });
 
   return (

@@ -34,6 +34,14 @@ function TuneView() {
     if (dbReady()) loadTuneById(params.tuneId);
   });
 
+  const handleVideoEnd = () => {
+    const entries = tuneEntries();
+    const current = activeEntry();
+    if (!current) return;
+    const idx = entries.findIndex(e => e.id === current.id);
+    if (idx !== -1 && idx < entries.length - 1) setActiveEntry(entries[idx + 1]);
+  };
+
   const handleVote = async (e, entry, vote, isReport = false) => {
     e.stopPropagation();
     if (!currentUser()) { loginWithGoogle(); return; }
@@ -73,6 +81,7 @@ function TuneView() {
           startSec={activeEntry()?.start_sec}
           endSec={activeEntry()?.end_sec}
           autoplay={true}
+          onEnd={handleVideoEnd}
         />
         <SheetMusic
           tune={selectedTune()}

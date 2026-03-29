@@ -4,7 +4,7 @@
  * Usa polling (500ms) para pausar al llegar a end_sec — necesario porque los
  * parámetros de URL no soportan end timestamp de forma fiable en sets.
  *
- * Props: { youtubeId, startSec, endSec, autoplay }
+ * Props: { youtubeId, startSec, endSec, autoplay, onEnd }
  */
 
 import { createEffect, onCleanup } from 'solid-js';
@@ -71,9 +71,13 @@ function YoutubePlayer(props) {
                 if (player?.getCurrentTime() >= endSec) {
                   player.pauseVideo();
                   clearPoll();
+                  props.onEnd?.();
                 }
               }, 500);
             }
+          } else if (event.data === window.YT.PlayerState.ENDED) {
+            clearPoll();
+            props.onEnd?.();
           } else {
             clearPoll();
           }
