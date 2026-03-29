@@ -26,17 +26,16 @@ function toAbcKey(key) {
     .replace('locrian', 'loc');
 }
 
-/** Default note length: 1/16 for 2/4, 1/8 for everything else */
 function defaultNoteLen(meter) {
   return meter === '2/4' ? '1/16' : '1/8';
 }
 
 function buildAbc(setting, tune) {
-  const key    = toAbcKey(setting.key);
-  const meter  = tune?.meter  ?? '4/4';
-  const type   = tune?.type   ?? '';
-  const name   = tune?.name   ?? '';
-  const L      = defaultNoteLen(meter);
+  const key   = toAbcKey(setting.key);
+  const meter = tune?.meter ?? '4/4';
+  const type  = tune?.type  ?? '';
+  const name  = tune?.name  ?? '';
+  const L     = defaultNoteLen(meter);
   return `X:1\nT:${name}\nR:${type}\nM:${meter}\nL:${L}\nK:${key}\n${setting.abc}`;
 }
 
@@ -47,11 +46,10 @@ function SheetMusic(props) {
 
   const [activeIdx, setActiveIdx] = createSignal(0);
 
-  // When tune or settingId changes, reset and pin the right variant
+  // When tune or settingId changes, pin the right variant
   createEffect(() => {
     const s = getSettings(props.tune?.tune_id);
     if (!s.length) { setActiveIdx(0); return; }
-
     if (props.settingId != null) {
       const idx = s.findIndex(x => x.id === props.settingId);
       setActiveIdx(idx >= 0 ? idx : 0);
@@ -79,33 +77,30 @@ function SheetMusic(props) {
 
   return (
     <Show when={settings().length > 0}>
-      <div class="flex flex-col gap-2">
+      <div class="rounded-xl overflow-hidden bg-white">
 
-        {/* Setting picker — only when multiple variants exist */}
+        {/* Setting select — only when multiple variants exist */}
         <Show when={settings().length > 1}>
-          <div class="flex items-center gap-1 flex-wrap">
-            <span class="text-[10px] text-[var(--color-muted)] uppercase tracking-wider mr-1">
-              Setting
-            </span>
-            <For each={settings()}>
-              {(s, i) => (
-                <button
-                  onClick={() => setActiveIdx(i())}
-                  class={`text-[10px] px-2 py-0.5 rounded-md border transition-colors
-                    ${activeIdx() === i()
-                      ? 'border-[var(--color-primary)]/60 bg-[var(--color-primary)]/15 text-[var(--color-primary)]'
-                      : 'border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-muted)]'
-                    }`}
-                >
-                  {i() + 1}. {toAbcKey(s.key)}
-                </button>
-              )}
-            </For>
+          <div class="flex items-center gap-2 px-3 pt-2.5 pb-1 border-b border-gray-100">
+            <span class="text-[10px] text-gray-400 uppercase tracking-wider">Setting</span>
+            <select
+              value={activeIdx()}
+              onChange={e => setActiveIdx(Number(e.target.value))}
+              class="text-xs text-gray-700 bg-transparent border border-gray-200 rounded-md px-2 py-0.5 focus:outline-none cursor-pointer"
+            >
+              <For each={settings()}>
+                {(s, i) => (
+                  <option value={i()}>
+                    {i() + 1}. {toAbcKey(s.key)}
+                  </option>
+                )}
+              </For>
+            </select>
           </div>
         </Show>
 
         {/* Sheet music canvas */}
-        <div class="rounded-xl overflow-hidden bg-white px-3 py-1">
+        <div class="px-3 py-1 overflow-y-auto max-h-[420px]">
           <div ref={containerRef} class="w-full [&_svg]:w-full [&_svg]:h-auto" />
         </div>
 

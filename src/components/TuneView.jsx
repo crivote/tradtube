@@ -3,7 +3,7 @@
  * Vista de detalle de una tune: reproductor + lista de entries con votos.
  */
 
-import { Show, For, createEffect } from 'solid-js';
+import { Show, For, createEffect, createSignal } from 'solid-js';
 import { useParams, useNavigate } from '@solidjs/router';
 import { useAppStore } from '../store/appStore';
 import { castVote, loginWithGoogle } from '../lib/supabase';
@@ -33,6 +33,8 @@ function TuneView() {
   createEffect(() => {
     if (dbReady()) loadTuneById(params.tuneId);
   });
+
+  const [showSheet, setShowSheet] = createSignal(true);
 
   const handleVideoEnd = () => {
     const entries = tuneEntries();
@@ -64,29 +66,56 @@ function TuneView() {
       </button>
 
       {/* Tune header */}
-      <div class="flex flex-col gap-1">
-        <h2 class="text-2xl font-black text-white">{selectedTune()?.name}</h2>
-        <p class="text-sm text-[var(--color-muted)] capitalize">
-          {selectedTune()?.type}
-          <Show when={selectedTune()?.meter}>
-            {' · '}{selectedTune()?.meter}
-          </Show>
-        </p>
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex flex-col gap-1">
+          <h2 class="text-2xl font-black text-white">{selectedTune()?.name}</h2>
+          <p class="text-sm text-[var(--color-muted)] capitalize">
+            {selectedTune()?.type}
+            <Show when={selectedTune()?.meter}>
+              {' · '}{selectedTune()?.meter}
+            </Show>
+          </p>
+        </div>
+
+        {/* Sheet music toggle */}
+        <Show when={activeEntry()}>
+          <label class="flex items-center gap-2 cursor-pointer select-none flex-shrink-0 mt-1">
+            <span class="text-xs text-[var(--color-muted)]">Sheet</span>
+            <button
+              onClick={() => setShowSheet(v => !v)}
+              class={`relative w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none
+                ${showSheet() ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-border)]'}`}
+              role="switch"
+              aria-checked={showSheet()}
+            >
+              <span class={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200
+                ${showSheet() ? 'translate-x-4' : 'translate-x-0'}`}
+              />
+            </button>
+          </label>
+        </Show>
       </div>
 
       {/* Reproductor activo */}
       <Show when={activeEntry()}>
-        <YoutubePlayer
-          youtubeId={activeEntry()?.tune_videos?.youtube_id}
-          startSec={activeEntry()?.start_sec}
-          endSec={activeEntry()?.end_sec}
-          autoplay={true}
-          onEnd={handleVideoEnd}
-        />
-        <SheetMusic
-          tune={selectedTune()}
-          settingId={activeEntry()?.setting_id ?? null}
-        />
+        <div class={showSheet()
+          ? 'grid grid-cols-1 md:grid-cols-[55%_45%] gap-4 items-start'
+          : ''
+        }>
+          <YoutubePlayer
+            youtubeId={activeEntry()?.tune_videos?.youtube_id}
+            startSec={activeEntry()?.start_sec}
+            endSec={activeEntry()?.end_sec}
+            autoplay={true}
+            onEnd={handleVideoEnd}
+          />
+          <Show when={showSheet()}>
+            <SheetMusic
+              tune={selectedTune()}
+              settingId={activeEntry()?.setting_id ?? null}
+            />
+          </Show>
+        </div>
       </Show>
 
       {/* Spinner de carga */}
