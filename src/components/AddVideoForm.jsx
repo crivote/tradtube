@@ -148,6 +148,10 @@ function AddVideoForm(props) {
   // Actualiza un campo concreto de una entry sin recrear el objeto → el input no pierde el foco
   const updateEntry = (i, field, value) => {
     setEntries(i, field, value);
+    // Propagate end time to next entry's start if it's empty
+    if (field === 'endSec' && i + 1 < entries.length && !entries[i + 1].startSec) {
+      setEntries(i + 1, 'startSec', value);
+    }
   };
 
   const handleSubmit = async () => {
