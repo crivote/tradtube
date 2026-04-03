@@ -21,7 +21,7 @@ export async function getEntriesForTune(tuneId) {
     .select(`
       id, tune_id, setting_id, start_sec, end_sec, position, main_instrument,
       tune_videos (
-        id, youtube_id, source_type, status, title, channel, created_at
+        id, youtube_id, source_type, status, title, channel, thesession_recording_id, created_at
       ),
       tune_video_votes ( vote, user_id )
     `)

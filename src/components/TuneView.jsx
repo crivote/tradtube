@@ -109,7 +109,20 @@ function TuneView() {
       {/* Tune header */}
       <div class="flex items-start justify-between gap-4">
         <div class="flex flex-col gap-1">
-          <h2 class="text-2xl font-black text-white">{selectedTune()?.name}</h2>
+          <div class="flex items-center gap-2">
+            <h2 class="text-2xl font-black text-white">{selectedTune()?.name}</h2>
+            <a
+              href={`https://thesession.org/tunes/${selectedTune()?.tune_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors"
+              title={`View ${selectedTune()?.name} on TheSession.org`}
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+          </div>
           <p class="text-sm text-[var(--color-muted)] capitalize">
             {selectedTune()?.type}
             <Show when={selectedTune()?.meter}>
@@ -232,9 +245,25 @@ function TuneView() {
                   {/* Metadatos */}
                   <div class="flex-grow min-w-0 flex flex-col gap-1">
                     <Show when={entry.tune_videos?.title}>
-                      <span class="text-sm text-white font-medium truncate">
-                        {entry.tune_videos.title}
-                      </span>
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-sm text-white font-medium truncate">
+                          {entry.tune_videos.title}
+                        </span>
+                        <Show when={entry.tune_videos?.thesession_recording_id}>
+                          <a
+                            href={`https://thesession.org/recordings/${entry.tune_videos.thesession_recording_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors flex-shrink-0"
+                            title="View recording on TheSession.org"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        </Show>
+                      </div>
                     </Show>
                     <div class="flex items-center gap-2 flex-wrap">
                       <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-border)] text-[var(--color-muted)] w-fit">
