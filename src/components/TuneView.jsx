@@ -26,7 +26,7 @@ function TuneView() {
     dbReady,
     selectedTune, tuneEntries, loadingEntries,
     activeEntry, setActiveEntry,
-    currentUser, loadTuneById,
+    currentUser, loadTuneById, updateEntryVote,
   } = useAppStore();
 
   // Sync selectedTune from URL param — handles both in-app nav and direct links
@@ -79,9 +79,18 @@ function TuneView() {
   const handleVote = async (e, entry, vote, isReport = false) => {
     e.stopPropagation();
     if (!currentUser()) { loginWithGoogle(); return; }
+    
+    const currentVote = entry.userVote || 0;
+    const newUserVote = currentVote === vote ? 0 : vote;
+    const scoreDelta = newUserVote - currentVote;
+    const newScore = (entry.voteScore || 0) + scoreDelta;
+    
+    updateEntryVote(entry.id, newScore, newUserVote);
+    
     try {
       await castVote(entry.id, vote, isReport);
     } catch (err) {
+      updateEntryVote(entry.id, entry.voteScore, currentVote);
       console.error('[TradTube] vote error', err);
     }
   };
@@ -255,12 +264,12 @@ function TuneView() {
                     </span>
                     <button
                       onClick={(e) => handleVote(e, entry, 1)}
-                      class="p-1 text-[var(--color-muted)] hover:text-green-400 transition-colors"
+                      class={`p-1 transition-colors ${entry.userVote === 1 ? 'text-green-400' : 'text-[var(--color-muted)] hover:text-green-400'}`}
                       title="Upvote"
                     >▲</button>
                     <button
                       onClick={(e) => handleVote(e, entry, -1)}
-                      class="p-1 text-[var(--color-muted)] hover:text-red-400 transition-colors"
+                      class={`p-1 transition-colors ${entry.userVote === -1 ? 'text-red-400' : 'text-[var(--color-muted)] hover:text-red-400'}`}
                       title="Downvote"
                     >▼</button>
                     <button

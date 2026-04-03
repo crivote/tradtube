@@ -105,6 +105,18 @@ export function useAppStore() {
     if (tune) setSelectedTune(tune);
   };
 
+  const updateEntryVote = (entryId, voteScore, userVote) => {
+    setTuneEntries(entries =>
+      entries.map(e =>
+        e.id === entryId ? { ...e, voteScore, userVote } : e
+      )
+    );
+    const current = activeEntry();
+    if (current?.id === entryId) {
+      setActiveEntry({ ...current, voteScore, userVote });
+    }
+  };
+
   return {
     // Estado
     dbReady, currentUser,
@@ -118,7 +130,7 @@ export function useAppStore() {
     addFormInitialTune, setAddFormInitialTune,
     // Acciones
     loadDB, initAuth, loadVideoData,
-    loadTuneById,
+    loadTuneById, updateEntryVote,
     openAddFormForTune: (tune) => {
       setAddFormInitialTune(tune);
       setShowAddForm(true);

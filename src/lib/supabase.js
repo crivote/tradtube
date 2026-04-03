@@ -14,6 +14,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
  * Ordenadas por score descendente
  */
 export async function getEntriesForTune(tuneId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  
   const { data, error } = await supabase
     .from('tune_video_entries')
     .select(`
@@ -21,22 +23,20 @@ export async function getEntriesForTune(tuneId) {
       tune_videos (
         id, youtube_id, source_type, status, title, channel, created_at
       ),
-      tune_video_votes ( vote )
+      tune_video_votes ( vote, user_id )
     `)
     .eq('tune_id', tuneId)
     .order('position', { ascending: true });
 
   if (error) { console.error(error); return []; }
 
-  // Filtrar solo las que pertenecen a vídeos aprobados (RLS lo controla,
-  // pero filtramos en cliente también por seguridad)
   const approved = (data || []).filter(e => e.tune_videos?.status === 'approved');
 
-  // Calcular score de votos y ordenar
   return approved
     .map(e => ({
       ...e,
       voteScore: (e.tune_video_votes || []).reduce((acc, r) => acc + r.vote, 0),
+      userVote: user ? (e.tune_video_votes || []).find(r => r.user_id === user.id)?.vote ?? 0 : 0,
     }))
     .sort((a, b) => b.voteScore - a.voteScore);
 }
