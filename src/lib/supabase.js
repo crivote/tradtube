@@ -19,7 +19,7 @@ export async function getEntriesForTune(tuneId) {
     .select(`
       id, tune_id, setting_id, start_sec, end_sec, position, main_instrument,
       tune_videos (
-        id, youtube_id, source_type, status, title, created_at
+        id, youtube_id, source_type, status, title, channel, created_at
       ),
       tune_video_votes ( vote )
     `)
@@ -49,14 +49,14 @@ export async function getEntriesForTune(tuneId) {
  * }
  * Solo accesible con service_role (fase 1: restringido)
  */
-export async function addVideoWithEntries({ youtube_id, source_type, title, thesession_recording_id, entries }) {
+export async function addVideoWithEntries({ youtube_id, source_type, title, channel, thesession_recording_id, entries }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Must be logged in to add a video');
 
   // 1. Insertar el vídeo
   const { data: video, error: videoError } = await supabase
     .from('tune_videos')
-    .insert([{ youtube_id, source_type, title: title ?? null, thesession_recording_id: thesession_recording_id ?? null, added_by: user.id }])
+    .insert([{ youtube_id, source_type, title: title ?? null, channel: channel ?? null, thesession_recording_id: thesession_recording_id ?? null, added_by: user.id }])
     .select()
     .single();
 
@@ -89,7 +89,7 @@ export async function addVideoWithEntries({ youtube_id, source_type, title, thes
 export async function checkYoutubeIdExists(youtubeId) {
   const { data, error } = await supabase
     .from('tune_videos')
-    .select('id, youtube_id, title, status')
+    .select('id, youtube_id, title, channel, status')
     .eq('youtube_id', youtubeId)
     .maybeSingle();
 
@@ -122,12 +122,13 @@ export async function getAllVideos() {
   const { data, error } = await supabase
     .from('tune_videos')
     .select(`
-      id, youtube_id, source_type, status, title, added_by, created_at,
+      id, youtube_id, source_type, status, title, channel, added_by, created_at,
       tune_video_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
     `)
+    .in('id', videoIds)
     .order('created_at', { ascending: false });
 
-  if (error) { console.error(error); return []; }
+  if (e2) { console.error(e2); return []; }
   return (data || []).map(v => ({
     ...v,
     tune_video_entries: [...(v.tune_video_entries || [])].sort((a, b) => a.position - b.position),
@@ -138,7 +139,7 @@ export async function getLatestApprovedVideos() {
   const { data, error } = await supabase
     .from('tune_videos')
     .select(`
-      id, youtube_id, source_type, status, title, added_by, created_at,
+      id, youtube_id, source_type, status, title, channel, added_by, created_at,
       tune_video_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
     `)
     .eq('status', 'approved')
@@ -152,28 +153,24 @@ export async function getLatestApprovedVideos() {
   }));
 }
 
-export async function getPendingCount() {
-  const { count, error } = await supabase
-    .from('tune_videos')
-    .select('id', { count: 'exact', head: true })
-    .eq('status', 'pending');
-  if (error) { console.error(error); return 0; }
-  return count || 0;
-}
-
-/** Returns array of tune_ids that appear in at least one approved video */
-export async function getTunesWithVideos() {
+export async function getPendingVideos() {
   const { data, error } = await supabase
-    .from('tune_video_entries')
-    .select('tune_id, tune_videos!inner(status)')
-    .eq('tune_videos.status', 'approved');
+    .from('tune_videos')
+    .select(`
+      id, youtube_id, source_type, status, title, channel, added_by, created_at,
+      tune_video_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
+    `)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
 
   if (error) { console.error(error); return []; }
-  return [...new Set((data || []).map(e => e.tune_id))];
+  return (data || []).map(v => ({
+    ...v,
+    tune_video_entries: [...(v.tune_video_entries || [])].sort((a, b) => a.position - b.position),
+  }));
 }
 
 export async function getVideosByTune(tuneId) {
-  // Step 1: find video IDs that have an approved entry for this tune
   const { data: entryData, error: e1 } = await supabase
     .from('tune_video_entries')
     .select('video_id, tune_videos!inner(status)')
@@ -184,34 +181,16 @@ export async function getVideosByTune(tuneId) {
   const videoIds = [...new Set((entryData || []).map(e => e.video_id))];
   if (videoIds.length === 0) return [];
 
-  // Step 2: fetch full video data with all entries
   const { data, error: e2 } = await supabase
     .from('tune_videos')
     .select(`
-      id, youtube_id, source_type, status, title, added_by, created_at,
+      id, youtube_id, source_type, status, title, channel, added_by, created_at,
       tune_video_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
     `)
     .in('id', videoIds)
     .order('created_at', { ascending: false });
 
   if (e2) { console.error(e2); return []; }
-  return (data || []).map(v => ({
-    ...v,
-    tune_video_entries: [...(v.tune_video_entries || [])].sort((a, b) => a.position - b.position),
-  }));
-}
-
-export async function getPendingVideos() {
-  const { data, error } = await supabase
-    .from('tune_videos')
-    .select(`
-      id, youtube_id, source_type, status, title, added_by, created_at,
-      tune_video_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
-    `)
-    .eq('status', 'pending')
-    .order('created_at', { ascending: false });
-
-  if (error) { console.error(error); return []; }
   return (data || []).map(v => ({
     ...v,
     tune_video_entries: [...(v.tune_video_entries || [])].sort((a, b) => a.position - b.position),
@@ -230,9 +209,9 @@ export async function deleteVideo(videoId) {
   if (error) throw error;
 }
 
-export async function updateVideoWithEntries(videoId, { source_type, title, thesession_recording_id, entries }) {
+export async function updateVideoWithEntries(videoId, { source_type, title, channel, thesession_recording_id, entries }) {
   const { error: ve } = await supabase
-    .from('tune_videos').update({ source_type, title: title ?? null, thesession_recording_id: thesession_recording_id ?? null }).eq('id', videoId);
+    .from('tune_videos').update({ source_type, title: title ?? null, channel: channel ?? null, thesession_recording_id: thesession_recording_id ?? null }).eq('id', videoId);
   if (ve) throw ve;
 
   const { error: de } = await supabase
@@ -252,6 +231,15 @@ export async function updateVideoWithEntries(videoId, { source_type, title, thes
       main_instrument: e.main_instrument ?? null,
     })));
   if (ie) throw ie;
+}
+
+export async function getPendingCount() {
+  const { count, error } = await supabase
+    .from('tune_videos')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'pending');
+  if (error) { console.error(error); return 0; }
+  return count || 0;
 }
 
 /**

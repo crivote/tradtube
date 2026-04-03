@@ -252,6 +252,7 @@ function AddVideoForm(props) {
         await updateVideoWithEntries(props.editVideo.id, {
           source_type: sourceType(),
           title: title().trim() || null,
+          channel: channel().trim() || null,
           thesession_recording_id: recordingId(),
           entries: entryPayload,
         });
@@ -260,6 +261,7 @@ function AddVideoForm(props) {
           youtube_id: youtubeId(),
           source_type: sourceType(),
           title: title().trim() || null,
+          channel: channel().trim() || null,
           thesession_recording_id: recordingId(),
           entries: entryPayload,
         });
