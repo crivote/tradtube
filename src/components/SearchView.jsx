@@ -22,8 +22,17 @@ function SearchView() {
     filterType, setFilterType,
     searchResults,
     videoCountsByTune, videoDataReady,
+    placeholderExamples,
     currentUser, openAddFormForTune,
   } = useAppStore();
+
+  const placeholder = () => {
+    const examples = placeholderExamples();
+    if (examples.length === 2) {
+      return `e.g. ${examples[0]}, ${examples[1]}…`;
+    }
+    return 'Search for any tune…';
+  };
 
   const navigate = useNavigate();
 
@@ -60,7 +69,7 @@ function SearchView() {
         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)] select-none">♪</span>
         <input
           type="text"
-          placeholder="e.g. Strayaway Child, The Morning Dew…"
+          placeholder={placeholder()}
           value={searchQuery()}
           onInput={(e) => setSearchQuery(e.target.value)}
           class="w-full bg-[var(--color-surface)] border border-[var(--color-primary)]/50 rounded-xl pl-10 pr-10 py-3.5 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_20px_rgba(34,197,94,0.12)] transition-all text-sm"

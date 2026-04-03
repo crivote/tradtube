@@ -1,7 +1,7 @@
 1.  [done, pending test] Voting doesn't seem work
-2.  The placeholder on the main screen could should two random examples from the tunes with videos.
+2.  ~~[done] The placeholder on the main screen could should two random examples from the tunes with videos.~~
 3.  improve flagging to show different issues (times badly set, wrong session tune, non working video, bad credits...)
-4.  ~~[done] show links to thesession.org in the title of tune in tuneview on new tab. Also on video title if it's an album with thesession reference.~~
+4.  ~~[done]show links to thesession.org in the title of tune in tuneview on new tab. Also on video title if it's an album with thesession reference.~~
 5.  ~~[done] the copy of time from the end of a tune to the next should be done on blur of the input, not earlier.~~
 6.  Instruments should be an array of tags instead of a single option
 7.  add a filter in main screen by instrument

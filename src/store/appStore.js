@@ -4,7 +4,7 @@
  */
 
 import { createSignal, createEffect } from 'solid-js';
-import { initDB, searchTunes, searchTunesByType, getTuneById } from '../lib/db';
+import { initDB, searchTunes, searchTunesByType, getTuneById, getRandomTunes } from '../lib/db';
 import { getEntriesForTune, getVideoCountsByTune, onAuthChange } from '../lib/supabase';
 import { SEARCH_LIMIT } from '../constants';
 
@@ -13,6 +13,7 @@ const [dbReady, setDbReady] = createSignal(false);
 const [videoCountsByTune, setVideoCountsByTune] = createSignal(new Map());
 const [videoThumbnailsByTune, setVideoThumbnailsByTune] = createSignal(new Map());
 const [videoDataReady, setVideoDataReady] = createSignal(false);
+const [placeholderExamples, setPlaceholderExamples] = createSignal([]);
 
 // ── Auth ────────────────────────────────────────────────────────────────────
 const [currentUser, setCurrentUser] = createSignal(null);
@@ -53,6 +54,8 @@ export function useAppStore() {
     await initDB();
     setDbReady(true);
     loadVideoData();
+    const randomTunes = getRandomTunes(2);
+    setPlaceholderExamples(randomTunes.map(t => t.name));
   };
 
   // Escuchar cambios de auth
@@ -137,6 +140,7 @@ export function useAppStore() {
     // Estado
     dbReady, currentUser,
     videoCountsByTune, videoThumbnailsByTune, videoDataReady,
+    placeholderExamples,
     searchQuery, setSearchQuery,
     filterType, setFilterType,
     searchResults,

@@ -125,3 +125,17 @@ export function getSimilarTunes(tuneId, limit = 5) {
     rowMode: 'object',
   });
 }
+
+/**
+ * Obtiene n tunes aleatorios de la base de datos
+ */
+export function getRandomTunes(limit = 2) {
+  if (!db) return [];
+
+  return db.exec({
+    sql: `SELECT tune_id, name, type, meter FROM tunes ORDER BY RANDOM() LIMIT ?`,
+    bind: [limit],
+    returnValue: 'resultRows',
+    rowMode: 'object',
+  });
+}
