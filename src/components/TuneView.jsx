@@ -27,6 +27,7 @@ function TuneView() {
     selectedTune, tuneEntries, loadingEntries,
     activeEntry, setActiveEntry,
     currentUser, loadTuneById, updateEntryVote,
+    getEntryVoteScore, getEntryUserVote,
   } = useAppStore();
 
   // Sync selectedTune from URL param — handles both in-app nav and direct links
@@ -80,10 +81,10 @@ function TuneView() {
     e.stopPropagation();
     if (!currentUser()) { loginWithGoogle(); return; }
     
-    const currentVote = entry.userVote || 0;
+    const currentVote = getEntryUserVote(entry.id, entry.userVote || 0);
     const newUserVote = currentVote === vote ? 0 : vote;
     const scoreDelta = newUserVote - currentVote;
-    const newScore = (entry.voteScore || 0) + scoreDelta;
+    const newScore = (getEntryVoteScore(entry.id, entry.voteScore || 0)) + scoreDelta;
     
     updateEntryVote(entry.id, newScore, newUserVote);
     
@@ -225,6 +226,8 @@ function TuneView() {
               const label    = SOURCE_TYPES[entry.tune_videos?.source_type]
                             ?? entry.tune_videos?.source_type
                             ?? 'Unknown';
+              const entryVoteScore = () => getEntryVoteScore(entry.id, entry.voteScore || 0);
+              const entryUserVote = () => getEntryUserVote(entry.id, entry.userVote || 0);
 
               return (
                 <div
@@ -285,20 +288,20 @@ function TuneView() {
                   {/* Votos */}
                   <div class="flex items-center gap-1 lg:gap-1.5 flex-shrink-0">
                     <span class={`text-sm lg:text-base font-bold w-8 lg:w-10 text-right
-                      ${entry.voteScore > 0 ? 'text-green-400'
-                        : entry.voteScore < 0 ? 'text-red-400'
+                      ${entryVoteScore() > 0 ? 'text-green-400'
+                        : entryVoteScore() < 0 ? 'text-red-400'
                         : 'text-[var(--color-muted)]'}`}
                     >
-                      {entry.voteScore > 0 ? '+' : ''}{entry.voteScore}
+                      {entryVoteScore() > 0 ? '+' : ''}{entryVoteScore()}
                     </span>
                     <button
                       onClick={(e) => handleVote(e, entry, 1)}
-                      class={`p-1 transition-colors ${entry.userVote === 1 ? 'text-green-400' : 'text-[var(--color-muted)] hover:text-green-400'}`}
+                      class={`p-1 transition-colors ${entryUserVote() === 1 ? 'text-green-400' : 'text-[var(--color-muted)] hover:text-green-400'}`}
                       title="Upvote"
                     >▲</button>
                     <button
                       onClick={(e) => handleVote(e, entry, -1)}
-                      class={`p-1 transition-colors ${entry.userVote === -1 ? 'text-red-400' : 'text-[var(--color-muted)] hover:text-red-400'}`}
+                      class={`p-1 transition-colors ${entryUserVote() === -1 ? 'text-red-400' : 'text-[var(--color-muted)] hover:text-red-400'}`}
                       title="Downvote"
                     >▼</button>
                     <button

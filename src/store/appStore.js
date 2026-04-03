@@ -27,6 +27,10 @@ const [selectedTune, setSelectedTune] = createSignal(null);
 const [tuneEntries, setTuneEntries] = createSignal([]);
 const [loadingEntries, setLoadingEntries] = createSignal(false);
 
+// ── Vote state (separate to avoid re-rendering entries list) ─────────────────
+const [voteScores, setVoteScores] = createSignal(new Map());
+const [userVotes, setUserVotes] = createSignal(new Map());
+
 // ── Vídeo activo en el reproductor ──────────────────────────────────────────
 const [activeEntry, setActiveEntry] = createSignal(null);
 
@@ -86,11 +90,22 @@ export function useAppStore() {
     setLoadingEntries(true);
     setTuneEntries([]);
     setActiveEntry(null);
+    setVoteScores(new Map());
+    setUserVotes(new Map());
 
     const entries = await getEntriesForTune(tune.tune_id);
+    
+    const scores = new Map();
+    const votes = new Map();
+    for (const e of entries) {
+      scores.set(e.id, e.voteScore);
+      votes.set(e.id, e.userVote);
+    }
+    setVoteScores(scores);
+    setUserVotes(votes);
+    
     setTuneEntries(entries);
 
-    // Autoplay del primero
     if (entries.length > 0) setActiveEntry(entries[0]);
 
     setLoadingEntries(false);
@@ -106,15 +121,16 @@ export function useAppStore() {
   };
 
   const updateEntryVote = (entryId, voteScore, userVote) => {
-    setTuneEntries(entries =>
-      entries.map(e =>
-        e.id === entryId ? { ...e, voteScore, userVote } : e
-      )
-    );
-    const current = activeEntry();
-    if (current?.id === entryId) {
-      setActiveEntry({ ...current, voteScore, userVote });
-    }
+    setVoteScores(scores => new Map(scores).set(entryId, voteScore));
+    setUserVotes(votes => new Map(votes).set(entryId, userVote));
+  };
+
+  const getEntryVoteScore = (entryId, fallback) => {
+    return voteScores().get(entryId) ?? fallback;
+  };
+
+  const getEntryUserVote = (entryId, fallback) => {
+    return userVotes().get(entryId) ?? fallback;
   };
 
   return {
@@ -130,7 +146,7 @@ export function useAppStore() {
     addFormInitialTune, setAddFormInitialTune,
     // Acciones
     loadDB, initAuth, loadVideoData,
-    loadTuneById, updateEntryVote,
+    loadTuneById, updateEntryVote, getEntryVoteScore, getEntryUserVote,
     openAddFormForTune: (tune) => {
       setAddFormInitialTune(tune);
       setShowAddForm(true);
