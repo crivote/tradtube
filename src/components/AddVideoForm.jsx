@@ -132,10 +132,10 @@ function AddVideoForm(props) {
           tune: getTuneById(e.tune_id) ?? { tune_id: e.tune_id, name: `Tune #${e.tune_id}`, type: '', meter: '' },
           startSec: formatSec(e.start_sec ?? 0),
           endSec: e.end_sec != null ? formatSec(e.end_sec) : '',
-          instrument: e.main_instrument ?? '',
+          instruments: e.instruments ?? [],
         }))
     : props.initialTune
-      ? [{ tune: props.initialTune, startSec: '', endSec: '', instrument: '' }]
+      ? [{ tune: props.initialTune, startSec: '', endSec: '', instruments: [] }]
       : [];
 
   const [youtubeUrl, setYoutubeUrl] = createSignal(props.editVideo?.youtube_id ?? '');
@@ -152,6 +152,7 @@ function AddVideoForm(props) {
   const [skippedTuneNames, setSkippedTuneNames] = createSignal([]);
   const [recordingId, setRecordingId] = createSignal(props.editVideo?.thesession_recording_id ?? null);
   const [autoMatchedCount, setAutoMatchedCount] = createSignal(0);
+  const [openInstrumentDropdown, setOpenInstrumentDropdown] = createSignal(null);
 
   const youtubeId = createMemo(() => extractYoutubeId(youtubeUrl()));
 
@@ -168,7 +169,7 @@ function AddVideoForm(props) {
     
     if (matchedTunes.length > 0) {
       for (const tune of matchedTunes) {
-        setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instrument: '' })));
+        setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [] })));
       }
       setAutoMatchedCount(matchedTunes.length);
     }
@@ -188,7 +189,7 @@ function AddVideoForm(props) {
   });
 
   const addEntry = (tune) => {
-    setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instrument: '' })));
+    setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [] })));
     setTuneSearch('');
   };
 
@@ -203,7 +204,7 @@ function AddVideoForm(props) {
     for (const r of resolved) {
       if (r.unresolvable) { skipped.push(r.name); continue; }
       if (existing.has(r.tune.tune_id)) continue;
-      setEntries(produce(e => e.push({ tune: r.tune, startSec: '', endSec: '', instrument: '' })));
+      setEntries(produce(e => e.push({ tune: r.tune, startSec: '', endSec: '', instruments: [] })));
       existing.add(r.tune.tune_id);
     }
     setSkippedTuneNames(skipped);
@@ -245,7 +246,7 @@ function AddVideoForm(props) {
         start_sec: parseSec(e.startSec) ?? 0,
         end_sec: parseSec(e.endSec) ?? null,
         position: i,
-        main_instrument: e.instrument || null,
+        instruments: e.instruments?.length > 0 ? e.instruments : null,
       }));
 
       if (isEdit()) {
@@ -525,18 +526,48 @@ function AddVideoForm(props) {
                       </div>
                     </div>
 
-                    {/* Instrument */}
-                    <select
-                      value={entry.instrument}
-                      onChange={e => updateEntry(i(), 'instrument', e.target.value)}
-                      class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[var(--color-primary)] transition-colors flex-shrink-0 appearance-none cursor-pointer"
-                      title="Main instrument"
-                    >
-                      <option value="">— instrument</option>
-                      <For each={Object.entries(INSTRUMENTS)}>
-                        {([key, label]) => <option value={key}>{label}</option>}
-                      </For>
-                    </select>
+                    {/* Instruments */}
+                    <div class="relative flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setOpenInstrumentDropdown(openInstrumentDropdown() === i() ? null : i())}
+                        class="flex items-center gap-1 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[var(--color-primary)] transition-colors cursor-pointer min-w-[80px]"
+                        title="Instruments"
+                      >
+                        <span class={entry.instruments.length === 0 ? 'text-[var(--color-muted)]' : ''}>
+                          {entry.instruments.length === 0 ? '—' : entry.instruments.map(ins => INSTRUMENTS[ins] ?? ins).join(', ')}
+                        </span>
+                        <svg class={`w-3 h-3 text-[var(--color-muted)] transition-transform ${openInstrumentDropdown() === i() ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      <Show when={openInstrumentDropdown() === i()}>
+                        <div class="absolute top-full left-0 mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl z-30 py-1 min-w-[140px]" onClick={e => e.stopPropagation()}>
+                          <For each={Object.entries(INSTRUMENTS)}>
+                            {([key, label]) => {
+                              const isSelected = () => entry.instruments.includes(key);
+                              return (
+                                <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-[var(--color-primary)]/10 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected()}
+                                    onChange={() => {
+                                      const current = entry.instruments;
+                                      const newInstruments = isSelected()
+                                        ? current.filter(ins => ins !== key)
+                                        : [...current, key];
+                                      updateEntry(i(), 'instruments', newInstruments);
+                                    }}
+                                    class="rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                                  />
+                                  <span class="text-xs text-white">{label}</span>
+                                </label>
+                              );
+                            }}
+                          </For>
+                        </div>
+                      </Show>
+                    </div>
 
                     {/* Remove */}
                     <button

@@ -19,7 +19,7 @@ export async function getEntriesForTune(tuneId) {
   const { data, error } = await supabase
     .from('tune_video_entries')
     .select(`
-      id, tune_id, setting_id, start_sec, end_sec, position, main_instrument,
+      id, tune_id, setting_id, start_sec, end_sec, position, instruments,
       tune_videos (
         id, youtube_id, source_type, status, title, channel, thesession_recording_id, created_at
       ),
@@ -70,7 +70,7 @@ export async function addVideoWithEntries({ youtube_id, source_type, title, chan
     start_sec: e.start_sec ?? 0,
     end_sec: e.end_sec ?? null,
     position: e.position ?? i,
-    main_instrument: e.main_instrument ?? null,
+    instruments: e.instruments?.length > 0 ? e.instruments : null,
   }));
 
   const { error: entriesError } = await supabase
@@ -228,7 +228,7 @@ export async function updateVideoWithEntries(videoId, { source_type, title, chan
       start_sec: e.start_sec ?? 0,
       end_sec: e.end_sec ?? null,
       position: i,
-      main_instrument: e.main_instrument ?? null,
+      instruments: e.instruments?.length > 0 ? e.instruments : null,
     })));
   if (ie) throw ie;
 }
