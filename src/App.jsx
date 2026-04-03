@@ -26,7 +26,7 @@ function App(props) {
     <div class="min-h-screen flex flex-col">
       {/* Header */}
       <header class="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg)]/90 backdrop-blur">
-        <div class="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+        <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
 
           {/* Logo */}
           <button
@@ -89,7 +89,7 @@ function App(props) {
       </header>
 
       {/* Main */}
-      <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-8">
+      <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-8">
         <Show
           when={dbReady()}
           fallback={

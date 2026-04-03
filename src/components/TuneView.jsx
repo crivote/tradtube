@@ -245,8 +245,8 @@ function TuneView() {
                   </div>
 
                   {/* Votos */}
-                  <div class="flex items-center gap-0.5 flex-shrink-0">
-                    <span class={`text-sm font-bold w-8 text-right
+                  <div class="flex items-center gap-1 lg:gap-1.5 flex-shrink-0">
+                    <span class={`text-sm lg:text-base font-bold w-8 lg:w-10 text-right
                       ${entry.voteScore > 0 ? 'text-green-400'
                         : entry.voteScore < 0 ? 'text-red-400'
                         : 'text-[var(--color-muted)]'}`}

@@ -77,7 +77,7 @@ function SheetMusic(props) {
 
   return (
     <Show when={settings().length > 0}>
-      <div class="rounded-xl overflow-hidden bg-white">
+      <div class="rounded-xl overflow-hidden bg-white text-gray-800">
 
         {/* Setting select — only when multiple variants exist */}
         <Show when={settings().length > 1}>

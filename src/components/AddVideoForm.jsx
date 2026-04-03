@@ -424,7 +424,7 @@ function AddVideoForm(props) {
                           type="text"
                           placeholder="—"
                           value={entry.endSec}
-                          onInput={e => updateEntry(i(), 'endSec', e.target.value)}
+                          onBlur={e => updateEntry(i(), 'endSec', e.target.value)}
                           class="w-14 text-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-[var(--color-primary)] transition-colors"
                         />
                       </div>
