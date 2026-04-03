@@ -268,6 +268,20 @@ export async function getVideoCountsByTune() {
 }
 
 /**
+ * Devuelve un Set de tune_ids que tienen entries con el instrumento especificado
+ */
+export async function getTuneIdsByInstrument(instrument) {
+  const { data, error } = await supabase
+    .from('tune_video_entries')
+    .select('tune_id, instruments')
+    .eq('instruments', `{"${instrument}"}`)
+    .eq('tune_videos.status', 'approved');
+
+  if (error) { console.error(error); return new Set(); }
+  return new Set((data || []).map(e => e.tune_id));
+}
+
+/**
  * Auth — Google OAuth
  */
 export async function loginWithGoogle() {

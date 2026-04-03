@@ -139,3 +139,29 @@ export function getRandomTunes(limit = 2) {
     rowMode: 'object',
   });
 }
+
+/**
+ * Obtiene el conteo de tunes por tipo (solo los que tienen vídeos)
+ */
+export function getCountsByType(types, videoCounts) {
+  if (!db || !types?.length) return {};
+
+  const tuneIdsWithVideos = videoCounts?.size ? new Set(videoCounts.keys()) : null;
+  const result = {};
+
+  for (const type of types) {
+    const tunes = db.exec({
+      sql: `SELECT tune_id FROM tunes WHERE type = ?`,
+      bind: [type],
+      returnValue: 'resultRows',
+      rowMode: 'object',
+    });
+    const total = tunes.length;
+    const withVideos = tuneIdsWithVideos
+      ? tunes.filter(t => tuneIdsWithVideos.has(t.tune_id)).length
+      : 0;
+    result[type] = { total, withVideos };
+  }
+
+  return result;
+}

@@ -2,6 +2,7 @@ import { For, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { useAppStore } from '../store/appStore';
 import { loginWithGoogle } from '../lib/supabase';
+import { INSTRUMENTS, INSTRUMENT_KEYS } from '../constants';
 
 const TYPE_COLOR = {
   jig:        'text-[var(--color-primary)]',
@@ -20,9 +21,10 @@ function SearchView() {
   const {
     searchQuery, setSearchQuery,
     filterType, setFilterType,
+    filterInstrument, setFilterInstrument,
     searchResults,
     videoCountsByTune, videoDataReady,
-    placeholderExamples,
+    placeholderExamples, typeCounts,
     currentUser, openAddFormForTune,
   } = useAppStore();
 
@@ -37,7 +39,7 @@ function SearchView() {
   const navigate = useNavigate();
 
   const isSearching = () => searchQuery().trim().length >= 2;
-  const isFiltering = () => !!filterType();
+  const isFiltering = () => !!filterType() || !!filterInstrument();
   const isActive = () => isSearching() || isFiltering();
 
   return (
@@ -83,11 +85,30 @@ function SearchView() {
         </Show>
       </div>
 
+      {/* ── Instrument filter ──────────────────────────────────────────── */}
+      <Show when={!isSearching()}>
+        <select
+          value={filterInstrument() ?? ''}
+          onChange={(e) => {
+            setSearchQuery('');
+            setFilterInstrument(e.target.value || null);
+          }}
+          class="bg-[var(--color-surface)] border border-[var(--color-primary)]/50 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+        >
+          <option value="">any</option>
+          <For each={INSTRUMENT_KEYS}>
+            {(key) => <option value={key}>{INSTRUMENTS[key]}</option>}
+          </For>
+        </select>
+      </Show>
+
       {/* ── Type chips ────────────────────────────────────────────────── */}
       <Show when={!isSearching()}>
         <div class="flex flex-wrap gap-2 justify-center">
           {TUNE_TYPES.map(type => {
             const active = () => filterType() === type;
+            const counts = () => typeCounts()[type];
+            const label = () => counts() ? `${type} ${counts().withVideos}` : type;
             return (
               <button
                 onClick={() => {
@@ -100,7 +121,7 @@ function SearchView() {
                     : 'border-[var(--color-primary)]/40 text-white/70 hover:border-[var(--color-primary)] hover:text-white'
                 }`}
               >
-                {type}
+                {label()}
               </button>
             );
           })}

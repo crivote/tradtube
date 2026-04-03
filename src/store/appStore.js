@@ -4,16 +4,19 @@
  */
 
 import { createSignal, createEffect } from 'solid-js';
-import { initDB, searchTunes, searchTunesByType, getTuneById, getRandomTunes } from '../lib/db';
-import { getEntriesForTune, getVideoCountsByTune, onAuthChange } from '../lib/supabase';
-import { SEARCH_LIMIT } from '../constants';
+import { initDB, searchTunes, searchTunesByType, getTuneById, getRandomTunes, getCountsByType } from '../lib/db';
+import { getEntriesForTune, getVideoCountsByTune, getTuneIdsByInstrument, onAuthChange } from '../lib/supabase';
+import { SEARCH_LIMIT, INSTRUMENT_KEYS } from '../constants';
 
 // ── DB ──────────────────────────────────────────────────────────────────────
 const [dbReady, setDbReady] = createSignal(false);
 const [videoCountsByTune, setVideoCountsByTune] = createSignal(new Map());
 const [videoThumbnailsByTune, setVideoThumbnailsByTune] = createSignal(new Map());
 const [videoDataReady, setVideoDataReady] = createSignal(false);
+const TUNE_TYPES = ['jig', 'reel', 'hornpipe', 'polka', 'slide', 'waltz', 'march', 'slip jig'];
+
 const [placeholderExamples, setPlaceholderExamples] = createSignal([]);
+const [typeCounts, setTypeCounts] = createSignal({});
 
 // ── Auth ────────────────────────────────────────────────────────────────────
 const [currentUser, setCurrentUser] = createSignal(null);
@@ -22,6 +25,7 @@ const [currentUser, setCurrentUser] = createSignal(null);
 const [searchQuery, setSearchQuery] = createSignal('');
 const [searchResults, setSearchResults] = createSignal([]);
 const [filterType, setFilterType] = createSignal(null);
+const [filterInstrument, setFilterInstrument] = createSignal(null);
 
 // ── Tune seleccionado ───────────────────────────────────────────────────────
 const [selectedTune, setSelectedTune] = createSignal(null);
@@ -42,20 +46,29 @@ const [addFormInitialTune, setAddFormInitialTune] = createSignal(null);
 export function useAppStore() {
 
   // Inicializar DB al montar la app
-  const loadVideoData = () => {
-    getVideoCountsByTune().then(({ counts, thumbnails }) => {
-      setVideoCountsByTune(counts);
-      setVideoThumbnailsByTune(thumbnails);
-      setVideoDataReady(true);
-    });
+  const loadVideoData = async () => {
+    const { counts, thumbnails } = await getVideoCountsByTune();
+    setVideoCountsByTune(counts);
+    setVideoThumbnailsByTune(thumbnails);
+    setVideoDataReady(true);
+
+    // Set placeholder examples only from tunes with videos
+    const tunesWithVideos = Array.from(counts.keys());
+    if (tunesWithVideos.length > 0) {
+      const shuffled = tunesWithVideos.sort(() => Math.random() - 0.5);
+      const sample = shuffled.slice(0, 2);
+      const randomTunes = sample.map(id => getTuneById(id)).filter(Boolean);
+      setPlaceholderExamples(randomTunes.map(t => t.name));
+    }
+
+    // Load type counts (tunes with videos)
+    setTypeCounts(getCountsByType(TUNE_TYPES, counts));
   };
 
   const loadDB = async () => {
     await initDB();
     setDbReady(true);
     loadVideoData();
-    const randomTunes = getRandomTunes(2);
-    setPlaceholderExamples(randomTunes.map(t => t.name));
   };
 
   // Escuchar cambios de auth
@@ -64,24 +77,55 @@ export function useAppStore() {
     return () => subscription.unsubscribe();
   };
 
+  const tuneIdsByInstrument = new Map();
+
+  const loadInstrumentFilter = async (instrument) => {
+    if (tuneIdsByInstrument.has(instrument)) return tuneIdsByInstrument.get(instrument);
+    const ids = await getTuneIdsByInstrument(instrument);
+    tuneIdsByInstrument.set(instrument, ids);
+    return ids;
+  };
+
   // Buscar tunes cuando cambia el query (texto)
-  createEffect(() => {
+  createEffect(async () => {
     const q = searchQuery();
+    const instrument = filterInstrument();
     if (!dbReady() || q.trim().length < 2) {
       setSearchResults([]);
       return;
     }
     setFilterType(null);
-    const results = searchTunes(q, SEARCH_LIMIT);
+    let results = searchTunes(q, SEARCH_LIMIT);
+    if (instrument) {
+      const ids = await loadInstrumentFilter(instrument);
+      results = results.filter(t => ids.has(t.tune_id));
+    }
     setSearchResults(results);
   });
 
   // Filtrar por tipo — solo tunes con vídeos
-  createEffect(() => {
+  createEffect(async () => {
     const type = filterType();
+    const instrument = filterInstrument();
     if (!type || !dbReady() || !videoDataReady()) return;
-    const all = searchTunesByType(type, 500);
+    let all = searchTunesByType(type, 500);
     const counts = videoCountsByTune();
+    all = all.filter(t => counts.has(t.tune_id));
+    if (instrument) {
+      const ids = await loadInstrumentFilter(instrument);
+      all = all.filter(t => ids.has(t.tune_id));
+    }
+    setSearchResults(all);
+  });
+
+  // Filtrar solo por instrumento (sin tipo)
+  createEffect(async () => {
+    const type = filterType();
+    const instrument = filterInstrument();
+    if (type || !instrument || !dbReady() || !videoDataReady()) return;
+    const ids = await loadInstrumentFilter(instrument);
+    const counts = videoCountsByTune();
+    const all = Array.from(ids).map(id => getTuneById(id)).filter(Boolean);
     setSearchResults(all.filter(t => counts.has(t.tune_id)));
   });
 
@@ -140,9 +184,10 @@ export function useAppStore() {
     // Estado
     dbReady, currentUser,
     videoCountsByTune, videoThumbnailsByTune, videoDataReady,
-    placeholderExamples,
+    placeholderExamples, typeCounts,
     searchQuery, setSearchQuery,
     filterType, setFilterType,
+    filterInstrument, setFilterInstrument,
     searchResults,
     selectedTune, tuneEntries, loadingEntries,
     activeEntry, setActiveEntry,
