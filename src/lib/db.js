@@ -6,7 +6,7 @@
 
 import { DB_PATH } from '../constants';
 
-let db = null;
+export let db = null;
 
 export async function initDB() {
   if (db) return db;

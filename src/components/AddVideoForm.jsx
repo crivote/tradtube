@@ -8,7 +8,7 @@
 
 import { createSignal, createMemo, createEffect, For, Show } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
-import { searchTunes, getTuneById } from '../lib/db';
+import { searchTunes, getTuneById, db } from '../lib/db';
 import { addVideoWithEntries, updateVideoWithEntries, checkYoutubeIdExists } from '../lib/supabase';
 import { resolveTrackTunes } from '../lib/thesession';
 import { SOURCE_TYPES, INSTRUMENTS } from '../constants';
@@ -41,18 +41,78 @@ function parseSec(val) {
   return null;
 }
 
-// Obtiene el título del vídeo via YouTube oEmbed (sin API key)
-async function fetchYoutubeTitle(videoId) {
+async function fetchYoutubeData(videoId) {
   try {
     const res = await fetch(
       `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
     );
     if (!res.ok) return null;
     const data = await res.json();
-    return data.title ?? null;
+    return {
+      title: data.title ?? null,
+      channel: data.author_name ?? null,
+    };
   } catch {
     return null;
   }
+}
+
+function findMatchingTunes(text, existingIds = new Set()) {
+  if (!text || !db) return [];
+  
+  const words = text
+    .replace(/[^\w\s'-]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 2)
+    .filter(w => !STOP_WORDS.has(w.toLowerCase()))
+    .filter(w => !/^\d+$/.test(w));
+  
+  if (words.length === 0) return [];
+  
+  const seen = new Set();
+  const matches = [];
+  
+  for (const word of words) {
+    const results = searchTunes(word, 5);
+    for (const tune of results) {
+      if (!existingIds.has(tune.tune_id) && !seen.has(tune.tune_id)) {
+        seen.add(tune.tune_id);
+        matches.push(tune);
+      }
+    }
+  }
+  
+  return matches.slice(0, 8);
+}
+
+const STOP_WORDS = new Set([
+  'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'her',
+  'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how',
+  'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy',
+  'did', 'let', 'put', 'say', 'she', 'too', 'use', 'this', 'with', 'from',
+  'live', 'session', 'music', 'cover', 'live', 'video', 'song', 'feat',
+  'official', 'hd', 'live', 'studio', 'recording', 'pub', 'irish',
+]);
+
+function cleanTitleForDisplay(title, matchedTunes) {
+  if (!matchedTunes.length) return title;
+  
+  let cleaned = title;
+  for (const tune of matchedTunes) {
+    const escaped = tune.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    cleaned = cleaned.replace(new RegExp(escaped, 'gi'), '').trim();
+  }
+  
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+  
+  const separators = cleaned.match(/[-–—|]/g);
+  if (separators && separators.length > 0) {
+    cleaned = cleaned.replace(/[-–—|]\s*/g, (m) => {
+      return separators.shift() ? ' – ' : m;
+    });
+  }
+  
+  return cleaned || title;
 }
 
 // Formatea segundos a "m:ss"
@@ -81,6 +141,7 @@ function AddVideoForm(props) {
   const [youtubeUrl, setYoutubeUrl] = createSignal(props.editVideo?.youtube_id ?? '');
   const [sourceType, setSourceType] = createSignal(props.editVideo?.source_type ?? 'session');
   const [title, setTitle] = createSignal(props.editVideo?.title ?? '');
+  const [channel, setChannel] = createSignal(props.editVideo?.channel ?? '');
   const [entries, setEntries] = createStore(initialEntries);
   const [tuneSearch, setTuneSearch] = createSignal('');
   const [submitting, setSubmitting] = createSignal(false);
@@ -90,15 +151,31 @@ function AddVideoForm(props) {
   const [showImportModal, setShowImportModal] = createSignal(false);
   const [skippedTuneNames, setSkippedTuneNames] = createSignal([]);
   const [recordingId, setRecordingId] = createSignal(props.editVideo?.thesession_recording_id ?? null);
+  const [autoMatchedCount, setAutoMatchedCount] = createSignal(0);
 
   const youtubeId = createMemo(() => extractYoutubeId(youtubeUrl()));
 
-  // Auto-fetch título + duplicate check al detectar un ID válido
   createEffect(async () => {
     const id = youtubeId();
     if (!id || isEdit()) { setDuplicate(null); return; }
-    const [t, existing] = await Promise.all([fetchYoutubeTitle(id), checkYoutubeIdExists(id)]);
-    if (t) setTitle(t);
+    const [data, existing] = await Promise.all([fetchYoutubeData(id), checkYoutubeIdExists(id)]);
+    if (!data) { setDuplicate(existing ?? null); return; }
+    
+    setChannel(data.channel ?? '');
+    
+    const existingIds = new Set(entries.map(e => e.tune.tune_id));
+    const matchedTunes = findMatchingTunes(data.title, existingIds);
+    
+    if (matchedTunes.length > 0) {
+      for (const tune of matchedTunes) {
+        setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instrument: '' })));
+      }
+      setAutoMatchedCount(matchedTunes.length);
+    }
+    
+    const cleanedTitle = cleanTitleForDisplay(data.title, matchedTunes);
+    setTitle(cleanedTitle);
+    
     setDuplicate(existing ?? null);
   });
 
@@ -294,7 +371,23 @@ function AddVideoForm(props) {
           </div>
         </Show>
 
-        {/* ── Título ───────────────────────────────────────────────────── */}
+        {/* ── Channel + Title ───────────────────────────────────────────── */}
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">
+            Channel
+            <Show when={youtubeId() && !channel()}>
+              <span class="ml-2 text-[var(--color-muted)]/50 normal-case font-normal">fetching…</span>
+            </Show>
+          </label>
+          <input
+            type="text"
+            placeholder="Channel name (auto-filled from YouTube)"
+            value={channel()}
+            onInput={e => setChannel(e.target.value)}
+            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
+          />
+        </div>
+
         <div class="flex flex-col gap-2">
           <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">
             Title
@@ -304,7 +397,7 @@ function AddVideoForm(props) {
           </label>
           <input
             type="text"
-            placeholder="Video title (auto-filled from YouTube)"
+            placeholder="Video title (auto-filled, matched tunes removed)"
             value={title()}
             onInput={e => setTitle(e.target.value)}
             class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
@@ -458,6 +551,11 @@ function AddVideoForm(props) {
           <Show when={entries.length === 0}>
             <p class="text-xs text-[var(--color-muted)] py-2">
               Search and add the tunes that appear in this video, in order.
+            </p>
+          </Show>
+          <Show when={autoMatchedCount() > 0}>
+            <p class="text-xs text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 rounded-lg px-3 py-2">
+              ✓ {autoMatchedCount()} tune{autoMatchedCount() > 1 ? 's' : ''} auto-matched from title
             </p>
           </Show>
         </div>
