@@ -43,6 +43,27 @@ const [activeEntry, setActiveEntry] = createSignal(null);
 const [showAddForm, setShowAddForm] = createSignal(false);
 const [addFormInitialTune, setAddFormInitialTune] = createSignal(null);
 
+// ── Theme ────────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'tradtube-theme';
+const savedTheme = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+const [theme, setTheme] = createSignal(savedTheme === 'light' ? 'light' : 'dark');
+
+const applyTheme = (value) => {
+  if (typeof document !== 'undefined') {
+    document.documentElement.dataset.theme = value;
+  }
+};
+
+applyTheme(theme());
+
+createEffect(() => {
+  const value = theme();
+  applyTheme(value);
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(STORAGE_KEY, value);
+  }
+});
+
 export function useAppStore() {
 
   // Inicializar DB al montar la app
@@ -193,6 +214,7 @@ export function useAppStore() {
     activeEntry, setActiveEntry,
     showAddForm, setShowAddForm,
     addFormInitialTune, setAddFormInitialTune,
+    theme, toggleTheme: () => setTheme(v => v === 'dark' ? 'light' : 'dark'),
     // Acciones
     loadDB, initAuth, loadVideoData,
     loadTuneById, updateEntryVote, getEntryVoteScore, getEntryUserVote,

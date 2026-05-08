@@ -309,7 +309,7 @@ function AddVideoForm(props) {
       {/* Header */}
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-2xl font-black text-white">
+          <h2 class="text-2xl font-black text-[var(--color-text)]">
             {isEdit() ? 'Edit video' : 'Add a video'}
           </h2>
           <p class="text-sm text-[var(--color-muted)] mt-0.5">
@@ -320,7 +320,7 @@ function AddVideoForm(props) {
         </div>
         <button
           onClick={props.onClose}
-          class="text-sm text-[var(--color-muted)] hover:text-white transition-colors"
+          class="text-sm text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
         >
           ✕ Close
         </button>
@@ -354,7 +354,7 @@ function AddVideoForm(props) {
             value={youtubeUrl()}
             onInput={e => setYoutubeUrl(e.target.value)}
             disabled={isEdit()}
-            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <Show when={youtubeUrl() && !youtubeId()}>
             <p class="text-xs text-red-400">Can't extract a valid video ID from this URL.</p>
@@ -402,7 +402,7 @@ function AddVideoForm(props) {
             placeholder="Channel name (auto-filled from YouTube)"
             value={channel()}
             onInput={e => setChannel(e.target.value)}
-            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
+            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
           />
         </div>
 
@@ -418,7 +418,7 @@ function AddVideoForm(props) {
             placeholder="Video title (auto-filled, matched tunes removed)"
             value={title()}
             onInput={e => setTitle(e.target.value)}
-            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
+            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
           />
         </div>
 
@@ -430,7 +430,7 @@ function AddVideoForm(props) {
           <select
             value={sourceType()}
             onChange={e => setSourceType(e.target.value)}
-            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm appearance-none cursor-pointer"
+            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm appearance-none cursor-pointer"
           >
             <For each={Object.entries(SOURCE_TYPES)}>
               {([key, label]) => <option value={key}>{label}</option>}
@@ -469,7 +469,7 @@ function AddVideoForm(props) {
               placeholder="Search tune name…"
               value={tuneSearch()}
               onInput={e => setTuneSearch(e.target.value)}
-              class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
+              class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
             />
 
             {/* Dropdown results */}
@@ -481,7 +481,7 @@ function AddVideoForm(props) {
                       onClick={() => addEntry(tune)}
                       class="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)] transition-colors flex items-center justify-between gap-3 border-b border-[var(--color-border)] last:border-0"
                     >
-                      <span class="font-medium text-white group-hover:text-[var(--color-primary)] truncate">
+                      <span class="font-medium text-[var(--color-text)] group-hover:text-[var(--color-primary)] truncate">
                         {tune.name}
                       </span>
                       <span class="text-[10px] text-[var(--color-muted)] flex-shrink-0">
@@ -508,7 +508,7 @@ function AddVideoForm(props) {
 
                     {/* Tune name */}
                     <div class="flex-grow min-w-0">
-                      <span class="text-sm font-semibold text-white block truncate">
+                      <span class="text-sm font-semibold text-[var(--color-text)] block truncate">
                         {entry.tune.name}
                       </span>
                       <span class="text-[10px] text-[var(--color-muted)]">
@@ -525,7 +525,7 @@ function AddVideoForm(props) {
                           placeholder="0:00"
                           value={entry.startSec}
                           onInput={e => updateEntry(i(), 'startSec', e.target.value)}
-                          class="w-14 text-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                          class="w-14 text-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none focus:border-[var(--color-primary)] transition-colors"
                         />
                       </div>
                       <span class="text-[var(--color-border)] text-xs mt-3">–</span>
@@ -536,7 +536,7 @@ function AddVideoForm(props) {
                           placeholder="—"
                           value={entry.endSec}
                           onBlur={e => updateEntry(i(), 'endSec', e.target.value)}
-                          class="w-14 text-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                          class="w-14 text-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none focus:border-[var(--color-primary)] transition-colors"
                         />
                       </div>
                     </div>
@@ -546,7 +546,7 @@ function AddVideoForm(props) {
                       <button
                         type="button"
                         onClick={() => setOpenInstrumentDropdown(openInstrumentDropdown() === i() ? null : i())}
-                        class="flex items-center gap-1 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[var(--color-primary)] transition-colors cursor-pointer min-w-[80px]"
+                        class="flex items-center gap-1 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors cursor-pointer min-w-[80px]"
                         title="Instruments"
                       >
                         <span class={entry.instruments.length === 0 ? 'text-[var(--color-muted)]' : ''}>
@@ -575,7 +575,7 @@ function AddVideoForm(props) {
                                     }}
                                     class="rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                                   />
-                                  <span class="text-xs text-white">{label}</span>
+                                  <span class="text-xs text-[var(--color-text)]">{label}</span>
                                 </label>
                               );
                             }}

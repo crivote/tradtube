@@ -56,7 +56,7 @@ function SameTypeTunes() {
                       />
                     </Show>
                   </div>
-                  <span class="text-xs text-white/80 group-hover:text-white transition-colors leading-tight line-clamp-2">
+                  <span class="text-xs text-[var(--color-text)]/80 group-hover:text-[var(--color-text)] transition-colors leading-tight line-clamp-2">
                     {tune.name}
                   </span>
                 </button>

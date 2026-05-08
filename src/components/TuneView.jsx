@@ -102,7 +102,7 @@ function TuneView() {
       {/* Back */}
       <button
         onClick={() => navigate('/')}
-        class="flex items-center gap-2 text-sm text-[var(--color-muted)] hover:text-white transition-colors w-fit"
+        class="flex items-center gap-2 text-sm text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors w-fit"
       >
         ← Back to search
       </button>
@@ -111,7 +111,7 @@ function TuneView() {
       <div class="flex items-start justify-between gap-4">
         <div class="flex flex-col gap-1">
           <div class="flex items-center gap-2">
-            <h2 class="text-2xl font-black text-white">{selectedTune()?.name}</h2>
+            <h2 class="text-2xl font-black text-[var(--color-text)]">{selectedTune()?.name}</h2>
             <a
               href={`https://thesession.org/tunes/${selectedTune()?.tune_id}`}
               target="_blank"
@@ -252,7 +252,7 @@ function TuneView() {
                   <div class="flex-grow min-w-0 flex flex-col gap-1">
                     <Show when={entry.tune_videos?.title}>
                       <div class="flex items-center gap-1.5">
-                        <span class="text-sm text-white font-medium truncate">
+                        <span class="text-sm text-[var(--color-text)] font-medium truncate">
                           {entry.tune_videos.title}
                         </span>
                         <Show when={entry.tune_videos?.thesession_recording_id}>

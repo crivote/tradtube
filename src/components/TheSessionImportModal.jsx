@@ -47,14 +47,14 @@ function TheSessionImportModal(props) {
         {/* Header */}
         <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)] flex-shrink-0">
           <div>
-            <h3 class="text-base font-bold text-white">Import from TheSession</h3>
+            <h3 class="text-base font-bold text-[var(--color-text)]">Import from TheSession</h3>
             <p class="text-xs text-[var(--color-muted)] mt-0.5">
               Paste a recording URL or ID to load its tracklist
             </p>
           </div>
           <button
             onClick={props.onClose}
-            class="text-[var(--color-muted)] hover:text-white transition-colors text-lg leading-none ml-4"
+            class="text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors text-lg leading-none ml-4"
             aria-label="Close"
           >✕</button>
         </div>
@@ -70,7 +70,7 @@ function TheSessionImportModal(props) {
               value={recordingUrl()}
               onInput={e => setRecordingUrl(e.target.value)}
               autofocus
-              class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
+              class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
             />
             <Show when={loading()}>
               <div class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
@@ -87,7 +87,7 @@ function TheSessionImportModal(props) {
               {/* Album header */}
               <div class="px-4 py-3 bg-[var(--color-surface)] border-b border-[var(--color-border)]">
                 <p class="text-xs text-[var(--color-muted)]">{recording().artist?.name}</p>
-                <p class="text-sm font-semibold text-white">{recording().name}</p>
+                <p class="text-sm font-semibold text-[var(--color-text)]">{recording().name}</p>
               </div>
 
               {/* Tracklist */}

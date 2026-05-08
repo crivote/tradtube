@@ -10,6 +10,7 @@ function App(props) {
     currentUser,
     showAddForm, setShowAddForm,
     addFormInitialTune, setAddFormInitialTune,
+    theme, toggleTheme,
   } = useAppStore();
 
   const navigate = useNavigate();
@@ -37,17 +38,33 @@ function App(props) {
               <img src="/favicon.png" alt="TradTube" class="w-6 h-6 object-contain" />
             </div>
             <h1 class="font-black text-base tracking-tight uppercase">
-              <span class="text-white">Trad</span><span class="text-[var(--color-primary)] font-light">Tube</span>
+              <span class="text-[var(--color-text)]">Trad</span><span class="text-[var(--color-primary)] font-light">Tube</span>
             </h1>
           </button>
 
-          {/* Auth */}
+          {/* Theme toggle + Auth */}
+          <div class="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              class="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors p-1.5 rounded-lg"
+              title={theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            >
+              <Show when={theme() === 'dark'} fallback={
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              }>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </Show>
+            </button>
           <Show
             when={currentUser()}
             fallback={
               <button
                 onClick={loginWithGoogle}
-                class="text-xs px-4 py-1.5 rounded-lg border border-[var(--color-border)] text-white hover:border-[var(--color-primary)]/50 transition-colors"
+                class="text-xs px-4 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-primary)]/50 transition-colors"
               >
                 Login
               </button>
@@ -69,7 +86,7 @@ function App(props) {
                 class={`text-xs px-3 py-1.5 rounded-lg border transition-colors
                   ${isAdmin()
                     ? 'border-amber-500/60 bg-amber-500/10 text-amber-400'
-                    : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:text-white hover:border-amber-500/30'
+                    : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-amber-500/30'
                   }`}
               >
                 {isAdmin() ? '← Back' : 'Admin'}
@@ -79,12 +96,13 @@ function App(props) {
               </span>
               <button
                 onClick={logout}
-                class="text-xs text-[var(--color-muted)] hover:text-white transition-colors"
+                class="text-xs text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
               >
                 Log out
               </button>
             </div>
           </Show>
+          </div>
         </div>
       </header>
 

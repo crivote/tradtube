@@ -50,7 +50,7 @@ function SearchView() {
         <div class="text-center flex flex-col items-center gap-4 py-10">
           <div class="text-6xl text-[var(--color-muted)]/30 select-none leading-none">♫</div>
           <div>
-            <h2 class="text-4xl font-black text-white tracking-tight">Find any tune</h2>
+            <h2 class="text-4xl font-black text-[var(--color-text)] tracking-tight">Find any tune</h2>
             <p class="text-[var(--color-muted)] text-sm mt-2 max-w-sm leading-relaxed">
               Search 5,000+ traditional tunes and hear real performances —
               sessions, concerts, and recordings at the exact right moment.
@@ -74,13 +74,13 @@ function SearchView() {
           placeholder={placeholder()}
           value={searchQuery()}
           onInput={(e) => setSearchQuery(e.target.value)}
-          class="w-full bg-[var(--color-surface)] border border-[var(--color-primary)]/50 rounded-xl pl-10 pr-10 py-3.5 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_20px_rgba(34,197,94,0.12)] transition-all text-sm"
+          class="w-full bg-[var(--color-surface)] border border-[var(--color-primary)]/50 rounded-xl pl-10 pr-10 py-3.5 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_20px_rgba(34,197,94,0.12)] transition-all text-sm"
           autofocus
         />
         <Show when={searchQuery().length > 0}>
           <button
             onClick={() => setSearchQuery('')}
-            class="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)] hover:text-white transition-colors text-xs"
+            class="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors text-xs"
           >✕</button>
         </Show>
       </div>
@@ -93,7 +93,7 @@ function SearchView() {
             setSearchQuery('');
             setFilterInstrument(e.target.value || null);
           }}
-          class="bg-[var(--color-surface)] border border-[var(--color-primary)]/50 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+          class="bg-[var(--color-surface)] border border-[var(--color-primary)]/50 rounded-xl px-4 py-2.5 text-[var(--color-text)] text-sm focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
         >
           <option value="">any</option>
           <For each={INSTRUMENT_KEYS}>
@@ -117,8 +117,8 @@ function SearchView() {
                 }}
                 class={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                   active()
-                    ? `border-[var(--color-primary)] ${TYPE_COLOR[type] ?? 'text-white'} bg-[var(--color-primary)]/10`
-                    : 'border-[var(--color-primary)]/40 text-white/70 hover:border-[var(--color-primary)] hover:text-white'
+                    ? `border-[var(--color-primary)] ${TYPE_COLOR[type] ?? 'text-[var(--color-text)]'} bg-[var(--color-primary)]/10`
+                    : 'border-[var(--color-primary)]/40 text-[var(--color-text)]/70 hover:border-[var(--color-primary)] hover:text-[var(--color-text)]'
                 }`}
               >
                 {label()}
@@ -162,7 +162,7 @@ function SearchView() {
                         <div class="flex items-center gap-1.5">
                           <span class={`font-semibold leading-snug truncate transition-colors
                             ${hasVideos()
-                              ? 'text-white group-hover:text-[var(--color-primary)]'
+                              ? 'text-[var(--color-text)] group-hover:text-[var(--color-primary)]'
                               : 'text-[var(--color-muted)]'
                             }`}
                           >
@@ -238,7 +238,7 @@ function SearchView() {
       <Show when={isSearching() && searchResults().length === 0}>
         <div class="text-center py-8">
           <p class="text-[var(--color-muted)] text-sm">
-            No tunes found for "<span class="text-white">{searchQuery()}</span>"
+            No tunes found for "<span class="text-[var(--color-text)]">{searchQuery()}</span>"
           </p>
           <p class="text-[var(--color-muted)] text-xs mt-1">Try a different spelling or alias</p>
         </div>

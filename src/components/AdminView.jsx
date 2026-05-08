@@ -78,7 +78,7 @@ function VideoRow(props) {
       />
       <div class="flex-grow min-w-0">
         <Show when={video.title}>
-          <p class="text-sm text-white font-semibold truncate">{video.title}</p>
+          <p class="text-sm text-[var(--color-text)] font-semibold truncate">{video.title}</p>
         </Show>
         <div class="flex items-center gap-2 flex-wrap mt-0.5">
           <span class="text-xs font-mono text-[var(--color-muted)]">{video.youtube_id}</span>
@@ -96,7 +96,7 @@ function VideoRow(props) {
         <button
           onClick={() => onEdit(video)}
           disabled={isBusy()}
-          class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-muted)] hover:text-white hover:border-[var(--color-primary)]/50 transition-colors disabled:opacity-30"
+          class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 transition-colors disabled:opacity-30"
         >Edit</button>
         <button
           onClick={() => onDelete(video)}
@@ -190,7 +190,7 @@ function PendingTab(props) {
                     />
                     <div class="flex-grow min-w-0">
                       <Show when={video.title}>
-                        <p class="text-sm text-white font-semibold truncate">{video.title}</p>
+                        <p class="text-sm text-[var(--color-text)] font-semibold truncate">{video.title}</p>
                       </Show>
                       <div class="flex items-center gap-2 flex-wrap mt-0.5">
                         <span class="text-xs font-mono text-[var(--color-muted)]">{video.youtube_id}</span>
@@ -209,14 +209,14 @@ function PendingTab(props) {
                       class={`text-xs px-3 py-1.5 rounded-lg border transition-colors
                         ${isExpanded()
                           ? 'border-amber-500/50 bg-amber-500/10 text-amber-400'
-                          : 'border-[var(--color-border)] text-[var(--color-muted)] hover:text-white'}`}
+                          : 'border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)]'}`}
                     >
                       {isExpanded() ? '▲ Hide' : '▶ Preview'}
                     </button>
                     <button
                       onClick={() => props.onEdit(video)}
                       disabled={isBusy()}
-                      class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-muted)] hover:text-white hover:border-[var(--color-muted)]/50 transition-colors disabled:opacity-30"
+                      class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-muted)]/50 transition-colors disabled:opacity-30"
                     >Edit</button>
                     <div class="flex-grow" />
                     <button
@@ -244,7 +244,7 @@ function PendingTab(props) {
                                   class={`text-xs px-3 py-1 rounded-full border transition-colors
                                     ${isActive()
                                       ? 'border-amber-500/60 bg-amber-500/10 text-amber-400'
-                                      : 'border-[var(--color-border)] text-[var(--color-muted)] hover:text-white'}`}
+                                      : 'border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)]'}`}
                                 >
                                   {entry.tune?.name ?? `Tune ${entry.position + 1}`}
                                   <span class="font-mono ml-1.5 opacity-50 text-[10px]">{formatTime(entry.start_sec)}</span>
@@ -383,7 +383,7 @@ function SearchByTuneTab(props) {
           placeholder="Search tunes with videos…"
           value={query()}
           onInput={e => setQuery(e.target.value)}
-          class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-white placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
+          class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
         />
         <Show when={results().length > 0}>
           <div class="absolute top-full left-0 right-0 mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden z-10 flex flex-col shadow-lg">
@@ -391,7 +391,7 @@ function SearchByTuneTab(props) {
               {(tune) => (
                 <button
                   onClick={() => handleSelect(tune)}
-                  class="text-left px-4 py-2.5 text-sm text-white hover:bg-[var(--color-primary)]/10 transition-colors border-b border-[var(--color-border)] last:border-0"
+                  class="text-left px-4 py-2.5 text-sm text-[var(--color-text)] hover:bg-[var(--color-primary)]/10 transition-colors border-b border-[var(--color-border)] last:border-0"
                 >
                   {tune.name}
                   <span class="text-[10px] text-[var(--color-muted)] ml-2 uppercase tracking-wider">{tune.type}</span>
@@ -405,7 +405,7 @@ function SearchByTuneTab(props) {
       {/* ── Selected tune label ──────────────────────────────────── */}
       <Show when={selectedTune()}>
         <p class="text-xs text-[var(--color-muted)] -mt-2">
-          Videos for <span class="text-white font-semibold">{selectedTune().name}</span>
+          Videos for <span class="text-[var(--color-text)] font-semibold">{selectedTune().name}</span>
         </p>
       </Show>
 
@@ -479,10 +479,10 @@ function AdminView() {
 
         {/* Header */}
         <div class="flex items-center justify-between">
-          <h2 class="text-2xl font-black text-white">Admin</h2>
+          <h2 class="text-2xl font-black text-[var(--color-text)]">Admin</h2>
           <button
             onClick={() => navigate('/')}
-            class="text-sm text-[var(--color-muted)] hover:text-white transition-colors"
+            class="text-sm text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
           >✕ Close</button>
         </div>
 
@@ -494,8 +494,8 @@ function AdminView() {
                 onClick={() => setTab(key)}
                 class={`flex items-center gap-1.5 text-sm px-4 py-2 -mb-px border-b-2 transition-colors
                   ${tab() === key
-                    ? 'border-[var(--color-primary)] text-white font-semibold'
-                    : 'border-transparent text-[var(--color-muted)] hover:text-white'}`}
+                    ? 'border-[var(--color-primary)] text-[var(--color-text)] font-semibold'
+                    : 'border-transparent text-[var(--color-muted)] hover:text-[var(--color-text)]'}`}
               >
                 {label}
                 <Show when={key === 'pending' && pendingCount() !== null && pendingCount() > 0}>
