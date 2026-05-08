@@ -159,14 +159,28 @@ function SearchView() {
 
                       {/* Nombre + metadatos */}
                       <div class="min-w-0">
-                        <span class={`font-semibold block leading-snug truncate transition-colors
-                          ${hasVideos()
-                            ? 'text-white group-hover:text-[var(--color-primary)]'
-                            : 'text-[var(--color-muted)]'
-                          }`}
-                        >
-                          {tune.name}
-                        </span>
+                        <div class="flex items-center gap-1.5">
+                          <span class={`font-semibold leading-snug truncate transition-colors
+                            ${hasVideos()
+                              ? 'text-white group-hover:text-[var(--color-primary)]'
+                              : 'text-[var(--color-muted)]'
+                            }`}
+                          >
+                            {tune.name}
+                          </span>
+                          <a
+                            href={`https://thesession.org/tunes/${tune.tune_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            class="text-[var(--color-muted)]/50 hover:text-[var(--color-primary)] transition-colors flex-shrink-0 leading-none"
+                            title={`TheSession #${tune.tune_id}${tune.composer ? ` · ${tune.composer}` : ''}`}
+                          >
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        </div>
                         <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
                           <span class={`text-[10px] font-bold uppercase tracking-widest ${typeColor}`}>
                             {tune.type}
@@ -174,6 +188,10 @@ function SearchView() {
                           <Show when={tune.meter}>
                             <span class="text-[10px] text-[var(--color-border)]">·</span>
                             <span class="text-[10px] text-[var(--color-muted)]">{tune.meter}</span>
+                          </Show>
+                          <Show when={tune.composer}>
+                            <span class="text-[10px] text-[var(--color-border)]">·</span>
+                            <span class="text-[10px] text-[var(--color-muted)]">{tune.composer}</span>
                           </Show>
                           <span class="text-[10px] text-[var(--color-border)]">·</span>
                           <span class="text-[10px] text-[var(--color-muted)]">{tune.tunebooks} books</span>

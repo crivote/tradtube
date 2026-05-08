@@ -129,6 +129,9 @@ function TuneView() {
             <Show when={selectedTune()?.meter}>
               {' · '}{selectedTune()?.meter}
             </Show>
+            <Show when={selectedTune()?.composer}>
+              {' · '}{selectedTune()?.composer}
+            </Show>
           </p>
         </div>
 

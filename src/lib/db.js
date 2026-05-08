@@ -36,7 +36,7 @@ export async function initDB() {
 
 /**
  * Búsqueda FTS5 de tunes por nombre (o alias)
- * Devuelve array de { tune_id, name, type, meter, tunebooks, popularity_score }
+ * Devuelve array de { tune_id, name, type, meter, composer, tunebooks, popularity_score }
  */
 export function searchTunes(query, limit = 10) {
   if (!db || !query?.trim()) return [];
@@ -46,7 +46,7 @@ export function searchTunes(query, limit = 10) {
 
   return db.exec({
     sql: `
-      SELECT t.tune_id, t.name, t.type, t.meter, t.tunebooks, t.popularity_score
+      SELECT t.tune_id, t.name, t.type, t.meter, t.composer, t.tunebooks, t.popularity_score
       FROM tunes_search ts
       JOIN tunes t ON t.tune_id = CAST(ts.tune_id AS INTEGER)
       WHERE tunes_search MATCH ?
@@ -61,14 +61,14 @@ export function searchTunes(query, limit = 10) {
 
 /**
  * Devuelve tunes de un tipo concreto ordenados por popularidad
- * Devuelve array de { tune_id, name, type, meter, tunebooks, popularity_score }
+ * Devuelve array de { tune_id, name, type, meter, composer, tunebooks, popularity_score }
  */
 export function searchTunesByType(type, limit = 500) {
   if (!db || !type) return [];
 
   return db.exec({
     sql: `
-      SELECT tune_id, name, type, meter, tunebooks, popularity_score
+      SELECT tune_id, name, type, meter, composer, tunebooks, popularity_score
       FROM tunes WHERE type = ? ORDER BY tunebooks DESC LIMIT ?
     `,
     bind: [type, limit],
@@ -97,7 +97,7 @@ export function getSettings(tuneId) {
 export function getTuneById(tuneId) {
   if (!db) return null;
   const results = db.exec({
-    sql: `SELECT tune_id, name, type, meter FROM tunes WHERE tune_id = ? LIMIT 1`,
+    sql: `SELECT tune_id, name, type, meter, composer FROM tunes WHERE tune_id = ? LIMIT 1`,
     bind: [tuneId],
     returnValue: 'resultRows',
     rowMode: 'object',
