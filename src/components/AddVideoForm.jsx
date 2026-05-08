@@ -59,29 +59,39 @@ async function fetchYoutubeData(videoId) {
 
 function findMatchingTunes(text, existingIds = new Set()) {
   if (!text || !db) return [];
-  
-  const words = text
-    .replace(/[^\w\s'-]/g, ' ')
-    .split(/\s+/)
-    .filter(w => w.length > 2)
-    .filter(w => !STOP_WORDS.has(w.toLowerCase()))
-    .filter(w => !/^\d+$/.test(w));
-  
-  if (words.length === 0) return [];
-  
-  const seen = new Set();
+
+  const cleaned = text
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\[[^\]]*\]/g, ' ');
+
+  const phrases = cleaned.split(/[,;\/|–—\\-]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  const seen = new Set(existingIds);
   const matches = [];
-  
-  for (const word of words) {
-    const results = searchTunes(word, 5);
+
+  for (const phrase of phrases) {
+    const words = phrase
+      .replace(/[^\w\s'-]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 2)
+      .filter(w => !STOP_WORDS.has(w.toLowerCase()))
+      .filter(w => !/^\d+$/.test(w));
+
+    if (words.length === 0) continue;
+
+    const results = searchTunes(words.join(' '), 5);
     for (const tune of results) {
-      if (!existingIds.has(tune.tune_id) && !seen.has(tune.tune_id)) {
+      if (!seen.has(tune.tune_id)) {
         seen.add(tune.tune_id);
         matches.push(tune);
       }
     }
+
+    if (matches.length >= 8) break;
   }
-  
+
   return matches.slice(0, 8);
 }
 
@@ -90,8 +100,13 @@ const STOP_WORDS = new Set([
   'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how',
   'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy',
   'did', 'let', 'put', 'say', 'she', 'too', 'use', 'this', 'with', 'from',
-  'live', 'session', 'music', 'cover', 'live', 'video', 'song', 'feat',
-  'official', 'hd', 'live', 'studio', 'recording', 'pub', 'irish',
+  'live', 'session', 'music', 'cover', 'video', 'song', 'feat',
+  'official', 'hd', 'studio', 'recording', 'pub', 'irish',
+  'reel', 'jig', 'hornpipe', 'polka', 'slide', 'waltz', 'march', 'slip',
+  'set', 'dance', 'air', 'tune', 'tunes',
+  'trad', 'traditional', 'played', 'version', 'full', 'original', 'slow', 'fast',
+  'medley', 'parts',
+  'de', 'le', 'la', 'les', 'des', 'du',
 ]);
 
 function cleanTitleForDisplay(title, matchedTunes) {
