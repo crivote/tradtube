@@ -7,7 +7,9 @@
  * Props: { youtubeId, startSec, endSec, autoplay, onEnd }
  */
 
-import { createEffect, onCleanup } from 'solid-js';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
+
+const SPEED_STOPS = [0.25, 0.5, 0.75, 1];
 
 // ── IFrame API loader (singleton global) ────────────────────────────────────
 let ytApiReady = false;
@@ -34,6 +36,8 @@ function YoutubePlayer(props) {
   let containerRef;
   let player = null;
   let pollInterval = null;
+
+  const [speed, setSpeed] = createSignal(1);
 
   const clearPoll = () => {
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
@@ -63,6 +67,9 @@ function YoutubePlayer(props) {
         modestbranding: 1,
       },
       events: {
+        onReady() {
+          player.setPlaybackRate(speed());
+        },
         onStateChange(event) {
           if (event.data === window.YT.PlayerState.PLAYING) {
             clearPoll();
@@ -101,14 +108,77 @@ function YoutubePlayer(props) {
     onCleanup(() => { cancelled = true; });
   });
 
+  // Aplicar velocidad al player
+  createEffect(() => {
+    const rate = speed();
+    player?.setPlaybackRate?.(rate);
+  });
+
   // Limpiar al desmontar el componente
   onCleanup(destroyPlayer);
 
   return (
-    <div
-      ref={containerRef}
-      class="w-full aspect-video bg-black rounded-lg overflow-hidden"
-    />
+    <div>
+      <div
+        ref={containerRef}
+        class="w-full aspect-video bg-black rounded-lg overflow-hidden"
+      />
+
+      {/* Speed slider */}
+      <div class="mt-2 px-1 flex items-center gap-3">
+        <div class="relative flex-1">
+          <input
+            type="range"
+            min="0.25"
+            max="1"
+            step="0.25"
+            value={speed()}
+            onInput={e => setSpeed(parseFloat(e.target.value))}
+            class="speed-slider"
+            style="
+              -webkit-appearance: none; appearance: none;
+              width: 100%; height: 4px;
+              background: var(--color-border);
+              border-radius: 2px;
+              outline: none;
+            "
+          />
+          <div class="flex justify-between text-[9px] text-[var(--color-muted)] mt-0.5 px-0.5">
+            {SPEED_STOPS.map(v => (
+              <button
+                onClick={() => setSpeed(v)}
+                class={`hover:text-[var(--color-text)] transition-colors cursor-pointer
+                  ${speed() === v ? 'text-[var(--color-primary)]' : ''}`}
+              >
+                {v}x
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        .speed-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: var(--color-primary);
+          cursor: pointer;
+          border: 2px solid var(--color-bg);
+          box-shadow: 0 0 0 1px var(--color-primary);
+        }
+        .speed-slider::-moz-range-thumb {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: var(--color-primary);
+          cursor: pointer;
+          border: 2px solid var(--color-bg);
+        }
+      `}</style>
+    </div>
   );
 }
 
