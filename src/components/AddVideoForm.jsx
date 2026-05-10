@@ -6,40 +6,14 @@
  * Props: { onClose }
  */
 
-import { createSignal, createMemo, createEffect, For, Show } from 'solid-js';
+import { createSignal, createMemo, createEffect, onCleanup, For, Show } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
-import { searchTunes, getTuneById, db } from '../lib/db';
+import { searchTunes, getTuneById } from '../lib/db';
 import { addVideoWithEntries, updateVideoWithEntries, checkYoutubeIdExists } from '../lib/supabase';
 import { resolveTrackTunes } from '../lib/thesession';
+import { extractYoutubeId, parseSec, formatSec, cleanTitleForDisplay, findMatchingTunes } from '../lib/utils';
 import { SOURCE_TYPES, INSTRUMENTS } from '../constants';
 import TheSessionImportModal from './TheSessionImportModal';
-
-// Extrae el ID de YouTube de una URL o devuelve el input si ya es un ID
-function extractYoutubeId(input) {
-  if (!input) return null;
-  const s = input.trim();
-  if (/^[a-zA-Z0-9_-]{11}$/.test(s)) return s;
-  const patterns = [
-    /[?&]v=([a-zA-Z0-9_-]{11})/,
-    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
-    /\/embed\/([a-zA-Z0-9_-]{11})/,
-  ];
-  for (const re of patterns) {
-    const m = s.match(re);
-    if (m) return m[1];
-  }
-  return null;
-}
-
-// Convierte "3:47" o "227" a segundos enteros
-function parseSec(val) {
-  const s = String(val ?? '').trim();
-  if (!s) return null;
-  if (/^\d+$/.test(s)) return parseInt(s, 10);
-  const m = s.match(/^(\d+):(\d{2})$/);
-  if (m) return parseInt(m[1]) * 60 + parseInt(m[2]);
-  return null;
-}
 
 async function fetchYoutubeData(videoId) {
   try {
@@ -55,85 +29,6 @@ async function fetchYoutubeData(videoId) {
   } catch {
     return null;
   }
-}
-
-function findMatchingTunes(text, existingIds = new Set()) {
-  if (!text || !db) return [];
-
-  const cleaned = text
-    .replace(/\([^)]*\)/g, ' ')
-    .replace(/\[[^\]]*\]/g, ' ');
-
-  const phrases = cleaned.split(/[,;\/|–—\\-]+/)
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  const seen = new Set(existingIds);
-  const matches = [];
-
-  for (const phrase of phrases) {
-    const words = phrase
-      .replace(/[^\w\s'-]/g, ' ')
-      .split(/\s+/)
-      .filter(w => w.length > 2)
-      .filter(w => !STOP_WORDS.has(w.toLowerCase()))
-      .filter(w => !/^\d+$/.test(w));
-
-    if (words.length === 0) continue;
-
-    const results = searchTunes(words.join(' '), 5);
-    for (const tune of results) {
-      if (!seen.has(tune.tune_id)) {
-        seen.add(tune.tune_id);
-        matches.push(tune);
-      }
-    }
-
-    if (matches.length >= 8) break;
-  }
-
-  return matches.slice(0, 8);
-}
-
-const STOP_WORDS = new Set([
-  'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'her',
-  'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how',
-  'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy',
-  'did', 'let', 'put', 'say', 'she', 'too', 'use', 'this', 'with', 'from',
-  'live', 'session', 'music', 'cover', 'video', 'song', 'feat',
-  'official', 'hd', 'studio', 'recording', 'pub', 'irish',
-  'reel', 'jig', 'hornpipe', 'polka', 'slide', 'waltz', 'march', 'slip',
-  'set', 'dance', 'air', 'tune', 'tunes',
-  'trad', 'traditional', 'played', 'version', 'full', 'original', 'slow', 'fast',
-  'medley', 'parts',
-  'de', 'le', 'la', 'les', 'des', 'du',
-]);
-
-function cleanTitleForDisplay(title, matchedTunes) {
-  if (!matchedTunes.length) return title;
-  
-  let cleaned = title;
-  for (const tune of matchedTunes) {
-    const escaped = tune.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    cleaned = cleaned.replace(new RegExp(escaped, 'gi'), '').trim();
-  }
-  
-  cleaned = cleaned.replace(/\s+/g, ' ').trim();
-  
-  const separators = cleaned.match(/[-–—|]/g);
-  if (separators && separators.length > 0) {
-    cleaned = cleaned.replace(/[-–—|]\s*/g, (m) => {
-      return separators.shift() ? ' – ' : m;
-    });
-  }
-  
-  return cleaned || title;
-}
-
-// Formatea segundos a "m:ss"
-function formatSec(sec) {
-  if (sec == null) return '';
-  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 }
 
 function AddVideoForm(props) {
@@ -171,28 +66,31 @@ function AddVideoForm(props) {
 
   const youtubeId = createMemo(() => extractYoutubeId(youtubeUrl()));
 
-  createEffect(async () => {
+  createEffect(() => {
     const id = youtubeId();
     if (!id || isEdit()) { setDuplicate(null); return; }
-    const [data, existing] = await Promise.all([fetchYoutubeData(id), checkYoutubeIdExists(id)]);
-    if (!data) { setDuplicate(existing ?? null); return; }
-    
-    setChannel(data.channel ?? '');
-    
-    const existingIds = new Set(entries.map(e => e.tune.tune_id));
-    const matchedTunes = findMatchingTunes(data.title, existingIds);
-    
-    if (matchedTunes.length > 0) {
-      for (const tune of matchedTunes) {
-        setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [] })));
+    const timer = setTimeout(async () => {
+      const [data, existing] = await Promise.all([fetchYoutubeData(id), checkYoutubeIdExists(id)]);
+      if (!data) { setDuplicate(existing ?? null); return; }
+      
+      setChannel(data.channel ?? '');
+      
+      const existingIds = new Set(entries.map(e => e.tune.tune_id));
+      const matchedTunes = findMatchingTunes(data.title, existingIds);
+      
+      if (matchedTunes.length > 0) {
+        for (const tune of matchedTunes) {
+          setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [] })));
+        }
+        setAutoMatchedCount(matchedTunes.length);
       }
-      setAutoMatchedCount(matchedTunes.length);
-    }
-    
-    const cleanedTitle = cleanTitleForDisplay(data.title, matchedTunes);
-    setTitle(cleanedTitle);
-    
-    setDuplicate(existing ?? null);
+      
+      const cleanedTitle = cleanTitleForDisplay(data.title, matchedTunes);
+      setTitle(cleanedTitle);
+      
+      setDuplicate(existing ?? null);
+    }, 400);
+    onCleanup(() => clearTimeout(timer));
   });
 
   const tuneResults = createMemo(() => {
@@ -357,19 +255,19 @@ function AddVideoForm(props) {
             class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <Show when={youtubeUrl() && !youtubeId()}>
-            <p class="text-xs text-red-400">Can't extract a valid video ID from this URL.</p>
+            <p class="text-xs text-[var(--color-error)]">Can't extract a valid video ID from this URL.</p>
           </Show>
         </div>
 
         {/* Duplicate warning */}
         <Show when={duplicate()}>
-          <div class="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 flex items-start gap-3">
-            <span class="text-amber-400 text-base flex-shrink-0">⚠</span>
+          <div class="rounded-xl border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/10 px-4 py-3 flex items-start gap-3">
+            <span class="text-[var(--color-warning)] text-base flex-shrink-0">⚠</span>
             <div class="text-sm">
-              <p class="text-amber-300 font-semibold">This video is already in the database</p>
-              <p class="text-amber-400/80 text-xs mt-0.5">
+              <p class="text-[var(--color-warning)] font-semibold">This video is already in the database</p>
+              <p class="text-[var(--color-warning)]/80 text-xs mt-0.5">
                 "{duplicate().title || duplicate().id}" —{' '}
-                <span class={`font-medium ${duplicate().status === 'approved' ? 'text-green-400' : 'text-amber-400'}`}>
+                <span class={`font-medium ${duplicate().status === 'approved' ? 'text-green-400' : 'text-[var(--color-warning)]'}`}>
                   {duplicate().status}
                 </span>
               </p>
@@ -449,7 +347,7 @@ function AddVideoForm(props) {
               Import tracklist from TheSession…
             </button>
             <Show when={skippedTuneNames().length > 0}>
-              <p class="text-xs text-amber-400/80 bg-amber-400/5 border border-amber-400/20 rounded-lg px-3 py-2">
+              <p class="text-xs text-[var(--color-warning)]/80 bg-[var(--color-warning)]/5 border border-[var(--color-warning)]/20 rounded-lg px-3 py-2">
                 Skipped (not in database): {skippedTuneNames().join(', ')}
               </p>
             </Show>
@@ -587,7 +485,7 @@ function AddVideoForm(props) {
                     {/* Remove */}
                     <button
                       onClick={() => removeEntry(i())}
-                      class="text-[var(--color-muted)] hover:text-red-400 transition-colors text-sm flex-shrink-0 ml-1"
+                      class="text-[var(--color-muted)] hover:text-[var(--color-error)] transition-colors text-sm flex-shrink-0 ml-1"
                       title="Remove"
                     >✕</button>
                   </div>
@@ -610,7 +508,7 @@ function AddVideoForm(props) {
 
         {/* ── Error ────────────────────────────────────────────────────── */}
         <Show when={error()}>
-          <p class="text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-3">
+          <p class="text-sm text-[var(--color-error)] bg-[var(--color-error)]/10 border border-[var(--color-error)]/20 rounded-xl px-4 py-3">
             {error()}
           </p>
         </Show>

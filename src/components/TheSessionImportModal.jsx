@@ -78,7 +78,7 @@ function TheSessionImportModal(props) {
           </div>
 
           <Show when={error()}>
-            <p class="text-xs text-red-400">{error()}</p>
+            <p class="text-xs text-[var(--color-error)]">{error()}</p>
           </Show>
 
           {/* Recording */}

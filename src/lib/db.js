@@ -6,10 +6,14 @@
 
 import { DB_PATH } from '../constants';
 
-export let db = null;
+let _db = null;
+
+export function getDB() {
+  return _db;
+}
 
 export async function initDB() {
-  if (db) return db;
+  if (_db) return _db;
 
   const sqlite3InitModule = (await import('@sqlite.org/sqlite-wasm')).default;
   const sqlite3 = await sqlite3InitModule({ print: () => {}, printErr: () => {} });
@@ -20,9 +24,9 @@ export async function initDB() {
   const bytes = new Uint8Array(buffer);
 
   // Abrir DB desde los bytes descargados
-  db = new sqlite3.oo1.DB();
+  _db = new sqlite3.oo1.DB();
   sqlite3.capi.sqlite3_deserialize(
-    db.pointer,
+    _db.pointer,
     'main',
     sqlite3.wasm.allocFromTypedArray(bytes),
     bytes.length,
@@ -31,7 +35,7 @@ export async function initDB() {
     sqlite3.capi.SQLITE_DESERIALIZE_RESIZEABLE
   );
 
-  return db;
+  return _db;
 }
 
 /**
@@ -39,12 +43,12 @@ export async function initDB() {
  * Devuelve array de { tune_id, name, type, meter, composer, tunebooks, popularity_score }
  */
 export function searchTunes(query, limit = 10) {
-  if (!db || !query?.trim()) return [];
+  if (!_db || !query?.trim()) return [];
 
   // Escapar comillas para FTS5 (dobles y simples)
   const safe = query.trim().replace(/"/g, '""').replace(/'/g, "''");
 
-  return db.exec({
+  return _db.exec({
     sql: `
       SELECT t.tune_id, t.name, t.type, t.meter, t.composer, t.tunebooks, t.popularity_score
       FROM tunes_search ts
@@ -64,9 +68,9 @@ export function searchTunes(query, limit = 10) {
  * Devuelve array de { tune_id, name, type, meter, composer, tunebooks, popularity_score }
  */
 export function searchTunesByType(type, limit = 500) {
-  if (!db || !type) return [];
+  if (!_db || !type) return [];
 
-  return db.exec({
+  return _db.exec({
     sql: `
       SELECT tune_id, name, type, meter, composer, tunebooks, popularity_score
       FROM tunes WHERE type = ? ORDER BY tunebooks DESC LIMIT ?
@@ -81,9 +85,9 @@ export function searchTunesByType(type, limit = 500) {
  * Obtiene los settings (variaciones ABC) de un tune
  */
 export function getSettings(tuneId) {
-  if (!db) return [];
+  if (!_db) return [];
 
-  return db.exec({
+  return _db.exec({
     sql: `SELECT id, abc, key FROM settings WHERE tune_id = ? LIMIT 10`,
     bind: [tuneId],
     returnValue: 'resultRows',
@@ -95,8 +99,8 @@ export function getSettings(tuneId) {
  * Obtiene un tune por su ID
  */
 export function getTuneById(tuneId) {
-  if (!db) return null;
-  const results = db.exec({
+  if (!_db) return null;
+  const results = _db.exec({
     sql: `SELECT tune_id, name, type, meter, composer FROM tunes WHERE tune_id = ? LIMIT 1`,
     bind: [tuneId],
     returnValue: 'resultRows',
@@ -109,9 +113,9 @@ export function getTuneById(tuneId) {
  * Obtiene tunes similares precalculados
  */
 export function getSimilarTunes(tuneId, limit = 5) {
-  if (!db) return [];
+  if (!_db) return [];
 
-  return db.exec({
+  return _db.exec({
     sql: `
       SELECT t.tune_id, t.name, t.type, ts.score
       FROM tune_similarities ts
@@ -130,9 +134,9 @@ export function getSimilarTunes(tuneId, limit = 5) {
  * Obtiene n tunes aleatorios de la base de datos
  */
 export function getRandomTunes(limit = 2) {
-  if (!db) return [];
+  if (!_db) return [];
 
-  return db.exec({
+  return _db.exec({
     sql: `SELECT tune_id, name, type, meter FROM tunes ORDER BY RANDOM() LIMIT ?`,
     bind: [limit],
     returnValue: 'resultRows',
@@ -144,23 +148,27 @@ export function getRandomTunes(limit = 2) {
  * Obtiene el conteo de tunes por tipo (solo los que tienen vídeos)
  */
 export function getCountsByType(types, videoCounts) {
-  if (!db || !types?.length) return {};
+  if (!_db || !types?.length) return {};
+
+  const placeholders = types.map(() => '?').join(', ');
+  const rows = _db.exec({
+    sql: `SELECT tune_id, type FROM tunes WHERE type IN (${placeholders})`,
+    bind: types,
+    returnValue: 'resultRows',
+    rowMode: 'object',
+  });
 
   const tuneIdsWithVideos = videoCounts?.size ? new Set(videoCounts.keys()) : null;
   const result = {};
-
   for (const type of types) {
-    const tunes = db.exec({
-      sql: `SELECT tune_id FROM tunes WHERE type = ?`,
-      bind: [type],
-      returnValue: 'resultRows',
-      rowMode: 'object',
-    });
-    const total = tunes.length;
-    const withVideos = tuneIdsWithVideos
-      ? tunes.filter(t => tuneIdsWithVideos.has(t.tune_id)).length
-      : 0;
-    result[type] = { total, withVideos };
+    result[type] = { total: 0, withVideos: 0 };
+  }
+
+  for (const row of rows) {
+    result[row.type].total++;
+    if (tuneIdsWithVideos?.has(row.tune_id)) {
+      result[row.type].withVideos++;
+    }
   }
 
   return result;

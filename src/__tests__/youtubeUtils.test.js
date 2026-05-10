@@ -1,20 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
-function extractYoutubeId(input) {
-  if (!input) return null;
-  const s = input.trim();
-  if (/^[a-zA-Z0-9_-]{11}$/.test(s)) return s;
-  const patterns = [
-    /[?&]v=([a-zA-Z0-9_-]{11})/,
-    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
-    /\/embed\/([a-zA-Z0-9_-]{11})/,
-  ];
-  for (const re of patterns) {
-    const m = s.match(re);
-    if (m) return m[1];
-  }
-  return null;
-}
+import { extractYoutubeId } from '../lib/utils';
 
 describe('extractYoutubeId', () => {
   it('extracts video ID from watch URL', () => {
@@ -44,14 +29,7 @@ describe('extractYoutubeId', () => {
   });
 });
 
-function parseSec(val) {
-  const s = String(val ?? '').trim();
-  if (!s) return null;
-  if (/^\d+$/.test(s)) return parseInt(s, 10);
-  const m = s.match(/^(\d+):(\d{2})$/);
-  if (m) return parseInt(m[1]) * 60 + parseInt(m[2]);
-  return null;
-}
+import { parseSec } from '../lib/utils';
 
 describe('parseSec', () => {
   it('parses seconds only', () => {
@@ -74,10 +52,7 @@ describe('parseSec', () => {
   });
 });
 
-function formatSec(sec) {
-  if (sec == null) return '';
-  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-}
+import { formatSec } from '../lib/utils';
 
 describe('formatSec', () => {
   it('formats seconds to m:ss', () => {

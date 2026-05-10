@@ -7,7 +7,9 @@
   --color-bg: #0f0f0f;
   --color-surface: #1a1a1a;
   --color-border: #2a2a2a;
-  --color-primary: #22c55e;    /* green-500 — verde folk */
+  --color-primary: #22c55e;    /* green-500 */
+  --color-error: #f87171;      /* red-400 */
+  --color-warning: #fbbf24;    /* amber-400 */
   --color-text: #ffffff;
   --color-muted: #71717a;
 }
@@ -16,7 +18,9 @@
   --color-bg: #ffffff;
   --color-surface: #f3f4f6;
   --color-border: #e5e7eb;
-  --color-primary: #16a34a;    /* green-600 — darker for light bg */
+  --color-primary: #16a34a;    /* green-600 */
+  --color-error: #dc2626;      /* red-600 */
+  --color-warning: #d97706;    /* amber-600 */
   --color-text: #111827;
   --color-muted: #6b7280;
 }
@@ -25,4 +29,26 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* YouTube speed slider thumb */
+.speed-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+  border: 2px solid var(--color-bg);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.speed-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+  border: 2px solid var(--color-bg);
 }

@@ -3,7 +3,7 @@
  * Estado global de la app via SolidJS signals
  */
 
-import { createSignal, createEffect } from 'solid-js';
+import { createSignal, createEffect, onCleanup } from 'solid-js';
 import { initDB, searchTunes, searchTunesByType, getTuneById, getRandomTunes, getCountsByType } from '../lib/db';
 import { getEntriesForTune, getVideoCountsByTune, getTuneIdsByInstrument, onAuthChange } from '../lib/supabase';
 import { SEARCH_LIMIT, INSTRUMENT_KEYS } from '../constants';
@@ -107,21 +107,29 @@ export function useAppStore() {
     return ids;
   };
 
-  // Buscar tunes cuando cambia el query (texto)
-  createEffect(async () => {
+  // Buscar tunes cuando cambia el query (texto) — con debounce 300ms
+  createEffect(() => {
     const q = searchQuery();
     const instrument = filterInstrument();
     if (!dbReady() || q.trim().length < 2) {
       setSearchResults([]);
       return;
     }
-    setFilterType(null);
-    let results = searchTunes(q, SEARCH_LIMIT);
-    if (instrument) {
-      const ids = await loadInstrumentFilter(instrument);
-      results = results.filter(t => ids.has(t.tune_id));
-    }
-    setSearchResults(results);
+    const timer = setTimeout(async () => {
+      try {
+        setFilterType(null);
+        let results = searchTunes(q, SEARCH_LIMIT);
+        if (instrument) {
+          const ids = await loadInstrumentFilter(instrument);
+          results = results.filter(t => ids.has(t.tune_id));
+        }
+        setSearchResults(results);
+      } catch (err) {
+        console.error('Search effect error:', err);
+        setSearchResults([]);
+      }
+    }, 300);
+    onCleanup(() => clearTimeout(timer));
   });
 
   // Filtrar por tipo — solo tunes con vídeos
@@ -129,14 +137,19 @@ export function useAppStore() {
     const type = filterType();
     const instrument = filterInstrument();
     if (!type || !dbReady() || !videoDataReady()) return;
-    let all = searchTunesByType(type, 500);
-    const counts = videoCountsByTune();
-    all = all.filter(t => counts.has(t.tune_id));
-    if (instrument) {
-      const ids = await loadInstrumentFilter(instrument);
-      all = all.filter(t => ids.has(t.tune_id));
+    try {
+      let all = searchTunesByType(type, 500);
+      const counts = videoCountsByTune();
+      all = all.filter(t => counts.has(t.tune_id));
+      if (instrument) {
+        const ids = await loadInstrumentFilter(instrument);
+        all = all.filter(t => ids.has(t.tune_id));
+      }
+      setSearchResults(all);
+    } catch (err) {
+      console.error('Type filter effect error:', err);
+      setSearchResults([]);
     }
-    setSearchResults(all);
   });
 
   // Filtrar solo por instrumento (sin tipo)
@@ -144,10 +157,15 @@ export function useAppStore() {
     const type = filterType();
     const instrument = filterInstrument();
     if (type || !instrument || !dbReady() || !videoDataReady()) return;
-    const ids = await loadInstrumentFilter(instrument);
-    const counts = videoCountsByTune();
-    const all = Array.from(ids).map(id => getTuneById(id)).filter(Boolean);
-    setSearchResults(all.filter(t => counts.has(t.tune_id)));
+    try {
+      const ids = await loadInstrumentFilter(instrument);
+      const counts = videoCountsByTune();
+      const all = Array.from(ids).map(id => getTuneById(id)).filter(Boolean);
+      setSearchResults(all.filter(t => counts.has(t.tune_id)));
+    } catch (err) {
+      console.error('Instrument filter effect error:', err);
+      setSearchResults([]);
+    }
   });
 
   // Cargar entries cuando se selecciona un tune
@@ -161,22 +179,27 @@ export function useAppStore() {
     setVoteScores(new Map());
     setUserVotes(new Map());
 
-    const entries = await getEntriesForTune(tune.tune_id);
-    
-    const scores = new Map();
-    const votes = new Map();
-    for (const e of entries) {
-      scores.set(e.id, e.voteScore);
-      votes.set(e.id, e.userVote);
+    try {
+      const entries = await getEntriesForTune(tune.tune_id);
+      
+      const scores = new Map();
+      const votes = new Map();
+      for (const e of entries) {
+        scores.set(e.id, e.voteScore);
+        votes.set(e.id, e.userVote);
+      }
+      setVoteScores(scores);
+      setUserVotes(votes);
+      
+      setTuneEntries(entries);
+
+      if (entries.length > 0) setActiveEntry(entries[0]);
+    } catch (err) {
+      console.error('Tune entries effect error:', err);
+      setTuneEntries([]);
+    } finally {
+      setLoadingEntries(false);
     }
-    setVoteScores(scores);
-    setUserVotes(votes);
-    
-    setTuneEntries(entries);
-
-    if (entries.length > 0) setActiveEntry(entries[0]);
-
-    setLoadingEntries(false);
   });
 
   // Carga un tune por ID desde SQLite y lo establece como seleccionado.

@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
-function formatTime(sec) {
-  if (sec == null) return null;
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
+import { formatTime } from '../lib/utils';
 
 describe('formatTime', () => {
   it('formats seconds to m:ss', () => {

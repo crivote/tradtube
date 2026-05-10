@@ -157,27 +157,7 @@ function YoutubePlayer(props) {
         </div>
       </div>
 
-      <style>{`
-        .speed-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          background: var(--color-primary);
-          cursor: pointer;
-          border: 2px solid var(--color-bg);
-          box-shadow: 0 0 0 1px var(--color-primary);
-        }
-        .speed-slider::-moz-range-thumb {
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          background: var(--color-primary);
-          cursor: pointer;
-          border: 2px solid var(--color-bg);
-        }
-      `}</style>
+
     </div>
   );
 }

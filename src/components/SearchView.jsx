@@ -7,7 +7,7 @@ import { INSTRUMENTS, INSTRUMENT_KEYS } from '../constants';
 const TYPE_COLOR = {
   jig:        'text-[var(--color-primary)]',
   reel:       'text-blue-400',
-  hornpipe:   'text-amber-400',
+  hornpipe:   'text-[var(--color-warning)]',
   polka:      'text-rose-400',
   slide:      'text-violet-400',
   waltz:      'text-cyan-400',

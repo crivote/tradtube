@@ -9,20 +9,16 @@
 import { createSignal, createEffect, onMount, For, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import {
-  getPendingVideos, getPendingCount,
+  getPendingVideos,
   getLatestApprovedVideos, getVideosByTune,
   approveVideo, deleteVideo,
 } from '../lib/supabase';
 import { getTuneById, searchTunes } from '../lib/db';
+import { formatTime } from '../lib/utils';
 import { SOURCE_TYPES } from '../constants';
 import YoutubePlayer from './YoutubePlayer';
 import AddVideoForm from './AddVideoForm';
 import { useAppStore } from '../store/appStore';
-
-function formatTime(sec) {
-  if (sec == null) return '';
-  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-}
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('es-ES', {
@@ -32,8 +28,8 @@ function formatDate(iso) {
 
 const STATUS_STYLE = {
   approved: 'text-green-400 border-green-400/30 bg-green-400/10',
-  pending:  'text-amber-400 border-amber-400/30 bg-amber-400/10',
-  rejected: 'text-red-400 border-red-400/30 bg-red-400/10',
+  pending:  'text-[var(--color-warning)] border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10',
+  rejected: 'text-[var(--color-error)] border-[var(--color-error)]/30 bg-[var(--color-error)]/10',
 };
 
 function enrichVideos(data) {
@@ -101,7 +97,7 @@ function VideoRow(props) {
         <button
           onClick={() => onDelete(video)}
           disabled={isBusy()}
-          class="text-xs px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-30"
+          class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-error)]/30 text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors disabled:opacity-30"
         >{isBusy() ? '…' : '✕'}</button>
       </div>
     </div>
@@ -161,7 +157,7 @@ function PendingTab(props) {
     <>
       <Show when={loading()}>
         <div class="flex items-center gap-3 py-16 justify-center">
-          <div class="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+          <div class="w-5 h-5 border-2 border-[var(--color-warning)] border-t-transparent rounded-full animate-spin" />
           <span class="text-sm text-[var(--color-muted)]">Loading…</span>
         </div>
       </Show>
@@ -181,7 +177,7 @@ function PendingTab(props) {
               const isBusy = () => actionId() === video.id;
               return (
                 <div class={`border rounded-xl overflow-hidden transition-colors
-                  ${isExpanded() ? 'border-amber-500/40' : 'border-[var(--color-border)]'}`}>
+                  ${isExpanded() ? 'border-[var(--color-warning)]/40' : 'border-[var(--color-border)]'}`}>
 
                   <div class="flex items-start gap-4 p-4 bg-[var(--color-surface)]">
                     <img
@@ -208,7 +204,7 @@ function PendingTab(props) {
                       onClick={() => togglePreview(video)}
                       class={`text-xs px-3 py-1.5 rounded-lg border transition-colors
                         ${isExpanded()
-                          ? 'border-amber-500/50 bg-amber-500/10 text-amber-400'
+                          ? 'border-[var(--color-warning)]/50 bg-[var(--color-warning)]/10 text-[var(--color-warning)]'
                           : 'border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)]'}`}
                     >
                       {isExpanded() ? '▲ Hide' : '▶ Preview'}
@@ -222,7 +218,7 @@ function PendingTab(props) {
                     <button
                       onClick={() => handleReject(video)}
                       disabled={isBusy()}
-                      class="text-xs px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-30"
+                      class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-error)]/30 text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors disabled:opacity-30"
                     >{isBusy() ? '…' : '✕ Reject'}</button>
                     <button
                       onClick={() => handleApprove(video)}
@@ -243,7 +239,7 @@ function PendingTab(props) {
                                   onClick={() => setPreviewEntry({ ...entry, youtube_id: video.youtube_id })}
                                   class={`text-xs px-3 py-1 rounded-full border transition-colors
                                     ${isActive()
-                                      ? 'border-amber-500/60 bg-amber-500/10 text-amber-400'
+                                      ? 'border-[var(--color-warning)]/60 bg-[var(--color-warning)]/10 text-[var(--color-warning)]'
                                       : 'border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)]'}`}
                                 >
                                   {entry.tune?.name ?? `Tune ${entry.position + 1}`}
@@ -447,11 +443,6 @@ function AdminView() {
   const [editingVideo, setEditingVideo] = createSignal(null);
   const [pendingCount, setPendingCount] = createSignal(null);
 
-  onMount(async () => {
-    const count = await getPendingCount();
-    setPendingCount(count);
-  });
-
   let refreshLatest = () => {};
   let refreshByTune = () => {};
 
@@ -499,7 +490,7 @@ function AdminView() {
               >
                 {label}
                 <Show when={key === 'pending' && pendingCount() !== null && pendingCount() > 0}>
-                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 leading-none">
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30 leading-none">
                     {pendingCount()}
                   </span>
                 </Show>

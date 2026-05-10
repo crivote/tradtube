@@ -7,17 +7,11 @@ import { Show, For, createEffect, createSignal, onCleanup } from 'solid-js';
 import { useParams, useNavigate } from '@solidjs/router';
 import { useAppStore } from '../store/appStore';
 import { castVote, loginWithGoogle } from '../lib/supabase';
+import { formatTime } from '../lib/utils';
 import { SOURCE_TYPES, INSTRUMENTS } from '../constants';
 import YoutubePlayer from './YoutubePlayer';
 import SheetMusic from './SheetMusic';
 import SameTypeTunes from './SameTypeTunes';
-
-function formatTime(sec) {
-  if (sec == null) return null;
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
 
 function TuneView() {
   const params = useParams();
@@ -294,7 +288,7 @@ function TuneView() {
                   <div class="flex items-center gap-1 lg:gap-1.5 flex-shrink-0">
                     <span class={`text-sm lg:text-base font-bold w-8 lg:w-10 text-right
                       ${entryVoteScore() > 0 ? 'text-green-400'
-                        : entryVoteScore() < 0 ? 'text-red-400'
+                        : entryVoteScore() < 0 ? 'text-[var(--color-error)]'
                         : 'text-[var(--color-muted)]'}`}
                     >
                       {entryVoteScore() > 0 ? '+' : ''}{entryVoteScore()}
@@ -306,7 +300,7 @@ function TuneView() {
                     >▲</button>
                     <button
                       onClick={(e) => handleVote(e, entry, -1)}
-                      class={`p-1 transition-colors ${entryUserVote() === -1 ? 'text-red-400' : 'text-[var(--color-muted)] hover:text-red-400'}`}
+                      class={`p-1 transition-colors ${entryUserVote() === -1 ? 'text-[var(--color-error)]' : 'text-[var(--color-muted)] hover:text-[var(--color-error)]'}`}
                       title="Downvote"
                     >▼</button>
                     <button

@@ -23,3 +23,26 @@
   });
 </script>
 ```
+
+14. Add favourites system for videos for logged users.
+
+15. ~~[done] Project revision and refactor plan (2026-05-10)~~
+
+## Refactors — High Priority (2026-05-10)
+- [x] Extract duplicate utility functions into `src/lib/utils.js` (formatTime, extractYoutubeId, parseSec, formatSec, cleanTitleForDisplay, findMatchingTunes, STOP_WORDS)
+- [x] Fix tests to import from source instead of copy-pasting utility functions
+- [x] Remove dead code: `getAllVideos()` in `src/lib/supabase.js:121-136` (references undefined variables, never called)
+- [x] Fix `findMatchingTunes` in `titleUtils.test.js` — references undefined `db` and `searchTunes`
+
+## Refactors — Medium Priority
+- [x] Optimize `getCountsByType()` in `src/lib/db.js` — replace N queries with single query
+- [x] Increase SEARCH_LIMIT from 10 to 25 (pagination can be added later if needed)
+- [x] Encapsulate mutable `export let db` in `src/lib/db.js` with a `getDB()` getter function
+- [x] Debounce text search effect in `appStore.js` (300ms) and `youtubeId` effect in `AddVideoForm.jsx` (400ms)
+- [x] Fix duplicate `getPendingCount()` fetch in `AdminView.jsx`
+
+## Refactors — Low Priority
+- [x] Unify color system: added `--color-error` (red) and `--color-warning` (amber) CSS variables, replaced all hardcoded red/amber
+- [x] Extract inline `<style>` from `YoutubePlayer.jsx` into `src/index.css`
+- [x] Add global `<ErrorBoundary>` in `App.jsx` + try/catch blocks in all store effects
+- [x] Fix `<title>` in `index.html` + add meta description

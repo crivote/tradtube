@@ -33,4 +33,4 @@ export const INSTRUMENTS = {
 export const INSTRUMENT_KEYS = Object.keys(INSTRUMENTS);
 
 /* Número máximo de resultados de búsqueda de tunes */
-export const SEARCH_LIMIT = 10;
+export const SEARCH_LIMIT = 25;

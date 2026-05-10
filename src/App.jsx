@@ -1,4 +1,4 @@
-import { onMount, Show } from 'solid-js';
+import { onMount, Show, ErrorBoundary } from 'solid-js';
 import { useNavigate, useLocation } from '@solidjs/router';
 import { useAppStore } from './store/appStore';
 import { loginWithGoogle, logout } from './lib/supabase';
@@ -85,8 +85,8 @@ function App(props) {
                 onClick={() => { setShowAddForm(false); navigate(isAdmin() ? '/' : '/admin'); }}
                 class={`text-xs px-3 py-1.5 rounded-lg border transition-colors
                   ${isAdmin()
-                    ? 'border-amber-500/60 bg-amber-500/10 text-amber-400'
-                    : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-amber-500/30'
+                    ? 'border-[var(--color-warning)]/60 bg-[var(--color-warning)]/10 text-[var(--color-warning)]'
+                    : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-warning)]/30'
                   }`}
               >
                 {isAdmin() ? '← Back' : 'Admin'}
@@ -108,25 +108,41 @@ function App(props) {
 
       {/* Main */}
       <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-8">
-        <Show
-          when={dbReady()}
-          fallback={
-            <div class="flex flex-col items-center justify-center py-32 gap-4">
-              <div class="w-8 h-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
-              <p class="text-sm text-[var(--color-muted)]">Loading tune library…</p>
-            </div>
-          }
-        >
+        <ErrorBoundary fallback={(err) => (
+          <div class="flex flex-col items-center justify-center py-16 gap-4">
+            <div class="text-4xl">⚠</div>
+            <h2 class="text-lg font-semibold text-[var(--color-text)]">Something went wrong</h2>
+            <pre class="text-xs text-[var(--color-error)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4 max-w-lg overflow-auto">
+              {err.message}
+            </pre>
+            <button
+              onClick={() => window.location.reload()}
+              class="text-sm px-4 py-2 rounded-lg bg-[var(--color-primary)] text-black font-semibold hover:opacity-90 transition-opacity"
+            >
+              Reload page
+            </button>
+          </div>
+        )}>
           <Show
-            when={showAddForm()}
-            fallback={props.children}
+            when={dbReady()}
+            fallback={
+              <div class="flex flex-col items-center justify-center py-32 gap-4">
+                <div class="w-8 h-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+                <p class="text-sm text-[var(--color-muted)]">Loading tune library…</p>
+              </div>
+            }
           >
-            <AddVideoForm
-              initialTune={addFormInitialTune()}
-              onClose={() => { setShowAddForm(false); setAddFormInitialTune(null); }}
-            />
+            <Show
+              when={showAddForm()}
+              fallback={props.children}
+            >
+              <AddVideoForm
+                initialTune={addFormInitialTune()}
+                onClose={() => { setShowAddForm(false); setAddFormInitialTune(null); }}
+              />
+            </Show>
           </Show>
-        </Show>
+        </ErrorBoundary>
       </main>
 
       <footer class="border-t border-[var(--color-border)] py-4 text-center text-xs text-[var(--color-muted)]">
