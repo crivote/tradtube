@@ -27,7 +27,7 @@
 14. Add favourites system for videos for logged users.
 
 15. ~~[done] Project revision and refactor plan (2026-05-10)~~
-16. [~] UX improvements — see [UX_audit.md](UX_audit.md) for full report (9 critical/high done, 53 remaining)
+16. [~] UX improvements — see [UX_audit.md](UX_audit.md) for full report (22 done, 40 remaining)
     - [x] X-01: Toast/notification system (global signals, auto-dismiss, undo actions)
     - [x] T-07: OAuth redirect preserves current URL (not just origin)
     - [x] AP-03: Login loading state + error handling
@@ -37,6 +37,22 @@
     - [x] J-01: Suggested search chips on hero (6 well-known tune names)
     - [x] J-10: Pending review count badge on Admin button in header
     - [x] T-12: Wider drag handle touch target + touch-action:none
+    - [x] A-02: Removed Spanish browser confirm() (undo toast handles recovery)
+    - [x] T-01: Report button shows toast confirmation
+    - [x] Y-06: Removed 0.25x from SPEED_STOPS (too choppy); min speed now 0.5x
+    - [x] Y-02: Poll interval reduced 500→150ms for precise timestamp pausing
+    - [x] Y-04: Speed preset buttons touch-friendly (11px, padding, min-w-32px)
+    - [x] T-04: Auto-advance scrolls to active entry (smooth, nearest)
+    - [x] T-09: Sheet music label clickable (onClick moved to <label>)
+    - [x] T-11: Sheet music stacks vertically on mobile (<lg breakpoint)
+    - [x] T-14: Vote buttons have aria-label (replaced title)
+    - [x] S-11: Search input has aria-label + role="searchbox"
+    - [x] S-12: Type filter chips have aria-pressed
+    - [x] F-13: Instrument dropdown has aria-expanded + aria-haspopup
+    - [x] F-14: YouTube preview iframe has title attribute
+    - [x] AP-05: User avatar shown on mobile header (from Google profile)
+    - [x] F-05: Submit button shows disabled reason (no URL, no entries, duplicate)
+    - [x] F-09: Entry removal has undo toast (4s window)
 
 ## Refactors — High Priority (2026-05-10)
 - [x] Extract duplicate utility functions into `src/lib/utils.js` (formatTime, extractYoutubeId, parseSec, formatSec, cleanTitleForDisplay, findMatchingTunes, STOP_WORDS)

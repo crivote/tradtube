@@ -22,6 +22,7 @@ function TuneView() {
     activeEntry, setActiveEntry,
     currentUser, loadTuneById, updateEntryVote,
     getEntryVoteScore, getEntryUserVote,
+    showToast,
   } = useAppStore();
 
   // Sync selectedTune from URL param — handles both in-app nav and direct links
@@ -63,14 +64,6 @@ function TuneView() {
     cleanupDrag = onUp;
   };
 
-  const handleVideoEnd = () => {
-    const entries = tuneEntries();
-    const current = activeEntry();
-    if (!current) return;
-    const idx = entries.findIndex(e => e.id === current.id);
-    if (idx !== -1 && idx < entries.length - 1) setActiveEntry(entries[idx + 1]);
-  };
-
   const handleVote = async (e, entry, vote, isReport = false) => {
     e.stopPropagation();
     if (!currentUser()) { loginWithGoogle(); return; }
@@ -84,9 +77,23 @@ function TuneView() {
     
     try {
       await castVote(entry.id, vote, isReport);
+      if (isReport) showToast('Report submitted — thank you', 'success');
     } catch (err) {
       updateEntryVote(entry.id, entry.voteScore, currentVote);
-      console.error('[TradTube] vote error', err);
+      showToast('Vote failed — try again', 'error');
+    }
+  };
+
+  const handleVideoEnd = () => {
+    const entries = tuneEntries();
+    const current = activeEntry();
+    if (!current) return;
+    const idx = entries.findIndex(e => e.id === current.id);
+    if (idx !== -1 && idx < entries.length - 1) {
+      setActiveEntry(entries[idx + 1]);
+      setTimeout(() => {
+        document.querySelector(`[data-entry-id="${entries[idx + 1].id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
     }
   };
 
@@ -131,14 +138,14 @@ function TuneView() {
 
         {/* Sheet music toggle */}
         <Show when={activeEntry()}>
-          <label class="flex items-center gap-2 cursor-pointer select-none flex-shrink-0 mt-1">
+          <label class="flex items-center gap-2 cursor-pointer select-none flex-shrink-0 mt-1" onClick={() => setShowSheet(v => !v)}>
             <span class="text-xs text-[var(--color-muted)]">Sheet</span>
             <button
-              onClick={() => setShowSheet(v => !v)}
+              type="button"
               class={`relative w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none
                 ${showSheet() ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-border)]'}`}
               role="switch"
-              aria-checked={showSheet()}
+              aria-checked={showSheet() ? 'true' : 'false'}
             >
               <span class={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200
                 ${showSheet() ? 'translate-x-4' : 'translate-x-0'}`}
@@ -150,13 +157,14 @@ function TuneView() {
 
       {/* Reproductor activo */}
       <Show when={activeEntry()}>
-        <div ref={el => { containerRef = el; }} class="flex items-start">
+        <div ref={el => { containerRef = el; }} class="flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-0">
 
           {/* Video panel */}
           <div style={showSheet()
-            ? { flex: `0 0 ${splitPct()}%`, 'min-width': '160px' }
+            ? { flex: `0 0 ${splitPct()}%`, 'min-width': window.innerWidth >= 1024 ? '160px' : '100%' }
             : { width: '100%' }
-          }>
+          }
+          class="lg:flex-none">
             <YoutubePlayer
               youtubeId={activeEntry()?.tune_videos?.youtube_id}
               startSec={activeEntry()?.start_sec}
@@ -171,7 +179,7 @@ function TuneView() {
             <div
               onMouseDown={startDrag}
               onTouchStart={startDrag}
-              class="flex-none self-stretch cursor-col-resize flex items-center justify-center px-3 select-none group touch-none"
+              class="hidden lg:flex flex-none self-stretch cursor-col-resize items-center justify-center px-3 select-none group touch-none"
               style={{"touch-action": "none"}}
             >
               <div class="flex flex-col gap-[3px] opacity-40 group-hover:opacity-100 transition-opacity">
@@ -184,7 +192,7 @@ function TuneView() {
             </div>
 
             {/* Sheet panel */}
-            <div class="flex-1 min-w-0">
+            <div class="w-full lg:flex-1 lg:min-w-0">
               <SheetMusic
                 tune={selectedTune()}
                 settingId={activeEntry()?.setting_id ?? null}
@@ -230,6 +238,7 @@ function TuneView() {
               return (
                 <div
                   onClick={() => setActiveEntry(entry)}
+                  data-entry-id={entry.id}
                   class={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
                     ${isActive()
                       ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10'
@@ -296,18 +305,18 @@ function TuneView() {
                     </span>
                     <button
                       onClick={(e) => handleVote(e, entry, 1)}
+                      aria-label="Upvote"
                       class={`p-1 transition-colors ${entryUserVote() === 1 ? 'text-green-400' : 'text-[var(--color-muted)] hover:text-green-400'}`}
-                      title="Upvote"
                     >▲</button>
                     <button
                       onClick={(e) => handleVote(e, entry, -1)}
+                      aria-label="Downvote"
                       class={`p-1 transition-colors ${entryUserVote() === -1 ? 'text-[var(--color-error)]' : 'text-[var(--color-muted)] hover:text-[var(--color-error)]'}`}
-                      title="Downvote"
                     >▼</button>
                     <button
                       onClick={(e) => handleVote(e, entry, -1, true)}
+                      aria-label="Report"
                       class="p-1 text-[var(--color-muted)] hover:text-yellow-400 transition-colors text-xs"
-                      title="Report"
                     >⚑</button>
                   </div>
                 </div>

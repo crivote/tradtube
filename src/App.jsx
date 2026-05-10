@@ -114,6 +114,13 @@ function App(props) {
               <span class="text-xs text-[var(--color-muted)] hidden sm:inline truncate max-w-[160px]">
                 {currentUser().email}
               </span>
+              <Show when={currentUser()?.user_metadata?.avatar_url}>
+                <img
+                  src={currentUser().user_metadata.avatar_url}
+                  alt=""
+                  class="w-6 h-6 rounded-full border border-[var(--color-border)] sm:hidden"
+                />
+              </Show>
               <button
                 onClick={logout}
                 class="text-xs text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"

@@ -1,7 +1,7 @@
 /**
  * YoutubePlayer.jsx
  * Reproductor YouTube con soporte de timestamps exactos via IFrame Player API.
- * Usa polling (500ms) para pausar al llegar a end_sec — necesario porque los
+ * Usa polling (150ms) para pausar al llegar a end_sec — necesario porque los
  * parámetros de URL no soportan end timestamp de forma fiable en sets.
  *
  * Props: { youtubeId, startSec, endSec, autoplay, onEnd }
@@ -9,7 +9,7 @@
 
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 
-const SPEED_STOPS = [0.25, 0.5, 0.75, 1];
+const SPEED_STOPS = [0.5, 0.75, 1];
 
 // ── IFrame API loader (singleton global) ────────────────────────────────────
 let ytApiReady = false;
@@ -80,7 +80,7 @@ function YoutubePlayer(props) {
                   clearPoll();
                   props.onEnd?.();
                 }
-              }, 500);
+              }, 150);
             }
           } else if (event.data === window.YT.PlayerState.ENDED) {
             clearPoll();
@@ -129,12 +129,14 @@ function YoutubePlayer(props) {
         <div class="relative flex-1">
           <input
             type="range"
-            min="0.25"
+            min="0.5"
             max="1"
             step="0.25"
             value={speed()}
             onInput={e => setSpeed(parseFloat(e.target.value))}
             class="speed-slider"
+            aria-label={`Playback speed: ${speed()}x`}
+            aria-valuetext={`${speed()}x`}
             style="
               -webkit-appearance: none; appearance: none;
               width: 100%; height: 4px;
@@ -143,12 +145,14 @@ function YoutubePlayer(props) {
               outline: none;
             "
           />
-          <div class="flex justify-between text-[9px] text-[var(--color-muted)] mt-0.5 px-0.5">
+          <div class="flex justify-between text-[11px] text-[var(--color-muted)] mt-0.5 gap-1">
             {SPEED_STOPS.map(v => (
               <button
                 onClick={() => setSpeed(v)}
-                class={`hover:text-[var(--color-text)] transition-colors cursor-pointer
-                  ${speed() === v ? 'text-[var(--color-primary)]' : ''}`}
+                aria-label={`Set speed to ${v}x`}
+                aria-pressed={speed() === v}
+                class={`px-1.5 py-0.5 rounded min-w-[32px] hover:text-[var(--color-text)] transition-colors cursor-pointer
+                  ${speed() === v ? 'text-[var(--color-primary)] font-semibold' : ''}`}
               >
                 {v}x
               </button>

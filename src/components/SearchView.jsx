@@ -89,6 +89,8 @@ function SearchView() {
           placeholder={placeholder()}
           value={searchQuery()}
           onInput={(e) => setSearchQuery(e.target.value)}
+          aria-label="Search tunes"
+          role="searchbox"
           class="w-full bg-[var(--color-surface)] border border-[var(--color-primary)]/50 rounded-xl pl-10 pr-10 py-3.5 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_20px_rgba(34,197,94,0.12)] transition-all text-sm"
           autofocus
         />
@@ -130,6 +132,7 @@ function SearchView() {
                   setSearchQuery('');
                   setFilterType(active() ? null : type);
                 }}
+                aria-pressed={active()}
                 class={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                   active()
                     ? `border-[var(--color-primary)] ${TYPE_COLOR[type] ?? 'text-[var(--color-text)]'} bg-[var(--color-primary)]/10`

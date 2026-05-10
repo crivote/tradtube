@@ -13,6 +13,7 @@ import { addVideoWithEntries, updateVideoWithEntries, checkYoutubeIdExists } fro
 import { resolveTrackTunes } from '../lib/thesession';
 import { extractYoutubeId, parseSec, formatSec, validateTimestamp, cleanTitleForDisplay, findMatchingTunes } from '../lib/utils';
 import { SOURCE_TYPES, INSTRUMENTS } from '../constants';
+import { useAppStore } from '../store/appStore';
 import TheSessionImportModal from './TheSessionImportModal';
 
 async function fetchYoutubeData(videoId) {
@@ -32,6 +33,7 @@ async function fetchYoutubeData(videoId) {
 }
 
 function AddVideoForm(props) {
+  const { showToast } = useAppStore();
   // Modo edición: props.editVideo contiene el vídeo existente
   const isEdit = () => !!props.editVideo;
 
@@ -135,7 +137,16 @@ function AddVideoForm(props) {
   };
 
   const removeEntry = (i) => {
+    const removed = entries[i];
     setEntries(produce(e => e.splice(i, 1)));
+    if (removed) {
+      showToast(`"${removed.tune?.name || 'Tune'}" removed`, 'info', 4000, {
+        label: 'Undo',
+        onClick: () => {
+          setEntries(produce(e => { e.splice(i, 0, removed); }));
+        },
+      });
+    }
   };
 
   // Actualiza un campo concreto de una entry sin recrear el objeto → el input no pierde el foco
@@ -283,6 +294,7 @@ function AddVideoForm(props) {
               src={`https://www.youtube.com/embed/${youtubeId()}`}
               class="w-full h-full"
               allowfullscreen
+              title="YouTube video preview"
             />
           </div>
         </Show>
@@ -468,6 +480,8 @@ function AddVideoForm(props) {
                       <button
                         type="button"
                         onClick={() => setOpenInstrumentDropdown(openInstrumentDropdown() === i() ? null : i())}
+                        aria-expanded={openInstrumentDropdown() === i()}
+                        aria-haspopup="listbox"
                         class="flex items-center gap-1 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors cursor-pointer min-w-[80px]"
                         title="Instruments"
                       >
@@ -547,6 +561,13 @@ function AddVideoForm(props) {
         >
           {submitting() ? 'Saving…' : isEdit() ? 'Update video' : 'Save video'}
         </button>
+        <Show when={!submitting()}>
+          <p class="text-center text-[10px] text-[var(--color-muted)] -mt-1">
+            {duplicate() ? 'This video is already registered' :
+             entries.length === 0 ? 'Add at least one tune to submit' :
+             !youtubeId() ? 'Enter a valid YouTube URL' : ''}
+          </p>
+        </Show>
 
       </Show>
       <Show when={showImportModal()}>
