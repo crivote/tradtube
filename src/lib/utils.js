@@ -30,6 +30,19 @@ export function formatSec(sec) {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 }
 
+export function validateTimestamp(val) {
+  const str = String(val ?? '').trim();
+  if (!str) return { value: null, error: null };
+  if (/^\d+$/.test(str)) return { value: parseInt(str, 10), error: null };
+  if (/^\d+:\d{2}$/.test(str)) {
+    const [m, s] = str.split(':');
+    const sec = parseInt(m) * 60 + parseInt(s);
+    if (parseInt(s) >= 60) return { value: null, error: 'Seconds must be 00–59' };
+    return { value: sec, error: null };
+  }
+  return { value: null, error: 'Use m:ss or seconds' };
+}
+
 export function formatTime(sec) {
   if (sec == null) return null;
   const m = Math.floor(sec / 60);

@@ -11,7 +11,7 @@ import { createStore, produce } from 'solid-js/store';
 import { searchTunes, getTuneById } from '../lib/db';
 import { addVideoWithEntries, updateVideoWithEntries, checkYoutubeIdExists } from '../lib/supabase';
 import { resolveTrackTunes } from '../lib/thesession';
-import { extractYoutubeId, parseSec, formatSec, cleanTitleForDisplay, findMatchingTunes } from '../lib/utils';
+import { extractYoutubeId, parseSec, formatSec, validateTimestamp, cleanTitleForDisplay, findMatchingTunes } from '../lib/utils';
 import { SOURCE_TYPES, INSTRUMENTS } from '../constants';
 import TheSessionImportModal from './TheSessionImportModal';
 
@@ -415,7 +415,7 @@ function AddVideoForm(props) {
                     </div>
 
                     {/* Timestamps */}
-                    <div class="flex items-center gap-2 flex-shrink-0">
+                    <div class="flex items-start gap-2 flex-shrink-0">
                       <div class="flex flex-col items-center gap-0.5">
                         <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">start</span>
                         <input
@@ -423,7 +423,10 @@ function AddVideoForm(props) {
                           placeholder="0:00"
                           value={entry.startSec}
                           onInput={e => updateEntry(i(), 'startSec', e.target.value)}
-                          class="w-14 text-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                          class={`w-14 text-center bg-[var(--color-bg)] border rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none transition-colors
+                            ${entry.startSec && validateTimestamp(entry.startSec).error
+                              ? 'border-[var(--color-error)] focus:border-[var(--color-error)]'
+                              : 'border-[var(--color-border)] focus:border-[var(--color-primary)]'}`}
                         />
                       </div>
                       <span class="text-[var(--color-border)] text-xs mt-3">–</span>
@@ -433,10 +436,31 @@ function AddVideoForm(props) {
                           type="text"
                           placeholder="—"
                           value={entry.endSec}
-                          onBlur={e => updateEntry(i(), 'endSec', e.target.value)}
-                          class="w-14 text-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                          onInput={e => updateEntry(i(), 'endSec', e.target.value)}
+                          class={`w-14 text-center bg-[var(--color-bg)] border rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none transition-colors
+                            ${entry.endSec && validateTimestamp(entry.endSec).error
+                              ? 'border-[var(--color-error)] focus:border-[var(--color-error)]'
+                              : 'border-[var(--color-border)] focus:border-[var(--color-primary)]'}`}
                         />
                       </div>
+                      <Show when={(() => {
+                        const se = validateTimestamp(entry.startSec);
+                        const ee = validateTimestamp(entry.endSec);
+                        if (se.error) return 'start';
+                        if (ee.error) return 'start';
+                        if (se.value != null && ee.value != null && ee.value <= se.value) return 'start';
+                        return null;
+                      })()}>
+                        <span class="text-[9px] text-[var(--color-error)] mt-5 whitespace-nowrap">
+                          {validateTimestamp(entry.startSec).error
+                           || validateTimestamp(entry.endSec).error
+                           || (() => {
+                               const s = validateTimestamp(entry.startSec).value;
+                               const e = validateTimestamp(entry.endSec).value;
+                               return s != null && e != null && e <= s ? 'End must be after start' : '';
+                             })()}
+                        </span>
+                      </Show>
                     </div>
 
                     {/* Instruments */}

@@ -106,7 +106,7 @@ function VideoRow(props) {
 
 // ── Tab: Pending ─────────────────────────────────────────────────────────────
 function PendingTab(props) {
-  const { loadVideoData } = useAppStore();
+  const { loadVideoData, showToast } = useAppStore();
   const [videos, setVideos] = createSignal([]);
   const [loading, setLoading] = createSignal(true);
   const [expandedId, setExpandedId] = createSignal(null);
@@ -138,11 +138,22 @@ function PendingTab(props) {
       props.onCountLoaded(next.length);
       if (expandedId() === video.id) { setExpandedId(null); setPreviewEntry(null); }
       loadVideoData();
+      showToast(`"${video.youtube_id}" approved`, 'success', 4000, {
+        label: 'Undo',
+        onClick: async () => {
+          await deleteVideo(video.id);
+          setVideos(prev => [video, ...prev]);
+          props.onCountLoaded(videos().length + 1);
+          loadVideoData();
+          showToast('Approval undone', 'info');
+        },
+      });
+    } catch {
+      showToast('Failed to approve', 'error');
     } finally { setActionId(null); }
   };
 
   const handleReject = async (video) => {
-    if (!confirm(`¿Eliminar "${video.youtube_id}"? No se puede deshacer.`)) return;
     setActionId(video.id);
     try {
       await deleteVideo(video.id);
@@ -150,6 +161,17 @@ function PendingTab(props) {
       setVideos(next);
       props.onCountLoaded(next.length);
       if (expandedId() === video.id) { setExpandedId(null); setPreviewEntry(null); }
+      showToast(`"${video.youtube_id}" deleted`, 'warning', 4000, {
+        label: 'Undo',
+        onClick: async () => {
+          await approveVideo(video.id);
+          setVideos(prev => [video, ...prev]);
+          props.onCountLoaded(videos().length + 1);
+          showToast('Deletion undone — video restored as approved', 'info');
+        },
+      });
+    } catch {
+      showToast('Failed to delete', 'error');
     } finally { setActionId(null); }
   };
 

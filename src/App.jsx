@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from '@solidjs/router';
 import { useAppStore } from './store/appStore';
 import { loginWithGoogle, logout } from './lib/supabase';
 import AddVideoForm from './components/AddVideoForm';
+import Toast from './components/Toast';
 
 function App(props) {
   const {
@@ -10,6 +11,7 @@ function App(props) {
     currentUser,
     showAddForm, setShowAddForm,
     addFormInitialTune, setAddFormInitialTune,
+    loggingIn, setLoggingIn, showToast, pendingReviewCount,
     theme, toggleTheme,
   } = useAppStore();
 
@@ -63,10 +65,19 @@ function App(props) {
             when={currentUser()}
             fallback={
               <button
-                onClick={loginWithGoogle}
-                class="text-xs px-4 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-primary)]/50 transition-colors"
+                onClick={async () => {
+                  setLoggingIn(true);
+                  try {
+                    await loginWithGoogle();
+                  } catch (err) {
+                    setLoggingIn(false);
+                    showToast('Login failed — please try again', 'error');
+                  }
+                }}
+                disabled={loggingIn()}
+                class="text-xs px-4 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-primary)]/50 transition-colors disabled:opacity-50"
               >
-                Login
+                {loggingIn() ? 'Redirecting…' : 'Login'}
               </button>
             }
           >
@@ -89,7 +100,16 @@ function App(props) {
                     : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-warning)]/30'
                   }`}
               >
-                {isAdmin() ? '← Back' : 'Admin'}
+                {isAdmin() ? '← Back' : (
+                  <>
+                    Admin
+                    {pendingReviewCount() > 0 && (
+                      <span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30 leading-none">
+                        {pendingReviewCount()}
+                      </span>
+                    )}
+                  </>
+                )}
               </button>
               <span class="text-xs text-[var(--color-muted)] hidden sm:inline truncate max-w-[160px]">
                 {currentUser().email}
@@ -151,6 +171,7 @@ function App(props) {
           TheSession.org
         </a>
       </footer>
+      <Toast />
     </div>
   );
 }

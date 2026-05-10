@@ -5,7 +5,7 @@
 
 import { createSignal, createEffect, onCleanup } from 'solid-js';
 import { initDB, searchTunes, searchTunesByType, getTuneById, getRandomTunes, getCountsByType } from '../lib/db';
-import { getEntriesForTune, getVideoCountsByTune, getTuneIdsByInstrument, onAuthChange } from '../lib/supabase';
+import { getEntriesForTune, getVideoCountsByTune, getTuneIdsByInstrument, getPendingCount, onAuthChange } from '../lib/supabase';
 import { SEARCH_LIMIT, INSTRUMENT_KEYS } from '../constants';
 
 // ── DB ──────────────────────────────────────────────────────────────────────
@@ -18,8 +18,34 @@ const TUNE_TYPES = ['jig', 'reel', 'hornpipe', 'polka', 'slide', 'waltz', 'march
 const [placeholderExamples, setPlaceholderExamples] = createSignal([]);
 const [typeCounts, setTypeCounts] = createSignal({});
 
+// ── Toast ───────────────────────────────────────────────────────────────────
+const [toasts, setToasts] = createSignal([]);
+const dismissedIds = new Set();
+let toastId = 0;
+
+const showToast = (message, type = 'info', duration = 3000, action = null) => {
+  const id = ++toastId;
+  dismissedIds.delete(id);
+  setToasts(prev => [...prev, { id, message, type, action }]);
+  if (duration > 0) {
+    setTimeout(() => {
+      if (!dismissedIds.has(id)) {
+        dismissToast(id);
+        if (action?.onTimeout) action.onTimeout();
+      }
+    }, duration);
+  }
+};
+
+const dismissToast = (id) => {
+  dismissedIds.add(id);
+  setToasts(prev => prev.filter(t => t.id !== id));
+};
+
 // ── Auth ────────────────────────────────────────────────────────────────────
 const [currentUser, setCurrentUser] = createSignal(null);
+const [loggingIn, setLoggingIn] = createSignal(false);
+const [pendingReviewCount, setPendingReviewCount] = createSignal(null);
 
 // ── Búsqueda ────────────────────────────────────────────────────────────────
 const [searchQuery, setSearchQuery] = createSignal('');
@@ -94,7 +120,14 @@ export function useAppStore() {
 
   // Escuchar cambios de auth
   const initAuth = () => {
-    const { data: { subscription } } = onAuthChange(setCurrentUser);
+    const { data: { subscription } } = onAuthChange(async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        getPendingCount().then(setPendingReviewCount).catch(() => {});
+      } else {
+        setPendingReviewCount(null);
+      }
+    });
     return () => subscription.unsubscribe();
   };
 
@@ -226,7 +259,7 @@ export function useAppStore() {
 
   return {
     // Estado
-    dbReady, currentUser,
+    dbReady, currentUser, loggingIn, setLoggingIn, pendingReviewCount,
     videoCountsByTune, videoThumbnailsByTune, videoDataReady,
     placeholderExamples, typeCounts,
     searchQuery, setSearchQuery,
@@ -245,5 +278,6 @@ export function useAppStore() {
       setAddFormInitialTune(tune);
       setShowAddForm(true);
     },
+    toasts, showToast, dismissToast,
   };
 }

@@ -171,7 +171,8 @@ function TuneView() {
             <div
               onMouseDown={startDrag}
               onTouchStart={startDrag}
-              class="flex-none self-stretch cursor-col-resize flex items-center justify-center px-1.5 select-none group"
+              class="flex-none self-stretch cursor-col-resize flex items-center justify-center px-3 select-none group touch-none"
+              style={{"touch-action": "none"}}
             >
               <div class="flex flex-col gap-[3px] opacity-40 group-hover:opacity-100 transition-opacity">
                 <div class="w-[3px] h-[3px] rounded-full bg-[var(--color-muted)] group-hover:bg-[var(--color-primary)] transition-colors" />

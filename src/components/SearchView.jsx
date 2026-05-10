@@ -66,6 +66,21 @@ function SearchView() {
         </p>
       </Show>
 
+      {/* ── Suggested searches ────────────────────────────────────────── */}
+      <Show when={!isActive()}>
+        <div class="flex flex-wrap gap-2 justify-center -mt-2">
+          <span class="text-[10px] text-[var(--color-muted)] uppercase tracking-wider self-center mr-1">Try:</span>
+          {['The Butterfly', "Drowsy Maggie", "Cooley's Reel", 'The Banshee', 'Morrison\'s Jig', 'The Kesh'].map(name => (
+            <button
+              onClick={() => setSearchQuery(name)}
+              class="text-xs px-3 py-1 rounded-full border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/40 transition-colors"
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      </Show>
+
       {/* ── Search input ─────────────────────────────────────────────── */}
       <div class="w-full max-w-xl relative">
         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)] select-none">♪</span>
@@ -234,13 +249,33 @@ function SearchView() {
         </div>
       </Show>
 
-      {/* ── Empty state ───────────────────────────────────────────────── */}
+      {/* ── Empty state: text search ──────────────────────────────────── */}
       <Show when={isSearching() && searchResults().length === 0}>
         <div class="text-center py-8">
           <p class="text-[var(--color-muted)] text-sm">
             No tunes found for "<span class="text-[var(--color-text)]">{searchQuery()}</span>"
           </p>
           <p class="text-[var(--color-muted)] text-xs mt-1">Try a different spelling or alias</p>
+        </div>
+      </Show>
+
+      {/* ── Empty state: type/instrument filter ────────────────────────── */}
+      <Show when={isFiltering() && !isSearching() && searchResults().length === 0 && videoDataReady()}>
+        <div class="text-center py-8">
+          <p class="text-[var(--color-muted)] text-sm">
+            No tunes with videos found for {
+              filterType() ? TUNE_TYPES.find(t => t === filterType()) || filterType() : ''
+            }{
+              filterType() && filterInstrument() ? ' with ' : ''
+            }{
+              filterInstrument() ? INSTRUMENTS[filterInstrument()] || filterInstrument() : ''
+            }
+          </p>
+          <Show when={currentUser()}>
+            <p class="text-[var(--color-muted)] text-xs mt-1">
+              Know a good video? <button onClick={() => setSearchQuery('')} class="underline hover:text-[var(--color-primary)]">Search for a tune</button> and add it!
+            </p>
+          </Show>
         </div>
       </Show>
 

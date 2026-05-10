@@ -27,6 +27,16 @@
 14. Add favourites system for videos for logged users.
 
 15. ~~[done] Project revision and refactor plan (2026-05-10)~~
+16. [~] UX improvements — see [UX_audit.md](UX_audit.md) for full report (9 critical/high done, 53 remaining)
+    - [x] X-01: Toast/notification system (global signals, auto-dismiss, undo actions)
+    - [x] T-07: OAuth redirect preserves current URL (not just origin)
+    - [x] AP-03: Login loading state + error handling
+    - [x] F-04: Inline timestamp validation (format errors, end > start check)
+    - [x] S-05: Empty state for type/instrument filters with zero results
+    - [x] A-01: Undo after approve/reject via toast action buttons
+    - [x] J-01: Suggested search chips on hero (6 well-known tune names)
+    - [x] J-10: Pending review count badge on Admin button in header
+    - [x] T-12: Wider drag handle touch target + touch-action:none
 
 ## Refactors — High Priority (2026-05-10)
 - [x] Extract duplicate utility functions into `src/lib/utils.js` (formatTime, extractYoutubeId, parseSec, formatSec, cleanTitleForDisplay, findMatchingTunes, STOP_WORDS)
