@@ -29,11 +29,26 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: 'Inter', system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* YouTube speed slider thumb */
+*, *::before, *::after {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Speed slider */
+.speed-slider {
+  @apply appearance-none w-full rounded;
+  background: var(--color-border);
+  height: 4px;
+  outline: none;
+}
+.speed-slider::-moz-range-track {
+  background: var(--color-border);
+  height: 4px;
+  border-radius: 2px;
+}
 .speed-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
   appearance: none;
   width: 14px;
   height: 14px;

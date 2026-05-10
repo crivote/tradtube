@@ -66,6 +66,19 @@ function AddVideoForm(props) {
   const [autoMatchedCount, setAutoMatchedCount] = createSignal(0);
   const [openInstrumentDropdown, setOpenInstrumentDropdown] = createSignal(null);
 
+  // Click outside to close instrument dropdown
+  createEffect(() => {
+    const idx = openInstrumentDropdown();
+    if (idx === null) return;
+    const handler = (e) => {
+      if (!e.target.closest('[data-instrument-dropdown]')) {
+        setOpenInstrumentDropdown(null);
+      }
+    };
+    document.addEventListener('click', handler);
+    onCleanup(() => document.removeEventListener('click', handler));
+  });
+
   const youtubeId = createMemo(() => extractYoutubeId(youtubeUrl()));
 
   createEffect(() => {
@@ -76,19 +89,22 @@ function AddVideoForm(props) {
       if (!data) { setDuplicate(existing ?? null); return; }
       
       setChannel(data.channel ?? '');
-      
-      const existingIds = new Set(entries.map(e => e.tune.tune_id));
-      const matchedTunes = findMatchingTunes(data.title, existingIds);
-      
-      if (matchedTunes.length > 0) {
-        for (const tune of matchedTunes) {
-          setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [] })));
+
+      // Only auto-match if user hasn't manually added entries yet
+      const initialCount = props.initialTune ? 1 : 0;
+      if (entries.length <= initialCount) {
+        const existingIds = new Set(entries.map(e => e.tune.tune_id));
+        const matchedTunes = findMatchingTunes(data.title, existingIds);
+        
+        if (matchedTunes.length > 0) {
+          for (const tune of matchedTunes) {
+            setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [] })));
+          }
+          setAutoMatchedCount(matchedTunes.length);
         }
-        setAutoMatchedCount(matchedTunes.length);
+        const cleanedTitle = cleanTitleForDisplay(data.title, matchedTunes);
+        setTitle(cleanedTitle);
       }
-      
-      const cleanedTitle = cleanTitleForDisplay(data.title, matchedTunes);
-      setTitle(cleanedTitle);
       
       setDuplicate(existing ?? null);
     }, 400);
@@ -282,7 +298,12 @@ function AddVideoForm(props) {
                   {duplicate().status}
                 </span>
               </p>
-              <p class="text-[var(--color-muted)] text-xs mt-1">Submission is blocked — this video is already in the database.</p>
+              <p class="text-[var(--color-muted)] text-xs mt-1">
+                Submission is blocked — this video is already in the database.
+                <Show when={duplicate().tune_id && duplicate().status === 'approved'}>
+                  {' '}<a href={`/tune/${duplicate().tune_id}`} class="underline hover:text-[var(--color-primary)]">View tune page</a>
+                </Show>
+              </p>
             </div>
           </div>
         </Show>
@@ -476,7 +497,7 @@ function AddVideoForm(props) {
                     </div>
 
                     {/* Instruments */}
-                    <div class="relative flex-shrink-0">
+                    <div class="relative flex-shrink-0" data-instrument-dropdown>
                       <button
                         type="button"
                         onClick={() => setOpenInstrumentDropdown(openInstrumentDropdown() === i() ? null : i())}

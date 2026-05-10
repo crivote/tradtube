@@ -134,16 +134,9 @@ function YoutubePlayer(props) {
             step="0.25"
             value={speed()}
             onInput={e => setSpeed(parseFloat(e.target.value))}
-            class="speed-slider"
+            class="speed-slider w-full"
             aria-label={`Playback speed: ${speed()}x`}
             aria-valuetext={`${speed()}x`}
-            style="
-              -webkit-appearance: none; appearance: none;
-              width: 100%; height: 4px;
-              background: var(--color-border);
-              border-radius: 2px;
-              outline: none;
-            "
           />
           <div class="flex justify-between text-[11px] text-[var(--color-muted)] mt-0.5 gap-1">
             {SPEED_STOPS.map(v => (

@@ -144,14 +144,17 @@ export function useAppStore() {
   createEffect(() => {
     const q = searchQuery();
     const instrument = filterInstrument();
+    const type = filterType();
     if (!dbReady() || q.trim().length < 2) {
       setSearchResults([]);
       return;
     }
     const timer = setTimeout(async () => {
       try {
-        setFilterType(null);
         let results = searchTunes(q, SEARCH_LIMIT);
+        if (type) {
+          results = results.filter(t => t.type === type);
+        }
         if (instrument) {
           const ids = await loadInstrumentFilter(instrument);
           results = results.filter(t => ids.has(t.tune_id));
@@ -165,11 +168,12 @@ export function useAppStore() {
     onCleanup(() => clearTimeout(timer));
   });
 
-  // Filtrar por tipo — solo tunes con vídeos
+  // Filtrar por tipo — solo tunes con vídeos (solo si no hay búsqueda de texto)
   createEffect(async () => {
     const type = filterType();
     const instrument = filterInstrument();
-    if (!type || !dbReady() || !videoDataReady()) return;
+    const q = searchQuery();
+    if (!type || !dbReady() || !videoDataReady() || q.trim().length >= 2) return;
     try {
       let all = searchTunesByType(type, 500);
       const counts = videoCountsByTune();

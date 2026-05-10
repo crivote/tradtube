@@ -89,12 +89,13 @@ export async function addVideoWithEntries({ youtube_id, source_type, title, chan
 export async function checkYoutubeIdExists(youtubeId) {
   const { data, error } = await supabase
     .from('tune_videos')
-    .select('id, youtube_id, title, channel, status')
+    .select('id, youtube_id, title, channel, status, tune_video_entries ( tune_id )')
     .eq('youtube_id', youtubeId)
     .maybeSingle();
 
-  if (error) return null;
-  return data;
+  if (error || !data) return null;
+  const firstTuneId = data.tune_video_entries?.[0]?.tune_id ?? null;
+  return { id: data.id, youtube_id: data.youtube_id, title: data.title, channel: data.channel, status: data.status, tune_id: firstTuneId };
 }
 
 /**

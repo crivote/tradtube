@@ -108,7 +108,22 @@ function TuneView() {
         ← Back to search
       </button>
 
-      {/* Tune header */}
+      {/* Tune not found */}
+      <Show when={dbReady() && !selectedTune()}>
+        <div class="text-center py-16">
+          <p class="text-4xl mb-4">🔍</p>
+          <p class="text-xl font-semibold text-[var(--color-text)] mb-2">Tune not found</p>
+          <p class="text-sm text-[var(--color-muted)] mb-6">This tune doesn't exist or may have been removed.</p>
+          <button
+            onClick={() => navigate('/')}
+            class="text-sm px-4 py-2 rounded-lg bg-[var(--color-primary)] text-black font-semibold hover:opacity-90 transition-opacity"
+          >
+            Back to search
+          </button>
+        </div>
+      </Show>
+
+      <Show when={selectedTune()}>
       <div class="flex items-start justify-between gap-4">
         <div class="flex flex-col gap-1">
           <div class="flex items-center gap-2">
@@ -306,17 +321,17 @@ function TuneView() {
                     <button
                       onClick={(e) => handleVote(e, entry, 1)}
                       aria-label="Upvote"
-                      class={`p-1 transition-colors ${entryUserVote() === 1 ? 'text-green-400' : 'text-[var(--color-muted)] hover:text-green-400'}`}
+                      class={`p-1.5 lg:p-1 transition-colors ${entryUserVote() === 1 ? 'text-green-400' : 'text-[var(--color-muted)] hover:text-green-400'}`}
                     >▲</button>
                     <button
                       onClick={(e) => handleVote(e, entry, -1)}
                       aria-label="Downvote"
-                      class={`p-1 transition-colors ${entryUserVote() === -1 ? 'text-[var(--color-error)]' : 'text-[var(--color-muted)] hover:text-[var(--color-error)]'}`}
+                      class={`p-1.5 lg:p-1 transition-colors ${entryUserVote() === -1 ? 'text-[var(--color-error)]' : 'text-[var(--color-muted)] hover:text-[var(--color-error)]'}`}
                     >▼</button>
                     <button
                       onClick={(e) => handleVote(e, entry, -1, true)}
                       aria-label="Report"
-                      class="p-1 text-[var(--color-muted)] hover:text-yellow-400 transition-colors text-xs"
+                      class="p-1.5 lg:p-1 text-[var(--color-muted)] hover:text-yellow-400 transition-colors text-xs"
                     >⚑</button>
                   </div>
                 </div>
@@ -325,9 +340,12 @@ function TuneView() {
           </For>
         </div>
       </Show>
+      </Show>
 
       {/* Más tunes del mismo tipo */}
-      <SameTypeTunes />
+      <Show when={selectedTune()}>
+        <SameTypeTunes />
+      </Show>
 
     </div>
   );

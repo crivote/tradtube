@@ -27,7 +27,7 @@
 14. Add favourites system for videos for logged users.
 
 15. ~~[done] Project revision and refactor plan (2026-05-10)~~
-16. [~] UX improvements — see [UX_audit.md](UX_audit.md) for full report (22 done, 40 remaining)
+16. [~] UX improvements — see [UX_audit.md](UX_audit.md) for full report (34 done, 28 remaining)
     - [x] X-01: Toast/notification system (global signals, auto-dismiss, undo actions)
     - [x] T-07: OAuth redirect preserves current URL (not just origin)
     - [x] AP-03: Login loading state + error handling
@@ -53,6 +53,17 @@
     - [x] AP-05: User avatar shown on mobile header (from Google profile)
     - [x] F-05: Submit button shows disabled reason (no URL, no entries, duplicate)
     - [x] F-09: Entry removal has undo toast (4s window)
+    - [x] X-04: Theme transition animation (background, color, border 0.3s ease)
+    - [x] Y-05: Firefox range slider track styling (moz-range-track)
+    - [x] T-13: Vote buttons larger on mobile (p-1.5)
+    - [x] S-02+S-03: Unified search + type + instrument filters (no mutual exclusion)
+    - [x] F-10: Click-outside instrument dropdown (document click listener)
+    - [x] F-02: Auto-match guarded when user has manually added entries
+    - [x] F-11: Duplicate warning links to existing tune page (when approved)
+    - [x] AP-02: Tune not found 404 state in TuneView
+    - [x] S-08: Clips badge shows ♫ instead of ▶
+    - [x] S-09: TheSession link icon larger (w-4 h-4) + full opacity
+    - [x] SM-01: Sheet music soft ring/shadow to soften dark-mode contrast
 
 ## Refactors — High Priority (2026-05-10)
 - [x] Extract duplicate utility functions into `src/lib/utils.js` (formatTime, extractYoutubeId, parseSec, formatSec, cleanTitleForDisplay, findMatchingTunes, STOP_WORDS)

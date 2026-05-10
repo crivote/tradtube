@@ -103,13 +103,12 @@ function SearchView() {
       </div>
 
       {/* ── Instrument filter ──────────────────────────────────────────── */}
-      <Show when={!isSearching()}>
         <select
           value={filterInstrument() ?? ''}
           onChange={(e) => {
-            setSearchQuery('');
             setFilterInstrument(e.target.value || null);
           }}
+          aria-label="Filter by instrument"
           class="bg-[var(--color-surface)] border border-[var(--color-primary)]/50 rounded-xl px-4 py-2.5 text-[var(--color-text)] text-sm focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
         >
           <option value="">any</option>
@@ -117,10 +116,8 @@ function SearchView() {
             {(key) => <option value={key}>{INSTRUMENTS[key]}</option>}
           </For>
         </select>
-      </Show>
 
       {/* ── Type chips ────────────────────────────────────────────────── */}
-      <Show when={!isSearching()}>
         <div class="flex flex-wrap gap-2 justify-center">
           {TUNE_TYPES.map(type => {
             const active = () => filterType() === type;
@@ -129,7 +126,6 @@ function SearchView() {
             return (
               <button
                 onClick={() => {
-                  setSearchQuery('');
                   setFilterType(active() ? null : type);
                 }}
                 aria-pressed={active()}
@@ -144,7 +140,6 @@ function SearchView() {
             );
           })}
         </div>
-      </Show>
 
       {/* ── Results ───────────────────────────────────────────────────── */}
       <Show when={searchResults().length > 0}>
@@ -191,10 +186,10 @@ function SearchView() {
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={e => e.stopPropagation()}
-                            class="text-[var(--color-muted)]/50 hover:text-[var(--color-primary)] transition-colors flex-shrink-0 leading-none"
+                            class="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors flex-shrink-0 leading-none"
                             title={`TheSession #${tune.tune_id}${tune.composer ? ` · ${tune.composer}` : ''}`}
                           >
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
                           </a>
@@ -240,7 +235,7 @@ function SearchView() {
                         }
                       >
                         <span class="text-[10px] font-semibold whitespace-nowrap flex-shrink-0 px-2 py-0.5 rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)]">
-                          ▶ {clipCount()} {clipCount() === 1 ? 'clip' : 'clips'}
+                          ♫ {clipCount()} {clipCount() === 1 ? 'clip' : 'clips'}
                         </span>
                       </Show>
                     </Show>
