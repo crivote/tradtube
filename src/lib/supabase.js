@@ -287,3 +287,30 @@ export function onAuthChange(callback) {
     callback(session?.user ?? null);
   });
 }
+
+export async function getUserRole(userId) {
+  const { data, error } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return data.role;
+}
+
+export async function getVideoById(videoId) {
+  const { data, error } = await supabase
+    .from('tune_videos')
+    .select(`
+      id, youtube_id, source_type, status, title, channel, thesession_recording_id, created_at,
+      tune_video_entries (
+        id, tune_id, setting_id, start_sec, end_sec, position, instruments, key
+      )
+    `)
+    .eq('id', videoId)
+    .single();
+
+  if (error) { console.error(error); return null; }
+  return data;
+}

@@ -5,7 +5,7 @@
 
 import { createSignal, createEffect, onCleanup } from 'solid-js';
 import { initDB, searchTunes, searchTunesByType, getTuneById, getRandomTunes, getCountsByType } from '../lib/db';
-import { getEntriesForTune, getVideoCountsByTune, getTuneIdsByInstrument, getPendingCount, onAuthChange } from '../lib/supabase';
+import { getEntriesForTune, getVideoCountsByTune, getTuneIdsByInstrument, getPendingCount, onAuthChange, getUserRole } from '../lib/supabase';
 import { SEARCH_LIMIT, INSTRUMENT_KEYS } from '../constants';
 
 // ── DB ──────────────────────────────────────────────────────────────────────
@@ -44,6 +44,7 @@ const dismissToast = (id) => {
 
 // ── Auth ────────────────────────────────────────────────────────────────────
 const [currentUser, setCurrentUser] = createSignal(null);
+const [isAdmin, setIsAdmin] = createSignal(false);
 const [loggingIn, setLoggingIn] = createSignal(false);
 const [pendingReviewCount, setPendingReviewCount] = createSignal(null);
 
@@ -124,8 +125,10 @@ export function useAppStore() {
       setCurrentUser(user);
       if (user) {
         getPendingCount().then(setPendingReviewCount).catch(() => {});
+        getUserRole(user.id).then(role => setIsAdmin(role === 'admin')).catch(() => {});
       } else {
         setPendingReviewCount(null);
+        setIsAdmin(false);
       }
     });
     return () => subscription.unsubscribe();
@@ -268,7 +271,7 @@ export function useAppStore() {
 
   return {
     // Estado
-    dbReady, currentUser, loggingIn, setLoggingIn, pendingReviewCount,
+    dbReady,     currentUser, loggingIn, setLoggingIn, pendingReviewCount, isAdmin,
     videoCountsByTune, videoThumbnailsByTune, videoDataReady,
     placeholderExamples, typeCounts,
     searchQuery, setSearchQuery,

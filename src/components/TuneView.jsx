@@ -6,12 +6,13 @@
 import { Show, For, createEffect, createSignal, onCleanup } from 'solid-js';
 import { useParams, useNavigate } from '@solidjs/router';
 import { useAppStore } from '../store/appStore';
-import { castVote, loginWithGoogle } from '../lib/supabase';
+import { castVote, loginWithGoogle, getVideoById } from '../lib/supabase';
 import { formatTime } from '../lib/utils';
 import { useI18n } from '../i18n';
 import YoutubePlayer from './YoutubePlayer';
 import SheetMusic from './SheetMusic';
 import SameTypeTunes from './SameTypeTunes';
+import AddVideoForm from './AddVideoForm';
 
 function TuneView() {
   const params = useParams();
@@ -21,9 +22,9 @@ function TuneView() {
     dbReady,
     selectedTune, tuneEntries, loadingEntries,
     activeEntry, setActiveEntry,
-    currentUser, loadTuneById, updateEntryVote,
+    currentUser, isAdmin, loadTuneById, updateEntryVote,
     getEntryVoteScore, getEntryUserVote,
-    showToast,
+    showToast, loadVideoData,
   } = useAppStore();
 
   // Sync selectedTune from URL param — handles both in-app nav and direct links
@@ -33,6 +34,20 @@ function TuneView() {
 
   const [showSheet, setShowSheet] = createSignal(true);
   const [splitPct, setSplitPct] = createSignal(25);
+  const [editingVideo, setEditingVideo] = createSignal(null);
+
+  const handleEditVideo = async (entry) => {
+    const videoId = entry.tune_videos?.id;
+    if (!videoId) return;
+    const video = await getVideoById(videoId);
+    if (video) setEditingVideo(video);
+  };
+
+  const handleEditClose = () => {
+    const was = editingVideo();
+    setEditingVideo(null);
+    if (was) loadVideoData();
+  };
 
   let containerRef;
   let cleanupDrag = null;
@@ -99,6 +114,10 @@ function TuneView() {
   };
 
   return (
+    <Show
+      when={!editingVideo()}
+      fallback={<AddVideoForm editVideo={editingVideo()} onClose={handleEditClose} />}
+    >
     <div class="flex flex-col gap-6">
 
       {/* Back */}
@@ -314,6 +333,16 @@ function TuneView() {
                     </div>
                   </div>
 
+                  {/* Admin edit */}
+                  <Show when={isAdmin()}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleEditVideo(entry); }}
+                      class="text-[10px] px-2 py-1 rounded-lg border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 transition-colors flex-shrink-0"
+                    >
+                      Edit
+                    </button>
+                  </Show>
+
                   {/* Votos */}
                   <div class="flex items-center gap-1 lg:gap-1.5 flex-shrink-0">
                     <span class={`text-sm lg:text-base font-bold w-8 lg:w-10 text-right
@@ -353,6 +382,7 @@ function TuneView() {
       </Show>
 
     </div>
+    </Show>
   );
 }
 

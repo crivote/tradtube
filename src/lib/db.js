@@ -45,8 +45,9 @@ export async function initDB() {
 export function searchTunes(query, limit = 10) {
   if (!_db || !query?.trim()) return [];
 
-  // Escapar comillas para FTS5 (dobles y simples)
-  const safe = query.trim().replace(/"/g, '""').replace(/'/g, "''");
+  // Escape double quotes for FTS5, wrap in quotes for phrase matching + prefix
+  const safe = query.trim().replace(/"/g, '""');
+  const ftsQuery = `"${safe}"*`;
 
   return _db.exec({
     sql: `
@@ -57,7 +58,7 @@ export function searchTunes(query, limit = 10) {
       ORDER BY t.tunebooks DESC
       LIMIT ?
     `,
-    bind: [`${safe}*`, limit],
+    bind: [ftsQuery, limit],
     returnValue: 'resultRows',
     rowMode: 'object',
   });
