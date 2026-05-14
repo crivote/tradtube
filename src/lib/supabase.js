@@ -258,7 +258,7 @@ export async function getTuneIdsByInstrument(instrument) {
   const { data, error } = await supabase
     .from('tune_video_entries')
     .select('tune_id, instruments')
-    .eq('instruments', `{"${instrument}"}`)
+    .contains('instruments', [instrument])
     .eq('tune_videos.status', 'approved');
 
   if (error) { console.error(error); return new Set(); }
