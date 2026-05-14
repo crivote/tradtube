@@ -13,7 +13,7 @@ function App(props) {
     showAddForm, setShowAddForm,
     addFormInitialTune, setAddFormInitialTune,
     loggingIn, setLoggingIn, showToast, pendingReviewCount,
-    theme, toggleTheme,
+    theme, toggleTheme, isAdmin,
   } = useAppStore();
 
   const { t, locale, setLocale } = useI18n();
@@ -25,7 +25,7 @@ function App(props) {
     await loadDB();
   });
 
-  const isAdmin = () => location.pathname === '/admin';
+  const isAdminPath = () => location.pathname === '/admin';
 
   return (
     <div class="min-h-screen flex flex-col">
@@ -107,15 +107,16 @@ function App(props) {
               >
                 {t('app.addVideo')}
               </button>
+              <Show when={isAdmin()}>
               <button
-                onClick={() => { setShowAddForm(false); navigate(isAdmin() ? '/' : '/admin'); }}
+                onClick={() => { setShowAddForm(false); navigate(isAdminPath() ? '/' : '/admin'); }}
                 class={`text-xs px-3 py-1.5 rounded-lg border transition-colors
-                  ${isAdmin()
+                  ${isAdminPath()
                     ? 'border-[var(--color-warning)]/60 bg-[var(--color-warning)]/10 text-[var(--color-warning)]'
                     : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-warning)]/30'
                   }`}
               >
-                {isAdmin() ? t('app.back') : (
+                {isAdminPath() ? t('app.back') : (
                   <>
                     {t('app.admin')}
                     {pendingReviewCount() > 0 && (
@@ -126,6 +127,7 @@ function App(props) {
                   </>
                 )}
               </button>
+              </Show>
               <span class="text-xs text-[var(--color-muted)] hidden sm:inline truncate max-w-[160px]">
                 {currentUser().email}
               </span>

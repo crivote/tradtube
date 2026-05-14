@@ -467,9 +467,14 @@ function SearchByTuneTab(props) {
 function AdminView() {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const { isAdmin } = useAppStore();
   const [tab, setTab] = createSignal('pending');
   const [editingVideo, setEditingVideo] = createSignal(null);
   const [pendingCount, setPendingCount] = createSignal(null);
+
+  createEffect(() => {
+    if (!isAdmin()) navigate('/', { replace: true });
+  });
 
   let refreshLatest = () => {};
   let refreshByTune = () => {};
