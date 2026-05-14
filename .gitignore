@@ -4,3 +4,9 @@
 INTERNAL.md
 node_modules
 dist
+supabase/.temp/
+skills-lock.json
+AGENTS.md
+.agents/
+.claude/
+draft_landing_design.png
