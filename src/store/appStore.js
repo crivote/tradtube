@@ -145,8 +145,13 @@ export function useAppStore() {
     const q = searchQuery();
     const instrument = filterInstrument();
     const type = filterType();
-    if (!dbReady() || q.trim().length < 2) {
+    if (!dbReady()) {
       setSearchResults([]);
+      return;
+    }
+    if (q.trim().length < 2) {
+      // Only clear if no filter is active — dedicated effects handle type/instrument filtering
+      if (!type && !instrument) setSearchResults([]);
       return;
     }
     const timer = setTimeout(async () => {

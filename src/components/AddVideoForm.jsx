@@ -8,7 +8,7 @@
 
 import { createSignal, createMemo, createEffect, onCleanup, For, Show } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
-import { searchTunes, getTuneById } from '../lib/db';
+import { searchTunes, getTuneById, getSettings } from '../lib/db';
 import { addVideoWithEntries, updateVideoWithEntries, checkYoutubeIdExists } from '../lib/supabase';
 import { resolveTrackTunes } from '../lib/thesession';
 import { extractYoutubeId, parseSec, formatSec, validateTimestamp, cleanTitleForDisplay, findMatchingTunes } from '../lib/utils';
@@ -48,9 +48,10 @@ function AddVideoForm(props) {
           startSec: formatSec(e.start_sec ?? 0),
           endSec: e.end_sec != null ? formatSec(e.end_sec) : '',
           instruments: e.instruments ?? [],
+          key: e.key ?? null,
         }))
     : props.initialTune
-      ? [{ tune: props.initialTune, startSec: '', endSec: '', instruments: [] }]
+      ? [{ tune: props.initialTune, startSec: '', endSec: '', instruments: [], key: null }]
       : [];
 
   const [youtubeUrl, setYoutubeUrl] = createSignal(props.editVideo?.youtube_id ?? '');
@@ -101,7 +102,7 @@ function AddVideoForm(props) {
         
         if (matchedTunes.length > 0) {
           for (const tune of matchedTunes) {
-            setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [] })));
+            setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [], key: null })));
           }
           setAutoMatchedCount(matchedTunes.length);
         }
@@ -123,7 +124,7 @@ function AddVideoForm(props) {
   });
 
   const addEntry = (tune) => {
-    setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [] })));
+    setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [], key: null })));
     setTuneSearch('');
   };
 
@@ -138,7 +139,7 @@ function AddVideoForm(props) {
     for (const r of resolved) {
       if (r.unresolvable) { skipped.push(r.name); continue; }
       if (existing.has(r.tune.tune_id)) continue;
-      setEntries(produce(e => e.push({ tune: r.tune, startSec: '', endSec: '', instruments: [] })));
+      setEntries(produce(e => e.push({ tune: r.tune, startSec: '', endSec: '', instruments: [], key: null })));
       existing.add(r.tune.tune_id);
     }
     setSkippedTuneNames(skipped);
@@ -190,6 +191,7 @@ function AddVideoForm(props) {
         end_sec: parseSec(e.endSec) ?? null,
         position: i,
         instruments: e.instruments?.length > 0 ? e.instruments : null,
+        key: e.key || null,
       }));
 
       if (isEdit()) {
@@ -543,6 +545,23 @@ function AddVideoForm(props) {
                         </div>
                       </Show>
                     </div>
+
+                    {/* Key */}
+                    <Show when={(() => {
+                      const s = getSettings(entry.tune.tune_id);
+                      return s.length > 0;
+                    })()}>
+                      <select
+                        value={entry.key ?? ''}
+                        onChange={e => updateEntry(i(), 'key', e.target.value || null)}
+                        class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-1.5 py-0.5 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+                      >
+                        <option value="">—</option>
+                        <For each={[...new Set(getSettings(entry.tune.tune_id).map(s => s.key))]}>
+                          {(k) => <option value={k}>{k}</option>}
+                        </For>
+                      </select>
+                    </Show>
 
                     {/* Remove */}
                     <button

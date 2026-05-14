@@ -19,7 +19,7 @@ export async function getEntriesForTune(tuneId) {
   const { data, error } = await supabase
     .from('tune_video_entries')
     .select(`
-      id, tune_id, setting_id, start_sec, end_sec, position, instruments,
+      id, tune_id, setting_id, start_sec, end_sec, position, instruments, key,
       tune_videos (
         id, youtube_id, source_type, status, title, channel, thesession_recording_id, created_at
       ),
@@ -71,6 +71,7 @@ export async function addVideoWithEntries({ youtube_id, source_type, title, chan
     end_sec: e.end_sec ?? null,
     position: e.position ?? i,
     instruments: e.instruments?.length > 0 ? e.instruments : null,
+    key: e.key ?? null,
   }));
 
   const { error: entriesError } = await supabase
@@ -213,6 +214,7 @@ export async function updateVideoWithEntries(videoId, { source_type, title, chan
       end_sec: e.end_sec ?? null,
       position: i,
       instruments: e.instruments?.length > 0 ? e.instruments : null,
+      key: e.key ?? null,
     })));
   if (ie) throw ie;
 }
@@ -258,7 +260,7 @@ export async function getTuneIdsByInstrument(instrument) {
   const { data, error } = await supabase
     .from('tune_video_entries')
     .select('tune_id, instruments')
-    .contains('instruments', [instrument])
+    .filter('instruments', 'cs', `{${instrument}}`)
     .eq('tune_videos.status', 'approved');
 
   if (error) { console.error(error); return new Set(); }

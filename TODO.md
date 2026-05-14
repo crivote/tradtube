@@ -83,3 +83,8 @@
 - [x] Extract inline `<style>` from `YoutubePlayer.jsx` into `src/index.css`
 - [x] Add global `<ErrorBoundary>` in `App.jsx` + try/catch blocks in all store effects
 - [x] Fix `<title>` in `index.html` + add meta description
+
+17. Add a key field to video tunes. Each rendition has an specific key. display the key in the entries of the video list for each tune.
+18. height of the score component show have a max-height value a bit higher (like 200px +)  
+19. change the voting system to thumbs-up only. no need for negative voting. 
+20. order the list of videos for a tune by sum of voting.

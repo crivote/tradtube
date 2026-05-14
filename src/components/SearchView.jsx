@@ -67,7 +67,7 @@ function SearchView() {
       <Show when={videoDataReady()}>
         <p class="text-xs text-[var(--color-muted)] -mb-3">
           <span class="text-[var(--color-primary)] font-semibold">{videoCountsByTune().size}</span>{' '}
-          {t('search.tunesWithVideos', { count: videoCountsByTune().size })}
+          {t('search.tunesWithVideos')}
         </p>
       </Show>
 
@@ -212,7 +212,7 @@ function SearchView() {
                             <span class="text-[10px] text-[var(--color-muted)]">{tune.composer}</span>
                           </Show>
                           <span class="text-[10px] text-[var(--color-border)]">·</span>
-                          <span class="text-[10px] text-[var(--color-muted)]">{tune.tunebooks} {t('search.books', { count: tune.tunebooks })}</span>
+                          <span class="text-[10px] text-[var(--color-muted)]">{tune.tunebooks} {t('search.books')}</span>
                         </div>
                       </div>
                     </div>
@@ -240,7 +240,7 @@ function SearchView() {
                         }
                       >
                         <span class="text-[10px] font-semibold whitespace-nowrap flex-shrink-0 px-2 py-0.5 rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)]">
-                          ♫ {clipCount()} {clipCount() === 1 ? t('search.clip', { count: 1 }) : t('search.clips', { count: clipCount() })}
+                          ♫ {clipCount()} {clipCount() === 1 ? t('search.clip') : t('search.clips')}
                         </span>
                       </Show>
                     </Show>
