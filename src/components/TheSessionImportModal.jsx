@@ -9,8 +9,10 @@
 
 import { createSignal, createEffect, Show, For } from 'solid-js';
 import { parseRecordingUrl, fetchRecording, formatTrackLabel } from '../lib/thesession';
+import { useI18n } from '../i18n';
 
 function TheSessionImportModal(props) {
+  const { t } = useI18n();
   const [recordingUrl, setRecordingUrl] = createSignal('');
   const [recording, setRecording] = createSignal(null);
   const [loading, setLoading] = createSignal(false);
@@ -47,9 +49,9 @@ function TheSessionImportModal(props) {
         {/* Header */}
         <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)] flex-shrink-0">
           <div>
-            <h3 class="text-base font-bold text-[var(--color-text)]">Import from TheSession</h3>
+            <h3 class="text-base font-bold text-[var(--color-text)]">{t('theSession.title')}</h3>
             <p class="text-xs text-[var(--color-muted)] mt-0.5">
-              Paste a recording URL or ID to load its tracklist
+              {t('theSession.desc')}
             </p>
           </div>
           <button
@@ -66,7 +68,7 @@ function TheSessionImportModal(props) {
           <div class="relative">
             <input
               type="text"
-              placeholder="https://thesession.org/recordings/158 or recording ID"
+              placeholder={t('theSession.placeholder')}
               value={recordingUrl()}
               onInput={e => setRecordingUrl(e.target.value)}
               autofocus
@@ -94,7 +96,7 @@ function TheSessionImportModal(props) {
               <Show
                 when={recording().tracks?.length > 0}
                 fallback={
-                  <p class="text-xs text-[var(--color-muted)] px-4 py-3">No tracklist data available.</p>
+                  <p class="text-xs text-[var(--color-muted)] px-4 py-3">{t('theSession.noTracklist')}</p>
                 }
               >
                 <div class="flex flex-col divide-y divide-[var(--color-border)]">
@@ -111,7 +113,7 @@ function TheSessionImportModal(props) {
                           onClick={() => handleImport(i())}
                           class="text-[10px] px-2.5 py-1 rounded-lg border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20 transition-colors flex-shrink-0"
                         >
-                          Import
+                          {t('theSession.import')}
                         </button>
                       </div>
                     )}

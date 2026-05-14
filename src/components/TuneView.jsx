@@ -8,7 +8,7 @@ import { useParams, useNavigate } from '@solidjs/router';
 import { useAppStore } from '../store/appStore';
 import { castVote, loginWithGoogle } from '../lib/supabase';
 import { formatTime } from '../lib/utils';
-import { SOURCE_TYPES, INSTRUMENTS } from '../constants';
+import { useI18n } from '../i18n';
 import YoutubePlayer from './YoutubePlayer';
 import SheetMusic from './SheetMusic';
 import SameTypeTunes from './SameTypeTunes';
@@ -16,6 +16,7 @@ import SameTypeTunes from './SameTypeTunes';
 function TuneView() {
   const params = useParams();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const {
     dbReady,
     selectedTune, tuneEntries, loadingEntries,
@@ -77,10 +78,10 @@ function TuneView() {
     
     try {
       await castVote(entry.id, vote, isReport);
-      if (isReport) showToast('Report submitted — thank you', 'success');
+      if (isReport) showToast(t('vote.reportSubmitted'), 'success');
     } catch (err) {
       updateEntryVote(entry.id, entry.voteScore, currentVote);
-      showToast('Vote failed — try again', 'error');
+      showToast(t('vote.voteFailed'), 'error');
     }
   };
 
@@ -105,20 +106,20 @@ function TuneView() {
         onClick={() => navigate('/')}
         class="flex items-center gap-2 text-sm text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors w-fit"
       >
-        ← Back to search
+        {t('tune.backToSearch')}
       </button>
 
       {/* Tune not found */}
       <Show when={dbReady() && !selectedTune()}>
         <div class="text-center py-16">
           <p class="text-4xl mb-4">🔍</p>
-          <p class="text-xl font-semibold text-[var(--color-text)] mb-2">Tune not found</p>
-          <p class="text-sm text-[var(--color-muted)] mb-6">This tune doesn't exist or may have been removed.</p>
+          <p class="text-xl font-semibold text-[var(--color-text)] mb-2">{t('tune.notFound')}</p>
+          <p class="text-sm text-[var(--color-muted)] mb-6">{t('tune.notFoundDesc')}</p>
           <button
             onClick={() => navigate('/')}
             class="text-sm px-4 py-2 rounded-lg bg-[var(--color-primary)] text-black font-semibold hover:opacity-90 transition-opacity"
           >
-            Back to search
+            {t('tune.backToSearchBtn')}
           </button>
         </div>
       </Show>
@@ -154,7 +155,7 @@ function TuneView() {
         {/* Sheet music toggle */}
         <Show when={activeEntry()}>
           <label class="flex items-center gap-2 cursor-pointer select-none flex-shrink-0 mt-1" onClick={() => setShowSheet(v => !v)}>
-            <span class="text-xs text-[var(--color-muted)]">Sheet</span>
+            <span class="text-xs text-[var(--color-muted)]">{t('tune.sheet')}</span>
             <button
               type="button"
               class={`relative w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none
@@ -222,14 +223,14 @@ function TuneView() {
       <Show when={loadingEntries()}>
         <div class="flex items-center gap-3 py-8 justify-center">
           <div class="w-5 h-5 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
-          <span class="text-sm text-[var(--color-muted)]">Loading videos…</span>
+          <span class="text-sm text-[var(--color-muted)]">{t('tune.loadingVideos')}</span>
         </div>
       </Show>
 
       {/* Sin vídeos */}
       <Show when={!loadingEntries() && tuneEntries().length === 0}>
         <p class="text-[var(--color-muted)] text-sm py-4">
-          No videos yet for this tune.
+          {t('tune.noVideosYet')}
         </p>
       </Show>
 
@@ -237,16 +238,15 @@ function TuneView() {
       <Show when={!loadingEntries() && tuneEntries().length > 0}>
         <div class="flex flex-col gap-2">
           <h3 class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider mb-1">
-            Videos ({tuneEntries().length})
+            {t('tune.videos', { count: tuneEntries().length })}
           </h3>
           <For each={tuneEntries()}>
             {(entry) => {
               const isActive = () => activeEntry()?.id === entry.id;
               const startFmt = formatTime(entry.start_sec);
               const endFmt   = formatTime(entry.end_sec);
-              const label    = SOURCE_TYPES[entry.tune_videos?.source_type]
-                            ?? entry.tune_videos?.source_type
-                            ?? 'Unknown';
+              const sourceType = entry.tune_videos?.source_type;
+              const label    = sourceType ? t(`sourceTypes.${sourceType}`) ?? sourceType : t('tune.unknown');
               const entryVoteScore = () => getEntryVoteScore(entry.id, entry.voteScore || 0);
               const entryUserVote = () => getEntryUserVote(entry.id, entry.userVote || 0);
 
@@ -297,7 +297,7 @@ function TuneView() {
                       <For each={entry.instruments ?? []}>
                         {(ins) => (
                           <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-border)] text-[var(--color-muted)] w-fit">
-                            {INSTRUMENTS[ins] ?? ins}
+                            {t(`instruments.${ins}`) ?? ins}
                           </span>
                         )}
                       </For>
@@ -320,17 +320,17 @@ function TuneView() {
                     </span>
                     <button
                       onClick={(e) => handleVote(e, entry, 1)}
-                      aria-label="Upvote"
+                      aria-label={t('vote.upvote')}
                       class={`p-1.5 lg:p-1 transition-colors ${entryUserVote() === 1 ? 'text-green-400' : 'text-[var(--color-muted)] hover:text-green-400'}`}
                     >▲</button>
                     <button
                       onClick={(e) => handleVote(e, entry, -1)}
-                      aria-label="Downvote"
+                      aria-label={t('vote.downvote')}
                       class={`p-1.5 lg:p-1 transition-colors ${entryUserVote() === -1 ? 'text-[var(--color-error)]' : 'text-[var(--color-muted)] hover:text-[var(--color-error)]'}`}
                     >▼</button>
                     <button
                       onClick={(e) => handleVote(e, entry, -1, true)}
-                      aria-label="Report"
+                      aria-label={t('vote.report')}
                       class="p-1.5 lg:p-1 text-[var(--color-muted)] hover:text-yellow-400 transition-colors text-xs"
                     >⚑</button>
                   </div>

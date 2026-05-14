@@ -7,12 +7,14 @@ import { createMemo, For, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { useAppStore } from '../store/appStore';
 import { searchTunesByType } from '../lib/db';
+import { useI18n } from '../i18n';
 
 function SameTypeTunes() {
   const {
     selectedTune,
     videoCountsByTune, videoThumbnailsByTune, videoDataReady,
   } = useAppStore();
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   const related = createMemo(() => {
@@ -33,7 +35,7 @@ function SameTypeTunes() {
     <Show when={related().length > 0}>
       <div class="flex flex-col gap-3 mt-2">
         <h3 class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider capitalize">
-          More {selectedTune()?.type}s with videos
+          {t('sameType.more', { type: selectedTune()?.type })}
         </h3>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           <For each={related()}>

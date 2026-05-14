@@ -2,7 +2,8 @@ import { For, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { useAppStore } from '../store/appStore';
 import { loginWithGoogle } from '../lib/supabase';
-import { INSTRUMENTS, INSTRUMENT_KEYS } from '../constants';
+import { useI18n } from '../i18n';
+import { INSTRUMENT_KEYS } from '../constants';
 
 const TYPE_COLOR = {
   jig:        'text-[var(--color-primary)]',
@@ -28,12 +29,14 @@ function SearchView() {
     currentUser, openAddFormForTune,
   } = useAppStore();
 
+  const { t } = useI18n();
+
   const placeholder = () => {
     const examples = placeholderExamples();
     if (examples.length === 2) {
-      return `e.g. ${examples[0]}, ${examples[1]}…`;
+      return t('search.placeholderExamples', { name1: examples[0], name2: examples[1] });
     }
-    return 'Search for any tune…';
+    return t('search.placeholder');
   };
 
   const navigate = useNavigate();
@@ -41,6 +44,8 @@ function SearchView() {
   const isSearching = () => searchQuery().trim().length >= 2;
   const isFiltering = () => !!filterType() || !!filterInstrument();
   const isActive = () => isSearching() || isFiltering();
+
+  const instrumentLabel = (key) => t(`instruments.${key}`);
 
   return (
     <div class="flex flex-col items-center gap-6">
@@ -50,10 +55,9 @@ function SearchView() {
         <div class="text-center flex flex-col items-center gap-4 py-10">
           <div class="text-6xl text-[var(--color-muted)]/30 select-none leading-none">♫</div>
           <div>
-            <h2 class="text-4xl font-black text-[var(--color-text)] tracking-tight">Find any tune</h2>
+            <h2 class="text-4xl font-black text-[var(--color-text)] tracking-tight">{t('search.heroTitle')}</h2>
             <p class="text-[var(--color-muted)] text-sm mt-2 max-w-sm leading-relaxed">
-              Search 5,000+ traditional tunes and hear real performances —
-              sessions, concerts, and recordings at the exact right moment.
+              {t('search.heroSubtitle')}
             </p>
           </div>
         </div>
@@ -62,14 +66,15 @@ function SearchView() {
       {/* ── Stats ────────────────────────────────────────────────────── */}
       <Show when={videoDataReady()}>
         <p class="text-xs text-[var(--color-muted)] -mb-3">
-          <span class="text-[var(--color-primary)] font-semibold">{videoCountsByTune().size}</span> tunes with videos
+          <span class="text-[var(--color-primary)] font-semibold">{videoCountsByTune().size}</span>{' '}
+          {t('search.tunesWithVideos', { count: videoCountsByTune().size })}
         </p>
       </Show>
 
       {/* ── Suggested searches ────────────────────────────────────────── */}
       <Show when={!isActive()}>
         <div class="flex flex-wrap gap-2 justify-center -mt-2">
-          <span class="text-[10px] text-[var(--color-muted)] uppercase tracking-wider self-center mr-1">Try:</span>
+          <span class="text-[10px] text-[var(--color-muted)] uppercase tracking-wider self-center mr-1">{t('search.tryLabel')}</span>
           {['The Butterfly', "Drowsy Maggie", "Cooley's Reel", 'The Banshee', 'Morrison\'s Jig', 'The Kesh'].map(name => (
             <button
               onClick={() => setSearchQuery(name)}
@@ -111,9 +116,9 @@ function SearchView() {
           aria-label="Filter by instrument"
           class="bg-[var(--color-surface)] border border-[var(--color-primary)]/50 rounded-xl px-4 py-2.5 text-[var(--color-text)] text-sm focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
         >
-          <option value="">any</option>
+          <option value="">{t('search.any')}</option>
           <For each={INSTRUMENT_KEYS}>
-            {(key) => <option value={key}>{INSTRUMENTS[key]}</option>}
+            {(key) => <option value={key}>{instrumentLabel(key)}</option>}
           </For>
         </select>
 
@@ -207,7 +212,7 @@ function SearchView() {
                             <span class="text-[10px] text-[var(--color-muted)]">{tune.composer}</span>
                           </Show>
                           <span class="text-[10px] text-[var(--color-border)]">·</span>
-                          <span class="text-[10px] text-[var(--color-muted)]">{tune.tunebooks} books</span>
+                          <span class="text-[10px] text-[var(--color-muted)]">{tune.tunebooks} {t('search.books', { count: tune.tunebooks })}</span>
                         </div>
                       </div>
                     </div>
@@ -221,7 +226,7 @@ function SearchView() {
                             when={currentUser()}
                             fallback={
                               <span class="text-[10px] text-[var(--color-muted)]/40 whitespace-nowrap flex-shrink-0">
-                                no videos
+                                {t('search.noVideos')}
                               </span>
                             }
                           >
@@ -229,13 +234,13 @@ function SearchView() {
                               onClick={(e) => { e.stopPropagation(); openAddFormForTune(tune); }}
                               class="text-[10px] font-semibold whitespace-nowrap flex-shrink-0 px-2.5 py-1 rounded-full border border-dashed border-[var(--color-muted)]/30 text-[var(--color-muted)]/60 hover:border-[var(--color-primary)]/60 hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-colors"
                             >
-                              + Add video
+                              {t('search.addVideo')}
                             </button>
                           </Show>
                         }
                       >
                         <span class="text-[10px] font-semibold whitespace-nowrap flex-shrink-0 px-2 py-0.5 rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)]">
-                          ♫ {clipCount()} {clipCount() === 1 ? 'clip' : 'clips'}
+                          ♫ {clipCount()} {clipCount() === 1 ? t('search.clip', { count: 1 }) : t('search.clips', { count: clipCount() })}
                         </span>
                       </Show>
                     </Show>
@@ -251,9 +256,9 @@ function SearchView() {
       <Show when={isSearching() && searchResults().length === 0}>
         <div class="text-center py-8">
           <p class="text-[var(--color-muted)] text-sm">
-            No tunes found for "<span class="text-[var(--color-text)]">{searchQuery()}</span>"
+            {t('search.noTunesFound', { query: searchQuery() })}
           </p>
-          <p class="text-[var(--color-muted)] text-xs mt-1">Try a different spelling or alias</p>
+          <p class="text-[var(--color-muted)] text-xs mt-1">{t('search.tryDifferent')}</p>
         </div>
       </Show>
 
@@ -261,17 +266,17 @@ function SearchView() {
       <Show when={isFiltering() && !isSearching() && searchResults().length === 0 && videoDataReady()}>
         <div class="text-center py-8">
           <p class="text-[var(--color-muted)] text-sm">
-            No tunes with videos found for {
-              filterType() ? TUNE_TYPES.find(t => t === filterType()) || filterType() : ''
-            }{
-              filterType() && filterInstrument() ? ' with ' : ''
-            }{
-              filterInstrument() ? INSTRUMENTS[filterInstrument()] || filterInstrument() : ''
-            }
+            {t('search.noTunesVideos', { filter: [
+              filterType() ? TUNE_TYPES.find(t => t === filterType()) || filterType() : '',
+              filterType() && filterInstrument() ? ' · ' : '',
+              filterInstrument() ? instrumentLabel(filterInstrument()) : '',
+            ].join('') })}
           </p>
           <Show when={currentUser()}>
             <p class="text-[var(--color-muted)] text-xs mt-1">
-              Know a good video? <button onClick={() => setSearchQuery('')} class="underline hover:text-[var(--color-primary)]">Search for a tune</button> and add it!
+              {t('search.knowGoodVideo')}{' '}
+              <button onClick={() => setSearchQuery('')} class="underline hover:text-[var(--color-primary)]">{t('search.searchAndAdd')}</button>{' '}
+              {t('search.andAdd')}
             </p>
           </Show>
         </div>

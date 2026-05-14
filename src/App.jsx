@@ -2,6 +2,7 @@ import { onMount, Show, ErrorBoundary } from 'solid-js';
 import { useNavigate, useLocation } from '@solidjs/router';
 import { useAppStore } from './store/appStore';
 import { loginWithGoogle, logout } from './lib/supabase';
+import { useI18n } from './i18n';
 import AddVideoForm from './components/AddVideoForm';
 import Toast from './components/Toast';
 
@@ -15,6 +16,7 @@ function App(props) {
     theme, toggleTheme,
   } = useAppStore();
 
+  const { t, locale, setLocale } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -44,12 +46,12 @@ function App(props) {
             </h1>
           </button>
 
-          {/* Theme toggle + Auth */}
+          {/* Theme toggle + Lang + Auth */}
           <div class="flex items-center gap-2">
             <button
               onClick={toggleTheme}
               class="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors p-1.5 rounded-lg"
-              title={theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              title={theme() === 'dark' ? t('app.switchToLight') : t('app.switchToDark')}
             >
               <Show when={theme() === 'dark'} fallback={
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,6 +63,19 @@ function App(props) {
                 </svg>
               </Show>
             </button>
+
+            {/* Language selector */}
+            <select
+              value={locale()}
+              onChange={(e) => setLocale(e.target.value)}
+              aria-label="Language"
+              class="text-xs bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-1.5 py-1 text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
+            >
+              <option value="en">EN</option>
+              <option value="es">ES</option>
+              <option value="fr">FR</option>
+            </select>
+
           <Show
             when={currentUser()}
             fallback={
@@ -71,13 +86,13 @@ function App(props) {
                     await loginWithGoogle();
                   } catch (err) {
                     setLoggingIn(false);
-                    showToast('Login failed — please try again', 'error');
+                    showToast(t('login.failed'), 'error');
                   }
                 }}
                 disabled={loggingIn()}
                 class="text-xs px-4 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-primary)]/50 transition-colors disabled:opacity-50"
               >
-                {loggingIn() ? 'Redirecting…' : 'Login'}
+                {loggingIn() ? t('app.redirecting') : t('app.login')}
               </button>
             }
           >
@@ -90,7 +105,7 @@ function App(props) {
                     : 'bg-[var(--color-primary)] text-black hover:bg-green-400'
                   }`}
               >
-                + Add video
+                {t('app.addVideo')}
               </button>
               <button
                 onClick={() => { setShowAddForm(false); navigate(isAdmin() ? '/' : '/admin'); }}
@@ -100,9 +115,9 @@ function App(props) {
                     : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-warning)]/30'
                   }`}
               >
-                {isAdmin() ? '← Back' : (
+                {isAdmin() ? t('app.back') : (
                   <>
-                    Admin
+                    {t('app.admin')}
                     {pendingReviewCount() > 0 && (
                       <span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30 leading-none">
                         {pendingReviewCount()}
@@ -125,7 +140,7 @@ function App(props) {
                 onClick={logout}
                 class="text-xs text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
               >
-                Log out
+                {t('app.logOut')}
               </button>
             </div>
           </Show>
@@ -138,7 +153,7 @@ function App(props) {
         <ErrorBoundary fallback={(err) => (
           <div class="flex flex-col items-center justify-center py-16 gap-4">
             <div class="text-4xl">⚠</div>
-            <h2 class="text-lg font-semibold text-[var(--color-text)]">Something went wrong</h2>
+            <h2 class="text-lg font-semibold text-[var(--color-text)]">{t('app.error')}</h2>
             <pre class="text-xs text-[var(--color-error)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4 max-w-lg overflow-auto">
               {err.message}
             </pre>
@@ -146,7 +161,7 @@ function App(props) {
               onClick={() => window.location.reload()}
               class="text-sm px-4 py-2 rounded-lg bg-[var(--color-primary)] text-black font-semibold hover:opacity-90 transition-opacity"
             >
-              Reload page
+              {t('app.reload')}
             </button>
           </div>
         )}>
@@ -155,7 +170,7 @@ function App(props) {
             fallback={
               <div class="flex flex-col items-center justify-center py-32 gap-4">
                 <div class="w-8 h-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
-                <p class="text-sm text-[var(--color-muted)]">Loading tune library…</p>
+                <p class="text-sm text-[var(--color-muted)]">{t('app.loading')}</p>
               </div>
             }
           >
@@ -173,7 +188,7 @@ function App(props) {
       </main>
 
       <footer class="border-t border-[var(--color-border)] py-4 text-center text-xs text-[var(--color-muted)]">
-        Tune data from{' '}
+        {t('app.footer')}{' '}
         <a href="https://thesession.org" target="_blank" class="underline hover:text-[var(--color-primary)]">
           TheSession.org
         </a>

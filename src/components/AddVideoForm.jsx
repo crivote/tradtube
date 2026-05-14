@@ -12,7 +12,7 @@ import { searchTunes, getTuneById } from '../lib/db';
 import { addVideoWithEntries, updateVideoWithEntries, checkYoutubeIdExists } from '../lib/supabase';
 import { resolveTrackTunes } from '../lib/thesession';
 import { extractYoutubeId, parseSec, formatSec, validateTimestamp, cleanTitleForDisplay, findMatchingTunes } from '../lib/utils';
-import { SOURCE_TYPES, INSTRUMENTS } from '../constants';
+import { useI18n } from '../i18n';
 import { useAppStore } from '../store/appStore';
 import TheSessionImportModal from './TheSessionImportModal';
 
@@ -34,6 +34,9 @@ async function fetchYoutubeData(videoId) {
 
 function AddVideoForm(props) {
   const { showToast } = useAppStore();
+  const { t } = useI18n();
+  const sourceTypeLabel = (key) => t(`sourceTypes.${key}`) ?? key;
+  const instrumentLabel = (key) => t(`instruments.${key}`) ?? key;
   // Modo edición: props.editVideo contiene el vídeo existente
   const isEdit = () => !!props.editVideo;
 
@@ -156,8 +159,8 @@ function AddVideoForm(props) {
     const removed = entries[i];
     setEntries(produce(e => e.splice(i, 1)));
     if (removed) {
-      showToast(`"${removed.tune?.name || 'Tune'}" removed`, 'info', 4000, {
-        label: 'Undo',
+      showToast(t('addVideo.removed', { name: removed.tune?.name || 'Tune' }), 'info', 4000, {
+        label: t('admin.undo'),
         onClick: () => {
           setEntries(produce(e => { e.splice(i, 0, removed); }));
         },
@@ -175,8 +178,8 @@ function AddVideoForm(props) {
   };
 
   const handleSubmit = async () => {
-    if (!youtubeId()) { setError('URL de YouTube no válida.'); return; }
-    if (entries.length === 0) { setError('Añade al menos una tune.'); return; }
+    if (!youtubeId()) { setError(t('addVideo.enterValidUrl')); return; }
+    if (entries.length === 0) { setError(t('addVideo.addOneTune')); return; }
 
     setSubmitting(true);
     setError('');
@@ -209,7 +212,7 @@ function AddVideoForm(props) {
       }
       setSuccess(true);
     } catch (err) {
-      setError(err.message ?? 'Error al guardar. ¿Está el vídeo ya registrado?');
+      setError(err.message ?? '');
     } finally {
       setSubmitting(false);
     }
@@ -235,19 +238,19 @@ function AddVideoForm(props) {
       <div class="flex items-center justify-between">
         <div>
           <h2 class="text-2xl font-black text-[var(--color-text)]">
-            {isEdit() ? 'Edit video' : 'Add a video'}
+            {isEdit() ? t('addVideo.editTitle') : t('addVideo.addTitle')}
           </h2>
           <p class="text-sm text-[var(--color-muted)] mt-0.5">
             {isEdit()
-              ? `Editing ${props.editVideo.youtube_id}`
-              : 'Link a YouTube video to the tunes it contains'}
+              ? t('addVideo.editing', { id: props.editVideo.youtube_id })
+              : t('addVideo.addDesc')}
           </p>
         </div>
         <button
           onClick={props.onClose}
           class="text-sm text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
         >
-          ✕ Close
+          {t('addVideo.close')}
         </button>
       </div>
 
@@ -255,13 +258,13 @@ function AddVideoForm(props) {
       <Show when={success()}>
         <div class="rounded-xl border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/10 px-4 py-4 flex items-center justify-between gap-4">
           <p class="text-sm text-[var(--color-primary)] font-semibold">
-            ✓ {isEdit() ? 'Video updated' : 'Video saved — pending approval'}
+            {isEdit() ? t('addVideo.updated') : t('addVideo.saved')}
           </p>
           <button
             onClick={handleReset}
             class="text-xs text-[var(--color-primary)] underline hover:no-underline"
           >
-            Add another
+            {t('addVideo.addAnother')}
           </button>
         </div>
       </Show>
@@ -271,18 +274,18 @@ function AddVideoForm(props) {
         {/* ── YouTube URL ──────────────────────────────────────────────── */}
         <div class="flex flex-col gap-2">
           <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">
-            YouTube URL or video ID
+            {t('addVideo.youtubeLabel')}
           </label>
           <input
             type="text"
-            placeholder="https://www.youtube.com/watch?v=… or video ID"
+            placeholder={t('addVideo.youtubePlaceholder')}
             value={youtubeUrl()}
             onInput={e => setYoutubeUrl(e.target.value)}
             disabled={isEdit()}
             class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <Show when={youtubeUrl() && !youtubeId()}>
-            <p class="text-xs text-[var(--color-error)]">Can't extract a valid video ID from this URL.</p>
+            <p class="text-xs text-[var(--color-error)]">{t('addVideo.invalidId')}</p>
           </Show>
         </div>
 
@@ -291,7 +294,7 @@ function AddVideoForm(props) {
           <div class="rounded-xl border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/10 px-4 py-3 flex items-start gap-3">
             <span class="text-[var(--color-warning)] text-base flex-shrink-0">⚠</span>
             <div class="text-sm">
-              <p class="text-[var(--color-warning)] font-semibold">This video is already in the database</p>
+              <p class="text-[var(--color-warning)] font-semibold">{t('addVideo.duplicateTitle')}</p>
               <p class="text-[var(--color-warning)]/80 text-xs mt-0.5">
                 "{duplicate().title || duplicate().id}" —{' '}
                 <span class={`font-medium ${duplicate().status === 'approved' ? 'text-green-400' : 'text-[var(--color-warning)]'}`}>
@@ -299,9 +302,9 @@ function AddVideoForm(props) {
                 </span>
               </p>
               <p class="text-[var(--color-muted)] text-xs mt-1">
-                Submission is blocked — this video is already in the database.
+                {t('addVideo.duplicateBlocked')}
                 <Show when={duplicate().tune_id && duplicate().status === 'approved'}>
-                  {' '}<a href={`/tune/${duplicate().tune_id}`} class="underline hover:text-[var(--color-primary)]">View tune page</a>
+                  {' '}<a href={`/tune/${duplicate().tune_id}`} class="underline hover:text-[var(--color-primary)]">{t('addVideo.viewTune')}</a>
                 </Show>
               </p>
             </div>
@@ -323,14 +326,14 @@ function AddVideoForm(props) {
         {/* ── Channel + Title ───────────────────────────────────────────── */}
         <div class="flex flex-col gap-2">
           <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">
-            Channel
+            {t('addVideo.channel')}
             <Show when={youtubeId() && !channel()}>
-              <span class="ml-2 text-[var(--color-muted)]/50 normal-case font-normal">fetching…</span>
+              <span class="ml-2 text-[var(--color-muted)]/50 normal-case font-normal">{t('addVideo.fetching')}</span>
             </Show>
           </label>
           <input
             type="text"
-            placeholder="Channel name (auto-filled from YouTube)"
+            placeholder={t('addVideo.channelPlaceholder')}
             value={channel()}
             onInput={e => setChannel(e.target.value)}
             class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
@@ -339,14 +342,14 @@ function AddVideoForm(props) {
 
         <div class="flex flex-col gap-2">
           <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">
-            Title
+            {t('addVideo.title')}
             <Show when={youtubeId() && !title()}>
-              <span class="ml-2 text-[var(--color-muted)]/50 normal-case font-normal">fetching…</span>
+              <span class="ml-2 text-[var(--color-muted)]/50 normal-case font-normal">{t('addVideo.fetching')}</span>
             </Show>
           </label>
           <input
             type="text"
-            placeholder="Video title (auto-filled, matched tunes removed)"
+            placeholder={t('addVideo.titlePlaceholder')}
             value={title()}
             onInput={e => setTitle(e.target.value)}
             class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
@@ -356,16 +359,16 @@ function AddVideoForm(props) {
         {/* ── Source type ──────────────────────────────────────────────── */}
         <div class="flex flex-col gap-2">
           <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">
-            Source type
+            {t('addVideo.sourceType')}
           </label>
           <select
             value={sourceType()}
             onChange={e => setSourceType(e.target.value)}
             class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm appearance-none cursor-pointer"
           >
-            <For each={Object.entries(SOURCE_TYPES)}>
-              {([key, label]) => <option value={key}>{label}</option>}
-            </For>
+            {['studio', 'album', 'live_concert', 'tv_broadcast', 'session', 'tutorial', 'casual'].map(key => (
+              <option value={key}>{sourceTypeLabel(key)}</option>
+            ))}
           </select>
         </div>
 
@@ -377,11 +380,11 @@ function AddVideoForm(props) {
               onClick={() => setShowImportModal(true)}
               class="w-full py-2.5 rounded-xl text-sm border border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-primary)]/50 hover:text-[var(--color-primary)] transition-colors"
             >
-              Import tracklist from TheSession…
+              {t('addVideo.importTracklist')}
             </button>
             <Show when={skippedTuneNames().length > 0}>
               <p class="text-xs text-[var(--color-warning)]/80 bg-[var(--color-warning)]/5 border border-[var(--color-warning)]/20 rounded-lg px-3 py-2">
-                Skipped (not in database): {skippedTuneNames().join(', ')}
+                {t('addVideo.skipped', { tunes: skippedTuneNames().join(', ') })}
               </p>
             </Show>
           </div>
@@ -390,14 +393,14 @@ function AddVideoForm(props) {
         {/* ── Tunes in this video ──────────────────────────────────────── */}
         <div class="flex flex-col gap-3">
           <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">
-            Tunes in this video
+            {t('addVideo.tunesLabel')}
           </label>
 
           {/* Search tune */}
           <div class="relative">
             <input
               type="text"
-              placeholder="Search tune name…"
+              placeholder={t('addVideo.searchTunePlaceholder')}
               value={tuneSearch()}
               onInput={e => setTuneSearch(e.target.value)}
               class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
@@ -450,7 +453,7 @@ function AddVideoForm(props) {
                     {/* Timestamps */}
                     <div class="flex items-start gap-2 flex-shrink-0">
                       <div class="flex flex-col items-center gap-0.5">
-                        <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">start</span>
+                        <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">{t('addVideo.start')}</span>
                         <input
                           type="text"
                           placeholder="0:00"
@@ -464,7 +467,7 @@ function AddVideoForm(props) {
                       </div>
                       <span class="text-[var(--color-border)] text-xs mt-3">–</span>
                       <div class="flex flex-col items-center gap-0.5">
-                        <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">end</span>
+                        <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">{t('addVideo.end')}</span>
                         <input
                           type="text"
                           placeholder="—"
@@ -490,7 +493,7 @@ function AddVideoForm(props) {
                            || (() => {
                                const s = validateTimestamp(entry.startSec).value;
                                const e = validateTimestamp(entry.endSec).value;
-                               return s != null && e != null && e <= s ? 'End must be after start' : '';
+                               return s != null && e != null && e <= s ? t('addVideo.endAfterStart') : '';
                              })()}
                         </span>
                       </Show>
@@ -504,10 +507,10 @@ function AddVideoForm(props) {
                         aria-expanded={openInstrumentDropdown() === i()}
                         aria-haspopup="listbox"
                         class="flex items-center gap-1 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors cursor-pointer min-w-[80px]"
-                        title="Instruments"
+                        title={t('addVideo.instruments')}
                       >
                         <span class={entry.instruments.length === 0 ? 'text-[var(--color-muted)]' : ''}>
-                          {entry.instruments.length === 0 ? '—' : entry.instruments.map(ins => INSTRUMENTS[ins] ?? ins).join(', ')}
+                          {entry.instruments.length === 0 ? '—' : entry.instruments.map(ins => instrumentLabel(ins)).join(', ')}
                         </span>
                         <svg class={`w-3 h-3 text-[var(--color-muted)] transition-transform ${openInstrumentDropdown() === i() ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -515,8 +518,8 @@ function AddVideoForm(props) {
                       </button>
                       <Show when={openInstrumentDropdown() === i()}>
                         <div class="absolute top-full left-0 mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl z-30 py-1 min-w-[140px]" onClick={e => e.stopPropagation()}>
-                          <For each={Object.entries(INSTRUMENTS)}>
-                            {([key, label]) => {
+                          <For each={['fiddle', 'flute', 'uileann_pipes', 'whistle', 'banjo', 'concertina', 'melodeon', 'mandolin', 'mandola', 'various']}>
+                            {(key) => {
                               const isSelected = () => entry.instruments.includes(key);
                               return (
                                 <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-[var(--color-primary)]/10 cursor-pointer">
@@ -532,7 +535,7 @@ function AddVideoForm(props) {
                                     }}
                                     class="rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                                   />
-                                  <span class="text-xs text-[var(--color-text)]">{label}</span>
+                                  <span class="text-xs text-[var(--color-text)]">{instrumentLabel(key)}</span>
                                 </label>
                               );
                             }}
@@ -545,7 +548,7 @@ function AddVideoForm(props) {
                     <button
                       onClick={() => removeEntry(i())}
                       class="text-[var(--color-muted)] hover:text-[var(--color-error)] transition-colors text-sm flex-shrink-0 ml-1"
-                      title="Remove"
+                      title={t('addVideo.instruments')}
                     >✕</button>
                   </div>
                 )}
@@ -555,12 +558,14 @@ function AddVideoForm(props) {
 
           <Show when={entries.length === 0}>
             <p class="text-xs text-[var(--color-muted)] py-2">
-              Search and add the tunes that appear in this video, in order.
+              {t('addVideo.noEntries')}
             </p>
           </Show>
           <Show when={autoMatchedCount() > 0}>
             <p class="text-xs text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 rounded-lg px-3 py-2">
-              ✓ {autoMatchedCount()} tune{autoMatchedCount() > 1 ? 's' : ''} auto-matched from title
+              {autoMatchedCount() > 1
+                ? t('addVideo.autoMatchedPlural', { count: autoMatchedCount() })
+                : t('addVideo.autoMatched', { count: autoMatchedCount() })}
             </p>
           </Show>
         </div>
@@ -580,13 +585,13 @@ function AddVideoForm(props) {
             bg-[var(--color-primary)] text-black hover:opacity-90
             disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          {submitting() ? 'Saving…' : isEdit() ? 'Update video' : 'Save video'}
+          {submitting() ? t('addVideo.saving') : isEdit() ? t('addVideo.update') : t('addVideo.save')}
         </button>
         <Show when={!submitting()}>
           <p class="text-center text-[10px] text-[var(--color-muted)] -mt-1">
-            {duplicate() ? 'This video is already registered' :
-             entries.length === 0 ? 'Add at least one tune to submit' :
-             !youtubeId() ? 'Enter a valid YouTube URL' : ''}
+            {duplicate() ? t('addVideo.alreadyRegistered') :
+             entries.length === 0 ? t('addVideo.addOneTune') :
+              !youtubeId() ? t('addVideo.enterValidUrl') : ''}
           </p>
         </Show>
 
