@@ -73,6 +73,7 @@ function App(props) {
               aria-label="Language"
               class="text-xs bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-1.5 py-1 text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
             >
+              <option value="de">DE</option>
               <option value="en">EN</option>
               <option value="es">ES</option>
               <option value="fr">FR</option>

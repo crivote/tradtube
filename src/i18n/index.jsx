@@ -1,10 +1,11 @@
 import { createContext, useContext, createSignal, createMemo } from 'solid-js';
 import { translator, flatten, resolveTemplate } from '@solid-primitives/i18n';
+import de from './locales/de';
 import en from './locales/en';
 import es from './locales/es';
 import fr from './locales/fr';
 
-const dictionaries = { en, es, fr };
+const dictionaries = { de, en, es, fr };
 
 const flatDicts = Object.fromEntries(
   Object.entries(dictionaries).map(([key, dict]) => [key, flatten(dict)]),
