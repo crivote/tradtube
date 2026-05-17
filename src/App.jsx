@@ -15,6 +15,7 @@ function App(props) {
     addFormInitialTune, setAddFormInitialTune,
     loggingIn, setLoggingIn, showToast, pendingReviewCount,
     theme, toggleTheme,
+    setSearchQuery, setFilterType, setFilterInstrument, setSelectedTune,
   } = useAppStore();
 
   const { t, locale, setLocale } = useI18n();
@@ -37,7 +38,16 @@ function App(props) {
 
           {/* Logo */}
           <button
-            onClick={() => navigate('/')}
+            onClick={() => {
+              setShowAddForm(false);
+              setAddFormInitialTune(null);
+              setGeneralReport(false);
+              setSearchQuery('');
+              setFilterType(null);
+              setFilterInstrument(null);
+              setSelectedTune(null);
+              navigate('/');
+            }}
             class="flex items-center gap-2.5 flex-shrink-0 hover:opacity-80 transition-opacity"
           >
             <div class="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center flex-shrink-0">
