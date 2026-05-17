@@ -43,8 +43,8 @@ const dismissToast = (id) => {
 };
 
 // ── Auth ────────────────────────────────────────────────────────────────────
-const [currentUser, setCurrentUser] = createSignal(null);
-const [isAdmin, setIsAdmin] = createSignal(false);
+const [authUser, setAuthUser] = createSignal(null);
+const [authInitialized, setAuthInitialized] = createSignal(false);
 const [loggingIn, setLoggingIn] = createSignal(false);
 const [pendingReviewCount, setPendingReviewCount] = createSignal(null);
 
@@ -122,14 +122,20 @@ export function useAppStore() {
   // Escuchar cambios de auth
   const initAuth = () => {
     const { data: { subscription } } = onAuthChange(async (user) => {
-      setCurrentUser(user);
       if (user) {
-        getPendingCount().then(setPendingReviewCount).catch(() => {});
-        getUserRole(user.id).then(role => setIsAdmin(role === 'admin')).catch(() => {});
+        getPendingCount().then(setPendingReviewCount).catch((err) => console.error('getPendingCount failed:', err));
+        try {
+          const role = await getUserRole(user.id);
+          setAuthUser({ ...user, isAdmin: role === 'admin' });
+        } catch (err) {
+          console.error('getUserRole failed:', err);
+          setAuthUser({ ...user, isAdmin: false });
+        }
       } else {
         setPendingReviewCount(null);
-        setIsAdmin(false);
+        setAuthUser(null);
       }
+      setAuthInitialized(true);
     });
     return () => subscription.unsubscribe();
   };
@@ -271,7 +277,7 @@ export function useAppStore() {
 
   return {
     // Estado
-    dbReady,     currentUser, loggingIn, setLoggingIn, pendingReviewCount, isAdmin,
+    dbReady,     authUser, loggingIn, setLoggingIn, pendingReviewCount, authInitialized,
     videoCountsByTune, videoThumbnailsByTune, videoDataReady,
     placeholderExamples, typeCounts,
     searchQuery, setSearchQuery,

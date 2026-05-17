@@ -26,7 +26,7 @@ function SearchView() {
     searchResults,
     videoCountsByTune, videoDataReady,
     placeholderExamples, typeCounts,
-    currentUser, openAddFormForTune,
+    authUser, openAddFormForTune,
   } = useAppStore();
 
   const { t } = useI18n();
@@ -223,7 +223,7 @@ function SearchView() {
                         when={hasVideos()}
                         fallback={
                           <Show
-                            when={currentUser()}
+                              when={authUser()}
                             fallback={
                               <span class="text-[10px] text-[var(--color-muted)]/40 whitespace-nowrap flex-shrink-0">
                                 {t('search.noVideos')}
@@ -272,7 +272,7 @@ function SearchView() {
               filterInstrument() ? instrumentLabel(filterInstrument()) : '',
             ].join('') })}
           </p>
-          <Show when={currentUser()}>
+          <Show when={authUser()}>
             <p class="text-[var(--color-muted)] text-xs mt-1">
               {t('search.knowGoodVideo')}{' '}
               <button onClick={() => setSearchQuery('')} class="underline hover:text-[var(--color-primary)]">{t('search.searchAndAdd')}</button>{' '}

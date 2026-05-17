@@ -9,11 +9,11 @@ import Toast from './components/Toast';
 function App(props) {
   const {
     loadDB, initAuth, dbReady,
-    currentUser,
+    authUser,
     showAddForm, setShowAddForm,
     addFormInitialTune, setAddFormInitialTune,
     loggingIn, setLoggingIn, showToast, pendingReviewCount,
-    theme, toggleTheme, isAdmin,
+    theme, toggleTheme,
   } = useAppStore();
 
   const { t, locale, setLocale } = useI18n();
@@ -77,7 +77,7 @@ function App(props) {
             </select>
 
           <Show
-            when={currentUser()}
+            when={authUser()}
             fallback={
               <button
                 onClick={async () => {
@@ -107,7 +107,7 @@ function App(props) {
               >
                 {t('app.addVideo')}
               </button>
-              <Show when={isAdmin()}>
+              <Show when={authUser()?.isAdmin}>
               <button
                 onClick={() => { setShowAddForm(false); navigate(isAdminPath() ? '/' : '/admin'); }}
                 class={`text-xs px-3 py-1.5 rounded-lg border transition-colors
@@ -129,11 +129,11 @@ function App(props) {
               </button>
               </Show>
               <span class="text-xs text-[var(--color-muted)] hidden sm:inline truncate max-w-[160px]">
-                {currentUser().email}
+                {authUser()?.email}
               </span>
-              <Show when={currentUser()?.user_metadata?.avatar_url}>
+              <Show when={authUser()?.user_metadata?.avatar_url}>
                 <img
-                  src={currentUser().user_metadata.avatar_url}
+                  src={authUser().user_metadata.avatar_url}
                   alt=""
                   class="w-6 h-6 rounded-full border border-[var(--color-border)] sm:hidden"
                 />

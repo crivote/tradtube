@@ -22,7 +22,7 @@ function TuneView() {
     dbReady,
     selectedTune, tuneEntries, loadingEntries,
     activeEntry, setActiveEntry,
-    currentUser, isAdmin, loadTuneById, updateEntryVote,
+    authUser, loadTuneById, updateEntryVote,
     getEntryVoteScore, getEntryUserVote,
     showToast, loadVideoData,
   } = useAppStore();
@@ -82,7 +82,7 @@ function TuneView() {
 
   const handleVote = async (e, entry, vote, isReport = false) => {
     e.stopPropagation();
-    if (!currentUser()) { loginWithGoogle(); return; }
+    if (!authUser()) { loginWithGoogle(); return; }
     
     const currentVote = getEntryUserVote(entry.id, entry.userVote || 0);
     const newUserVote = currentVote === vote ? 0 : vote;
@@ -334,7 +334,7 @@ function TuneView() {
                   </div>
 
                   {/* Admin edit */}
-                  <Show when={isAdmin()}>
+                  <Show when={authUser()?.isAdmin}>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleEditVideo(entry); }}
                       class="text-[10px] px-2 py-1 rounded-lg border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 transition-colors flex-shrink-0"
