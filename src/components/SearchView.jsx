@@ -53,7 +53,7 @@ function SearchView() {
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <Show when={!isActive()}>
         <div class="text-center flex flex-col items-center gap-4 py-10">
-          <div class="text-6xl text-[var(--color-muted)]/30 select-none leading-none">♫</div>
+          <img src="/favicon.png" alt="" class="w-16 h-16 drop-shadow-[0_0_6px_rgba(255,255,255,0.25)]" />
           <div>
             <h2 class="text-4xl font-black text-[var(--color-text)] tracking-tight">{t('search.heroTitle')}</h2>
             <p class="text-[var(--color-muted)] text-sm mt-2 leading-relaxed mx-auto">
