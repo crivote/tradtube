@@ -1,9 +1,10 @@
-import { onMount, Show, ErrorBoundary } from 'solid-js';
+import { onMount, Show, ErrorBoundary, createSignal } from 'solid-js';
 import { useNavigate, useLocation } from '@solidjs/router';
 import { useAppStore } from './store/appStore';
 import { loginWithGoogle, logout } from './lib/supabase';
 import { useI18n } from './i18n';
 import AddVideoForm from './components/AddVideoForm';
+import ReportForm from './components/ReportForm';
 import Toast from './components/Toast';
 
 function App(props) {
@@ -19,6 +20,7 @@ function App(props) {
   const { t, locale, setLocale } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
+  const [generalReport, setGeneralReport] = createSignal(false);
 
   onMount(async () => {
     initAuth();
@@ -140,9 +142,12 @@ function App(props) {
               </Show>
               <button
                 onClick={logout}
-                class="text-xs text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
+                title={t('app.logOut')}
+                class="text-[var(--color-muted)] hover:text-[var(--color-error)] transition-colors p-1"
               >
-                {t('app.logOut')}
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
           </Show>
@@ -188,6 +193,20 @@ function App(props) {
           </Show>
         </ErrorBoundary>
       </main>
+
+      <div class="max-w-6xl w-full mx-auto px-4 pb-4">
+        <p class="text-xs text-[var(--color-muted)]/60 text-center">
+          {t('app.betaNotice')}{' '}
+          <button
+            onClick={() => setGeneralReport(true)}
+            class="underline hover:text-[var(--color-primary)] transition-colors"
+          >{t('app.betaLink')}</button>
+        </p>
+      </div>
+
+      <Show when={generalReport()}>
+        <ReportForm onClose={() => setGeneralReport(false)} />
+      </Show>
 
       <footer class="border-t border-[var(--color-border)] py-4 text-center text-xs text-[var(--color-muted)]">
         {t('app.footer')}{' '}

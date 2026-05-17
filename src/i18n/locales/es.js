@@ -12,6 +12,8 @@ const es = {
     switchToLight: 'Cambiar a tema claro',
     switchToDark: 'Cambiar a tema oscuro',
     footer: 'Datos de melod\u00edas de',
+    betaNotice: 'Este sitio est\u00e1 en beta p\u00fablica. Si encuentras un problema con una melod\u00eda, usa el bot\u00f3n de reporte junto a ella. Para lo dem\u00e1s, usa este',
+    betaLink: 'formulario de reporte.',
   },
   search: {
     heroTitle: 'Encuentra cualquier melod\u00eda',

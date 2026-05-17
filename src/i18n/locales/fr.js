@@ -12,6 +12,8 @@ const fr = {
     switchToLight: 'Passer au th\u00e8me clair',
     switchToDark: 'Passer au th\u00e8me sombre',
     footer: 'Donn\u00e9es de morceaux de',
+    betaNotice: 'Ce site est en b\u00eata publique. Si vous trouvez un probl\u00e8me avec un morceau, utilisez le bouton de signalement \u00e0 c\u00f4t\u00e9. Pour tout le reste, utilisez ce',
+    betaLink: 'formulaire de signalement.',
   },
   search: {
     heroTitle: 'Trouver un morceau',

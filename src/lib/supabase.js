@@ -322,7 +322,7 @@ export async function createReport({ video_id, tune_id, issue_type, description,
   const { error } = await supabase
     .from('tune_video_reports')
     .insert({
-      video_id,
+      video_id: video_id ?? null,
       tune_id: tune_id ?? null,
       user_id: user?.id ?? null,
       email: email || null,

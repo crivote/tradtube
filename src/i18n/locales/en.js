@@ -12,6 +12,8 @@ const en = {
     switchToLight: 'Switch to light theme',
     switchToDark: 'Switch to dark theme',
     footer: 'Tune data from',
+    betaNotice: 'This site is in public beta. If you find an issue with a specific tune, use the report button next to it. For anything else, use this',
+    betaLink: 'report form.',
   },
   search: {
     heroTitle: 'Find any tune',
