@@ -56,7 +56,7 @@ function SearchView() {
           <div class="text-6xl text-[var(--color-muted)]/30 select-none leading-none">♫</div>
           <div>
             <h2 class="text-4xl font-black text-[var(--color-text)] tracking-tight">{t('search.heroTitle')}</h2>
-            <p class="text-[var(--color-muted)] text-sm mt-2 max-w-sm leading-relaxed">
+            <p class="text-[var(--color-muted)] text-sm mt-2 leading-relaxed mx-auto">
               {t('search.heroSubtitle')}
             </p>
           </div>
@@ -71,56 +71,39 @@ function SearchView() {
         </p>
       </Show>
 
-      {/* ── Suggested searches ────────────────────────────────────────── */}
-      <Show when={!isActive()}>
-        <div class="flex flex-wrap gap-2 justify-center -mt-2">
-          <span class="text-[10px] text-[var(--color-muted)] uppercase tracking-wider self-center mr-1">{t('search.tryLabel')}</span>
-          {['The Butterfly', "Drowsy Maggie", "Cooley's Reel", 'The Banshee', 'Morrison\'s Jig', 'The Kesh'].map(name => (
+      {/* ── Search input + Instrument filter ─────────────────────────── */}
+      <div class="w-full max-w-xl flex gap-2">
+        <div class="flex-1 relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)] select-none">♪</span>
+          <input
+            type="text"
+            placeholder={placeholder()}
+            value={searchQuery()}
+            onInput={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search tunes"
+            role="searchbox"
+            class="w-full bg-[var(--color-surface)] border border-[var(--color-primary)]/50 rounded-xl pl-10 pr-10 py-3.5 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_20px_rgba(34,197,94,0.12)] transition-all text-sm"
+            autofocus
+          />
+          <Show when={searchQuery().length > 0}>
             <button
-              onClick={() => setSearchQuery(name)}
-              class="text-xs px-3 py-1 rounded-full border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/40 transition-colors"
-            >
-              {name}
-            </button>
-          ))}
+              onClick={() => setSearchQuery('')}
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors text-xs"
+            >✕</button>
+          </Show>
         </div>
-      </Show>
-
-      {/* ── Search input ─────────────────────────────────────────────── */}
-      <div class="w-full max-w-xl relative">
-        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)] select-none">♪</span>
-        <input
-          type="text"
-          placeholder={placeholder()}
-          value={searchQuery()}
-          onInput={(e) => setSearchQuery(e.target.value)}
-          aria-label="Search tunes"
-          role="searchbox"
-          class="w-full bg-[var(--color-surface)] border border-[var(--color-primary)]/50 rounded-xl pl-10 pr-10 py-3.5 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_20px_rgba(34,197,94,0.12)] transition-all text-sm"
-          autofocus
-        />
-        <Show when={searchQuery().length > 0}>
-          <button
-            onClick={() => setSearchQuery('')}
-            class="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors text-xs"
-          >✕</button>
-        </Show>
-      </div>
-
-      {/* ── Instrument filter ──────────────────────────────────────────── */}
         <select
           value={filterInstrument() ?? ''}
-          onChange={(e) => {
-            setFilterInstrument(e.target.value || null);
-          }}
+          onChange={(e) => setFilterInstrument(e.target.value || null)}
           aria-label="Filter by instrument"
-          class="bg-[var(--color-surface)] border border-[var(--color-primary)]/50 rounded-xl px-4 py-2.5 text-[var(--color-text)] text-sm focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+          class="bg-[var(--color-surface)] border border-[var(--color-primary)]/50 rounded-xl px-3 py-3.5 text-[var(--color-text)] text-sm focus:outline-none focus:border-[var(--color-primary)] cursor-pointer flex-shrink-0"
         >
           <option value="">{t('search.any')}</option>
           <For each={INSTRUMENT_KEYS}>
             {(key) => <option value={key}>{instrumentLabel(key)}</option>}
           </For>
         </select>
+      </div>
 
       {/* ── Type chips ────────────────────────────────────────────────── */}
         <div class="flex flex-wrap gap-2 justify-center">
