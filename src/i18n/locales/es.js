@@ -139,7 +139,7 @@ const es = {
     issueType: 'Tipo de problema',
     selectType: 'Selecciona un problema…',
     description: 'Descripción',
-    descriptionPlaceholder: 'Describe el problema con este vídeo o melodía…',
+    descriptionPlaceholder: 'Describe el problema…',
     email: 'Email (opcional)',
     emailPlaceholder: 'tu@email.com',
     submit: 'Enviar reporte',

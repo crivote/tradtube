@@ -139,7 +139,7 @@ const fr = {
     issueType: 'Type de problème',
     selectType: 'Sélectionnez un problème…',
     description: 'Description',
-    descriptionPlaceholder: 'Décrivez le problème avec cette vidéo ou ce morceau…',
+    descriptionPlaceholder: 'Décrivez le problème…',
     email: 'Email (optionnel)',
     emailPlaceholder: 'votre@email.com',
     submit: 'Envoyer le signalement',

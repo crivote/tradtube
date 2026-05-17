@@ -139,7 +139,7 @@ const de = {
     issueType: 'Art des Problems',
     selectType: 'W\u00e4hle ein Problem\u2026',
     description: 'Beschreibung',
-    descriptionPlaceholder: 'Beschreibe das Problem mit diesem Video oder dieser Melodie\u2026',
+    descriptionPlaceholder: 'Beschreibe das Problem\u2026',
     email: 'E-Mail (optional)',
     emailPlaceholder: 'deine@email.com',
     submit: 'Meldung einreichen',

@@ -139,7 +139,7 @@ const en = {
     issueType: 'Issue type',
     selectType: 'Select an issue…',
     description: 'Description',
-    descriptionPlaceholder: 'Describe the issue with this video or tune…',
+    descriptionPlaceholder: 'Describe the issue…',
     email: 'Email (optional)',
     emailPlaceholder: 'your@email.com',
     submit: 'Submit report',
