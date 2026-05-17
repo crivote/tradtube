@@ -195,8 +195,8 @@ function App(props) {
         </ErrorBoundary>
       </main>
 
-      <div class="max-w-6xl w-full mx-auto px-4 pb-4 flex justify-center">
-        <p class="inline-flex items-center gap-1 rounded-full px-4 py-1.5 text-xs bg-[var(--color-primary)]/10 text-[var(--color-text)]/80">
+      <div class="max-w-6xl w-full mx-auto p-4 rounded-md flex justify-center bg-[var(--color-primary)] text-white/80">
+        <p class="inline-flex items-center gap-1 px-4 py-1.5 text-sm">
           {t('app.betaNotice')}{' '}
           <button
             onClick={() => setGeneralReport(true)}
