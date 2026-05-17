@@ -45,6 +45,7 @@ const fr = {
     loadingVideos: 'Chargement des vid\u00e9os\u2026',
     noVideosYet: 'Pas encore de vid\u00e9o pour ce morceau.',
     videos: 'Vid\u00e9os ({{count}})',
+    restart: 'Recommencer',
     unknown: 'Inconnu',
   },
   admin: {

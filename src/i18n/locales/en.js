@@ -45,6 +45,7 @@ const en = {
     loadingVideos: 'Loading videos\u2026',
     noVideosYet: 'No videos yet for this tune.',
     videos: 'Videos ({{count}})',
+    restart: 'Restart',
     unknown: 'Unknown',
   },
   admin: {

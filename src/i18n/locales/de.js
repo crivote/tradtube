@@ -45,6 +45,7 @@ const de = {
     loadingVideos: 'Videos werden geladen\u2026',
     noVideosYet: 'Noch keine Videos f\u00fcr diese Melodie.',
     videos: 'Videos ({{count}})',
+    restart: 'Neustart',
     unknown: 'Unbekannt',
   },
   admin: {

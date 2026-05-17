@@ -259,8 +259,8 @@ export async function getVideoCountsByTune() {
 export async function getTuneIdsByInstrument(instrument) {
   const { data, error } = await supabase
     .from('tune_video_entries')
-    .select('tune_id, instruments')
-    .filter('instruments', 'cs', `{${instrument}}`)
+    .select('tune_id, instruments, tune_videos!inner(status)')
+    .contains('instruments', [instrument])
     .eq('tune_videos.status', 'approved');
 
   if (error) { console.error(error); return new Set(); }

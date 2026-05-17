@@ -8,6 +8,7 @@
  */
 
 import { createEffect, createSignal, onCleanup } from 'solid-js';
+import { useI18n } from '../i18n';
 
 const SPEED_STOPS = [0.5, 0.75, 1];
 
@@ -37,6 +38,7 @@ function YoutubePlayer(props) {
   let player = null;
   let pollInterval = null;
 
+  const { t } = useI18n();
   const [speed, setSpeed] = createSignal(1);
 
   const clearPoll = () => {
@@ -117,6 +119,14 @@ function YoutubePlayer(props) {
   // Limpiar al desmontar el componente
   onCleanup(destroyPlayer);
 
+  const seekToStart = () => {
+    const st = props.startSec;
+    if (player && st != null) {
+      player.seekTo(st, true);
+      player.playVideo();
+    }
+  };
+
   return (
     <div>
       <div
@@ -124,8 +134,19 @@ function YoutubePlayer(props) {
         class="w-full aspect-video bg-black rounded-lg overflow-hidden"
       />
 
-      {/* Speed slider */}
+      {/* Controls */}
       <div class="mt-2 px-1 flex items-center gap-3">
+        <button
+          onClick={seekToStart}
+          aria-label={t('tune.restart')}
+          title={t('tune.restart')}
+          class="text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors p-1 rounded flex-shrink-0"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 9a9 9 0 009 4.5A9 9 0 0020 4" />
+          </svg>
+        </button>
         <div class="relative flex-1">
           <input
             type="range"
@@ -153,8 +174,6 @@ function YoutubePlayer(props) {
           </div>
         </div>
       </div>
-
-
     </div>
   );
 }

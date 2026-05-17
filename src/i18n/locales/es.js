@@ -45,6 +45,7 @@ const es = {
     loadingVideos: 'Cargando v\u00eddeos\u2026',
     noVideosYet: 'A\u00fan no hay v\u00eddeos para esta melod\u00eda.',
     videos: 'V\u00eddeos ({{count}})',
+    restart: 'Reiniciar',
     unknown: 'Desconocido',
   },
   admin: {
