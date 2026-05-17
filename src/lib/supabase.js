@@ -314,3 +314,55 @@ export async function getVideoById(videoId) {
   if (error) { console.error(error); return null; }
   return data;
 }
+
+// ── Reports ──────────────────────────────────────────────────────────────────
+
+export async function createReport({ video_id, tune_id, issue_type, description, email }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from('tune_video_reports')
+    .insert({
+      video_id,
+      tune_id: tune_id ?? null,
+      user_id: user?.id ?? null,
+      email: email || null,
+      issue_type,
+      description: description || null,
+    });
+
+  if (error) throw error;
+}
+
+export async function getReports(status) {
+  let query = supabase
+    .from('tune_video_reports')
+    .select(`
+      id, created_at, video_id, tune_id, user_id, email, issue_type, description, status, admin_comments, closed_at,
+      tune_videos (id, youtube_id, title, source_type, status)
+    `)
+    .order('created_at', { ascending: false });
+
+  if (status) query = query.eq('status', status);
+
+  const { data, error } = await query;
+  if (error) { console.error(error); return []; }
+  return data ?? [];
+}
+
+export async function updateReport(reportId, { status, admin_comments }) {
+  const updates = {};
+  if (status !== undefined) {
+    updates.status = status;
+    if (status === 'solved' || status === 'discarded') {
+      updates.closed_at = new Date().toISOString();
+    }
+  }
+  if (admin_comments !== undefined) updates.admin_comments = admin_comments;
+
+  const { error } = await supabase
+    .from('tune_video_reports')
+    .update(updates)
+    .eq('id', reportId);
+
+  if (error) throw error;
+}

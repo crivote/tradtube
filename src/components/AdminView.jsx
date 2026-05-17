@@ -12,6 +12,7 @@ import {
   getPendingVideos,
   getLatestApprovedVideos, getVideosByTune,
   approveVideo, deleteVideo,
+  getReports, updateReport,
 } from '../lib/supabase';
 import { getTuneById, searchTunes } from '../lib/db';
 import { formatTime } from '../lib/utils';
@@ -30,6 +31,13 @@ const STATUS_STYLE = {
   approved: 'text-green-400 border-green-400/30 bg-green-400/10',
   pending:  'text-[var(--color-warning)] border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10',
   rejected: 'text-[var(--color-error)] border-[var(--color-error)]/30 bg-[var(--color-error)]/10',
+};
+
+const REPORT_STATUS_STYLE = {
+  pending:   'text-[var(--color-warning)] border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10',
+  tracking:  'text-blue-400 border-blue-400/30 bg-blue-400/10',
+  solved:    'text-green-400 border-green-400/30 bg-green-400/10',
+  discarded: 'text-[var(--color-error)] border-[var(--color-error)]/30 bg-[var(--color-error)]/10',
 };
 
 function enrichVideos(data) {
@@ -463,6 +471,169 @@ function SearchByTuneTab(props) {
   );
 }
 
+// ── Tab: Reports ─────────────────────────────────────────────────────────────
+function ReportsTab() {
+  const { t } = useI18n();
+  const [reports, setReports] = createSignal([]);
+  const [loading, setLoading] = createSignal(true);
+  const [statusFilter, setStatusFilter] = createSignal('');
+  const [actionId, setActionId] = createSignal(null);
+  const [expandedId, setExpandedId] = createSignal(null);
+
+  const load = async (status) => {
+    setLoading(true);
+    const data = await getReports(status || undefined);
+    setReports(data);
+    setLoading(false);
+  };
+  onMount(() => load());
+
+  createEffect(() => {
+    const s = statusFilter();
+    load(s || undefined);
+  });
+
+  const handleStatusUpdate = async (reportId, newStatus) => {
+    setActionId(reportId);
+    try {
+      await updateReport(reportId, { status: newStatus });
+      setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: newStatus, closed_at: newStatus === 'solved' || newStatus === 'discarded' ? new Date().toISOString() : r.closed_at } : r));
+    } catch { /* ignore */ }
+    finally { setActionId(null); }
+  };
+
+  const reportTypeLabel = (type) => t(`report.types.${type}`) ?? type;
+  const reportStatusLabel = (status) => t(`report.status.${status}`) ?? status;
+
+  return (
+    <div class="flex flex-col gap-4">
+      {/* Status filter */}
+      <div class="flex gap-1.5 flex-wrap">
+        <button
+          onClick={() => setStatusFilter('')}
+          class={`text-xs px-3 py-1 rounded-lg border transition-colors
+            ${!statusFilter()
+              ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+              : 'border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)]'}`}
+        >{t('report.all')}</button>
+        {['pending', 'tracking', 'solved', 'discarded'].map(s => (
+          <button
+            onClick={() => setStatusFilter(s)}
+            class={`text-xs px-3 py-1 rounded-lg border transition-colors
+              ${statusFilter() === s
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                : 'border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)]'}`}
+          >{reportStatusLabel(s)}</button>
+        ))}
+      </div>
+
+      <Show when={loading()}>
+        <div class="flex items-center gap-3 py-16 justify-center">
+          <div class="w-5 h-5 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+          <span class="text-sm text-[var(--color-muted)]">{t('admin.loading')}</span>
+        </div>
+      </Show>
+
+      <Show when={!loading() && reports().length === 0}>
+        <div class="text-center py-16 border border-dashed border-[var(--color-border)] rounded-xl">
+          <p class="text-[var(--color-muted)] text-sm">{t('report.noReports')}</p>
+        </div>
+      </Show>
+
+      <Show when={!loading() && reports().length > 0}>
+        <div class="flex flex-col gap-3">
+          <For each={reports()}>
+            {(report) => {
+              const isExpanded = () => expandedId() === report.id;
+              const isBusy = () => actionId() === report.id;
+              return (
+                <div class={`border rounded-xl overflow-hidden transition-colors
+                  ${isExpanded() ? 'border-[var(--color-primary)]/40' : 'border-[var(--color-border)]'}
+                  bg-[var(--color-surface)]`}>
+                  <div class="flex items-start gap-3 p-4">
+                    <div class="flex-grow min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap mb-1">
+                        <span class="text-sm font-semibold text-[var(--color-text)]">
+                          {reportTypeLabel(report.issue_type)}
+                        </span>
+                        <span class={`text-[10px] px-2 py-0.5 rounded-full border ${REPORT_STATUS_STYLE[report.status] ?? ''}`}>
+                          {reportStatusLabel(report.status)}
+                        </span>
+                      </div>
+                      <Show when={report.tune_videos}>
+                        <div class="text-xs text-[var(--color-muted)] flex items-center gap-2 flex-wrap">
+                          <Show when={report.tune_videos.title}>
+                            <span class="truncate max-w-[200px]">{report.tune_videos.title}</span>
+                          </Show>
+                          <span class="font-mono">{report.tune_videos.youtube_id}</span>
+                          <a
+                            href={`https://www.youtube.com/watch?v=${report.tune_videos.youtube_id}`}
+                            target="_blank" rel="noopener noreferrer"
+                            class="text-[var(--color-primary)] hover:underline"
+                          >{t('report.viewVideo')}</a>
+                        </div>
+                      </Show>
+                      <Show when={report.email}>
+                        <p class="text-[10px] text-[var(--color-muted)] mt-1">{report.email}</p>
+                      </Show>
+                      <div class="text-[10px] text-[var(--color-muted)]/60 mt-1">
+                        {formatDate(report.created_at)}
+                        <Show when={report.closed_at}>
+                          <span class="ml-2">{t('report.closed')} {formatDate(report.closed_at)}</span>
+                        </Show>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => setExpandedId(isExpanded() ? null : report.id)}
+                        class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
+                      >{isExpanded() ? t('admin.hide') : t('report.details')}</button>
+                    </div>
+                  </div>
+
+                  <Show when={isExpanded()}>
+                    <div class="border-t border-[var(--color-border)] bg-[var(--color-bg)] p-4 flex flex-col gap-3">
+                      <Show when={report.description}>
+                        <div>
+                          <p class="text-xs font-semibold text-[var(--color-muted)] mb-1">{t('report.description')}</p>
+                          <p class="text-sm text-[var(--color-text)] whitespace-pre-wrap">{report.description}</p>
+                        </div>
+                      </Show>
+
+                      <div>
+                        <p class="text-xs font-semibold text-[var(--color-muted)] mb-2">{t('report.updateStatus')}</p>
+                        <div class="flex gap-1.5 flex-wrap">
+                          {['pending', 'tracking', 'solved', 'discarded'].map(s => (
+                            <button
+                              onClick={() => handleStatusUpdate(report.id, s)}
+                              disabled={isBusy() || report.status === s}
+                              class={`text-xs px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-30
+                                ${report.status === s
+                                  ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                                  : 'border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)]'}`}
+                            >{reportStatusLabel(s)}</button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <Show when={report.admin_comments}>
+                        <div>
+                          <p class="text-xs font-semibold text-[var(--color-muted)] mb-1">{t('report.adminComments')}</p>
+                          <p class="text-sm text-[var(--color-muted)] whitespace-pre-wrap">{report.admin_comments}</p>
+                        </div>
+                      </Show>
+                    </div>
+                  </Show>
+                </div>
+              );
+            }}
+          </For>
+        </div>
+      </Show>
+    </div>
+  );
+}
+
 // ── AdminView principal ──────────────────────────────────────────────────────
 function AdminView() {
   const navigate = useNavigate();
@@ -492,6 +663,7 @@ function AdminView() {
     ['pending', t('admin.pending')],
     ['latest', t('admin.latestApproved')],
     ['byTune', t('admin.searchByTune')],
+    ['reports', t('admin.reports')],
   ];
 
   return (
@@ -550,6 +722,9 @@ function AdminView() {
             onEdit={setEditingVideo}
             onRegisterRefresh={(fn) => { refreshByTune = fn; }}
           />
+        </Show>
+        <Show when={tab() === 'reports'}>
+          <ReportsTab />
         </Show>
 
       </div>

@@ -13,6 +13,7 @@ import YoutubePlayer from './YoutubePlayer';
 import SheetMusic from './SheetMusic';
 import SameTypeTunes from './SameTypeTunes';
 import AddVideoForm from './AddVideoForm';
+import ReportForm from './ReportForm';
 
 function TuneView() {
   const params = useParams();
@@ -35,6 +36,7 @@ function TuneView() {
   const [showSheet, setShowSheet] = createSignal(true);
   const [splitPct, setSplitPct] = createSignal(25);
   const [editingVideo, setEditingVideo] = createSignal(null);
+  const [reportingEntry, setReportingEntry] = createSignal(null);
 
   const handleEditVideo = async (entry) => {
     const videoId = entry.tune_videos?.id;
@@ -363,8 +365,8 @@ function TuneView() {
                       class={`p-1.5 lg:p-1 transition-colors ${entryUserVote() === -1 ? 'text-[var(--color-error)]' : 'text-[var(--color-muted)] hover:text-[var(--color-error)]'}`}
                     >▼</button>
                     <button
-                      onClick={(e) => handleVote(e, entry, -1, true)}
-                      aria-label={t('vote.report')}
+                      onClick={(e) => { e.stopPropagation(); setReportingEntry(entry); }}
+                      aria-label={t('report.title')}
                       class="p-1.5 lg:p-1 text-[var(--color-muted)] hover:text-yellow-400 transition-colors text-xs"
                     >⚑</button>
                   </div>
@@ -379,6 +381,14 @@ function TuneView() {
       {/* Más tunes del mismo tipo */}
       <Show when={selectedTune()}>
         <SameTypeTunes />
+      </Show>
+
+      <Show when={reportingEntry()}>
+        <ReportForm
+          videoId={reportingEntry().tune_videos?.id}
+          tuneId={reportingEntry().tune_id}
+          onClose={() => setReportingEntry(null)}
+        />
       </Show>
 
     </div>
