@@ -82,6 +82,7 @@ const fr = {
     editing: 'Modification de {{id}}',
     addDesc: 'Liez une vid\u00e9o YouTube aux morceaux qu\u2019elle contient',
     close: '\u2715 Fermer',
+    cancel: 'Annuler',
     updated: '\u2713 Vid\u00e9o mise \u00e0 jour',
     saved: '\u2713 Vid\u00e9o enregistr\u00e9e \u2014 en attente d\u2019approbation',
     addAnother: 'Ajouter une autre',

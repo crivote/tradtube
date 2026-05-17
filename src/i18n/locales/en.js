@@ -82,6 +82,7 @@ const en = {
     editing: 'Editing {{id}}',
     addDesc: 'Link a YouTube video to the tunes it contains',
     close: '\u2715 Close',
+    cancel: 'Cancel',
     updated: '\u2713 Video updated',
     saved: '\u2713 Video saved \u2014 pending approval',
     addAnother: 'Add another',

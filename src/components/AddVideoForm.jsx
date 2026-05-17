@@ -597,15 +597,26 @@ function AddVideoForm(props) {
         </Show>
 
         {/* ── Submit ───────────────────────────────────────────────────── */}
-        <button
-          onClick={handleSubmit}
-          disabled={submitting() || !youtubeId() || entries.length === 0 || !!duplicate()}
-          class="w-full py-3 rounded-xl font-semibold text-sm transition-all
-            bg-[var(--color-primary)] text-black hover:opacity-90
-            disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          {submitting() ? t('addVideo.saving') : isEdit() ? t('addVideo.update') : t('addVideo.save')}
-        </button>
+        <div class="flex gap-3">
+          <button
+            onClick={props.onClose}
+            disabled={submitting()}
+            class="flex-1 py-3 rounded-xl font-semibold text-sm transition-all
+              border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-muted)]/50
+              disabled:opacity-30"
+          >
+            {t('addVideo.cancel')}
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={submitting() || !youtubeId() || entries.length === 0 || !!duplicate()}
+            class="flex-1 py-3 rounded-xl font-semibold text-sm transition-all
+              bg-[var(--color-primary)] text-black hover:opacity-90
+              disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            {submitting() ? t('addVideo.saving') : isEdit() ? t('addVideo.update') : t('addVideo.save')}
+          </button>
+        </div>
         <Show when={!submitting()}>
           <p class="text-center text-[10px] text-[var(--color-muted)] -mt-1">
             {duplicate() ? t('addVideo.alreadyRegistered') :

@@ -82,6 +82,7 @@ const es = {
     editing: 'Editando {{id}}',
     addDesc: 'Vincula un v\u00eddeo de YouTube a las melod\u00edas que contiene',
     close: '\u2715 Cerrar',
+    cancel: 'Cancelar',
     updated: '\u2713 V\u00eddeo actualizado',
     saved: '\u2713 V\u00eddeo guardado \u2014 pendiente de aprobaci\u00f3n',
     addAnother: 'A\u00f1adir otro',
