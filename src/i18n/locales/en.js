@@ -116,6 +116,8 @@ const en = {
     alreadyRegistered: 'This video is already registered',
     addOneTune: 'Add at least one tune to submit',
     enterValidUrl: 'Enter a valid YouTube URL',
+    unavailable: 'Unavailable',
+    unavailableDesc: 'Mark as unavailable (no longer accessible on YouTube)',
     removed: '"{{name}}" removed',
   },
   theSession: {

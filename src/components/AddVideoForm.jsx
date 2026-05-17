@@ -67,6 +67,7 @@ function AddVideoForm(props) {
   const [showImportModal, setShowImportModal] = createSignal(false);
   const [skippedTuneNames, setSkippedTuneNames] = createSignal([]);
   const [recordingId, setRecordingId] = createSignal(props.editVideo?.thesession_recording_id ?? null);
+  const [unavailable, setUnavailable] = createSignal(props.editVideo?.unavailable ?? false);
   const [autoMatchedCount, setAutoMatchedCount] = createSignal(0);
   const [openInstrumentDropdown, setOpenInstrumentDropdown] = createSignal(null);
 
@@ -202,6 +203,7 @@ function AddVideoForm(props) {
           title: title().trim() || null,
           channel: channel().trim() || null,
           thesession_recording_id: recordingId(),
+          unavailable: unavailable(),
           entries: entryPayload,
         });
       } else {
@@ -375,6 +377,28 @@ function AddVideoForm(props) {
             ))}
           </select>
         </div>
+
+        {/* ── Unavailable toggle (edit only) ─────────────────────────── */}
+        <Show when={isEdit()}>
+          <label class="flex items-center gap-3 cursor-pointer select-none">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={unavailable()}
+              onClick={() => setUnavailable(v => !v)}
+              class={`relative w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none
+                ${unavailable() ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-border)]'}`}
+            >
+              <span class={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200
+                ${unavailable() ? 'translate-x-4' : 'translate-x-0'}`}
+              />
+            </button>
+            <div class="flex flex-col">
+              <span class="text-sm text-[var(--color-text)]">{t('addVideo.unavailable')}</span>
+              <span class="text-xs text-[var(--color-muted)]">{t('addVideo.unavailableDesc')}</span>
+            </div>
+          </label>
+        </Show>
 
         {/* ── TheSession recording import ──────────────────────────────── */}
         <Show when={!isEdit()}>

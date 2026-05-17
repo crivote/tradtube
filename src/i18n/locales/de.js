@@ -116,6 +116,8 @@ const de = {
     alreadyRegistered: 'Dieses Video ist bereits registriert',
     addOneTune: 'F\u00fcge mindestens eine Melodie hinzu, um einzureichen',
     enterValidUrl: 'Gib eine g\u00fcltige YouTube-URL ein',
+    unavailable: 'Nicht verf\u00fcgbar',
+    unavailableDesc: 'Als nicht verf\u00fcgbar markieren (auf YouTube nicht mehr zug\u00e4nglich)',
     removed: '"{{name}}" entfernt',
   },
   theSession: {

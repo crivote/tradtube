@@ -116,6 +116,8 @@ const es = {
     alreadyRegistered: 'Este v\u00eddeo ya est\u00e1 registrado',
     addOneTune: 'A\u00f1ade al menos una melod\u00eda para enviar',
     enterValidUrl: 'Introduce una URL de YouTube v\u00e1lida',
+    unavailable: 'No disponible',
+    unavailableDesc: 'Marcar como no disponible (ya no accesible en YouTube)',
     removed: '"{{name}}" eliminada',
   },
   theSession: {

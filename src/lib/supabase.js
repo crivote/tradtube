@@ -21,7 +21,7 @@ export async function getEntriesForTune(tuneId) {
     .select(`
       id, tune_id, setting_id, start_sec, end_sec, position, instruments, key,
       tune_videos (
-        id, youtube_id, source_type, status, title, channel, thesession_recording_id, created_at
+        id, youtube_id, source_type, status, unavailable, title, channel, thesession_recording_id, created_at
       ),
       tune_video_votes ( vote, user_id )
     `)
@@ -30,7 +30,7 @@ export async function getEntriesForTune(tuneId) {
 
   if (error) { console.error(error); return []; }
 
-  const approved = (data || []).filter(e => e.tune_videos?.status === 'approved');
+  const approved = (data || []).filter(e => e.tune_videos?.status === 'approved' && !e.tune_videos?.unavailable);
 
   return approved
     .map(e => ({
@@ -124,7 +124,7 @@ export async function getLatestApprovedVideos() {
   const { data, error } = await supabase
     .from('tune_videos')
     .select(`
-      id, youtube_id, source_type, status, title, channel, added_by, created_at,
+      id, youtube_id, source_type, status, unavailable, title, channel, added_by, created_at,
       tune_video_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
     `)
     .eq('status', 'approved')
@@ -142,7 +142,7 @@ export async function getPendingVideos() {
   const { data, error } = await supabase
     .from('tune_videos')
     .select(`
-      id, youtube_id, source_type, status, title, channel, added_by, created_at,
+      id, youtube_id, source_type, status, unavailable, title, channel, added_by, created_at,
       tune_video_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
     `)
     .eq('status', 'pending')
@@ -169,7 +169,7 @@ export async function getVideosByTune(tuneId) {
   const { data, error: e2 } = await supabase
     .from('tune_videos')
     .select(`
-      id, youtube_id, source_type, status, title, channel, added_by, created_at,
+      id, youtube_id, source_type, status, unavailable, title, channel, added_by, created_at,
       tune_video_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
     `)
     .in('id', videoIds)
@@ -194,9 +194,9 @@ export async function deleteVideo(videoId) {
   if (error) throw error;
 }
 
-export async function updateVideoWithEntries(videoId, { source_type, title, channel, thesession_recording_id, entries }) {
+export async function updateVideoWithEntries(videoId, { source_type, title, channel, thesession_recording_id, unavailable, entries }) {
   const { error: ve } = await supabase
-    .from('tune_videos').update({ source_type, title: title ?? null, channel: channel ?? null, thesession_recording_id: thesession_recording_id ?? null }).eq('id', videoId);
+    .from('tune_videos').update({ source_type, title: title ?? null, channel: channel ?? null, thesession_recording_id: thesession_recording_id ?? null, unavailable: unavailable ?? false }).eq('id', videoId);
   if (ve) throw ve;
 
   const { error: de } = await supabase
@@ -236,7 +236,8 @@ export async function getVideoCountsByTune() {
   const { data, error } = await supabase
     .from('tune_videos')
     .select('id, youtube_id, tune_video_entries(tune_id)')
-    .eq('status', 'approved');
+    .eq('status', 'approved')
+    .eq('unavailable', false);
 
   if (error) { console.error(error); return { counts: new Map(), thumbnails: new Map() }; }
 
@@ -259,9 +260,10 @@ export async function getVideoCountsByTune() {
 export async function getTuneIdsByInstrument(instrument) {
   const { data, error } = await supabase
     .from('tune_video_entries')
-    .select('tune_id, instruments, tune_videos!inner(status)')
+    .select('tune_id, instruments, tune_videos!inner(status, unavailable)')
     .contains('instruments', [instrument])
-    .eq('tune_videos.status', 'approved');
+    .eq('tune_videos.status', 'approved')
+    .eq('tune_videos.unavailable', false);
 
   if (error) { console.error(error); return new Set(); }
   return new Set((data || []).map(e => e.tune_id));
@@ -303,7 +305,7 @@ export async function getVideoById(videoId) {
   const { data, error } = await supabase
     .from('tune_videos')
     .select(`
-      id, youtube_id, source_type, status, title, channel, thesession_recording_id, created_at,
+      id, youtube_id, source_type, status, unavailable, title, channel, thesession_recording_id, created_at,
       tune_video_entries (
         id, tune_id, setting_id, start_sec, end_sec, position, instruments, key
       )

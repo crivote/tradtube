@@ -116,6 +116,8 @@ const fr = {
     alreadyRegistered: 'Cette vid\u00e9o est d\u00e9j\u00e0 enregistr\u00e9e',
     addOneTune: 'Ajoutez au moins un morceau pour soumettre',
     enterValidUrl: 'Entrez une URL YouTube valide',
+    unavailable: 'Indisponible',
+    unavailableDesc: 'Marquer comme indisponible (plus accessible sur YouTube)',
     removed: '\u00ab\u00a0{{name}}\u00a0\u00bb supprim\u00e9',
   },
   theSession: {

@@ -226,7 +226,12 @@ function PendingTab(props) {
                         <span class="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-muted)]">
                           {t(`sourceTypes.${video.source_type}`) ?? video.source_type}
                         </span>
-                        <span class="text-[10px] text-[var(--color-muted)]">{formatDate(video.created_at)}</span>
+          <span class="text-[10px] text-[var(--color-muted)]">{formatDate(video.created_at)}</span>
+          <Show when={video.unavailable}>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-warning)]/15 text-[var(--color-warning)] border border-[var(--color-warning)]/30">
+              {t('addVideo.unavailable')}
+            </span>
+          </Show>
                       </div>
                       <TuneChips entries={video.tune_video_entries} />
                     </div>
