@@ -196,11 +196,11 @@ function App(props) {
       </main>
 
       <div class="max-w-6xl w-full mx-auto px-4 pb-4 flex justify-center">
-        <p class="inline-flex items-center gap-1 rounded-full px-4 py-1.5 text-xs bg-[var(--color-primary)]/15 text-white/80">
+        <p class="inline-flex items-center gap-1 rounded-full px-4 py-1.5 text-xs bg-[var(--color-primary)]/10 text-[var(--color-text)]/80">
           {t('app.betaNotice')}{' '}
           <button
             onClick={() => setGeneralReport(true)}
-            class="underline hover:text-white transition-colors"
+            class="underline hover:text-[var(--color-primary)] transition-colors"
           >{t('app.betaLink')}</button>
         </p>
       </div>
