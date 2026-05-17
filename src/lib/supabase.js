@@ -228,6 +228,15 @@ export async function getPendingCount() {
   return count || 0;
 }
 
+export async function getPendingReportsCount() {
+  const { count, error } = await supabase
+    .from('tune_video_reports')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'pending');
+  if (error) { console.error(error); return 0; }
+  return count || 0;
+}
+
 /**
  * Devuelve un Map<tune_id, clipCount> para todos los tunes con vídeos aprobados.
  * Se carga una vez al inicio para mostrar badges en los resultados de búsqueda.

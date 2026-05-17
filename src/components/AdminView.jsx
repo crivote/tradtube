@@ -12,7 +12,7 @@ import {
   getPendingVideos,
   getLatestApprovedVideos, getVideosByTune,
   approveVideo, deleteVideo,
-  getReports, updateReport,
+  getReports, updateReport, getPendingReportsCount,
 } from '../lib/supabase';
 import { getTuneById, searchTunes } from '../lib/db';
 import { formatTime } from '../lib/utils';
@@ -477,7 +477,7 @@ function SearchByTuneTab(props) {
 }
 
 // ── Tab: Reports ─────────────────────────────────────────────────────────────
-function ReportsTab() {
+function ReportsTab(props) {
   const { t } = useI18n();
   const [reports, setReports] = createSignal([]);
   const [loading, setLoading] = createSignal(true);
@@ -489,9 +489,13 @@ function ReportsTab() {
     setLoading(true);
     const data = await getReports(status || undefined);
     setReports(data);
+    if (!status) props.onCountLoaded?.(data.filter(r => r.status === 'pending').length);
     setLoading(false);
   };
-  onMount(() => load());
+  onMount(() => {
+    load();
+    props.onRegisterRefresh?.(() => load(statusFilter() || undefined));
+  });
 
   createEffect(() => {
     const s = statusFilter();
@@ -576,6 +580,12 @@ function ReportsTab() {
                             target="_blank" rel="noopener noreferrer"
                             class="text-[var(--color-primary)] hover:underline"
                           >{t('report.viewVideo')}</a>
+                          <Show when={props.onEdit}>
+                            <button
+                              onClick={() => props.onEdit(report.tune_videos)}
+                              class="text-xs px-2 py-0.5 rounded-lg border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 transition-colors"
+                            >{t('admin.edit')}</button>
+                          </Show>
                         </div>
                       </Show>
                       <Show when={report.email}>
@@ -647,13 +657,19 @@ function AdminView() {
   const [tab, setTab] = createSignal('pending');
   const [editingVideo, setEditingVideo] = createSignal(null);
   const [pendingCount, setPendingCount] = createSignal(null);
+  const [pendingReportsCount, setPendingReportsCount] = createSignal(null);
 
   createEffect(() => {
     if (authInitialized() && !authUser()?.isAdmin) navigate('/', { replace: true });
   });
 
+  onMount(() => {
+    getPendingReportsCount().then(setPendingReportsCount);
+  });
+
   let refreshLatest = () => {};
   let refreshByTune = () => {};
+  let refreshReports = () => {};
 
   const handleEditClose = () => {
     const wasEditing = editingVideo();
@@ -661,6 +677,7 @@ function AdminView() {
     if (wasEditing) {
       if (tab() === 'latest') refreshLatest();
       else if (tab() === 'byTune') refreshByTune();
+      else if (tab() === 'reports') refreshReports();
     }
   };
 
@@ -704,6 +721,11 @@ function AdminView() {
                     {pendingCount()}
                   </span>
                 </Show>
+                <Show when={key === 'reports' && pendingReportsCount() !== null && pendingReportsCount() > 0}>
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30 leading-none">
+                    {pendingReportsCount()}
+                  </span>
+                </Show>
               </button>
             )}
           </For>
@@ -729,7 +751,7 @@ function AdminView() {
           />
         </Show>
         <Show when={tab() === 'reports'}>
-          <ReportsTab />
+          <ReportsTab onEdit={setEditingVideo} onCountLoaded={setPendingReportsCount} onRegisterRefresh={(fn) => { refreshReports = fn; }} />
         </Show>
 
       </div>
