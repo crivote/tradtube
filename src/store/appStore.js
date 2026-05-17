@@ -284,7 +284,7 @@ export function useAppStore() {
     filterType, setFilterType,
     filterInstrument, setFilterInstrument,
     searchResults,
-    selectedTune, tuneEntries, loadingEntries,
+    selectedTune, setSelectedTune, tuneEntries, loadingEntries,
     activeEntry, setActiveEntry,
     showAddForm, setShowAddForm,
     addFormInitialTune, setAddFormInitialTune,

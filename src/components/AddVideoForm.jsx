@@ -169,12 +169,14 @@ function AddVideoForm(props) {
     }
   };
 
-  // Actualiza un campo concreto de una entry sin recrear el objeto → el input no pierde el foco
   const updateEntry = (i, field, value) => {
     setEntries(i, field, value);
-    // Propagate end time to next entry's start if it's empty
-    if (field === 'endSec' && i + 1 < entries.length && !entries[i + 1].startSec) {
-      setEntries(i + 1, 'startSec', value);
+  };
+
+  const propagateEndTime = (i) => {
+    const endSec = entries[i].endSec;
+    if (endSec && i + 1 < entries.length && !entries[i + 1].startSec) {
+      setEntries(i + 1, 'startSec', endSec);
     }
   };
 
@@ -475,6 +477,7 @@ function AddVideoForm(props) {
                           placeholder="—"
                           value={entry.endSec}
                           onInput={e => updateEntry(i(), 'endSec', e.target.value)}
+                          onBlur={() => propagateEndTime(i())}
                           class={`w-14 text-center bg-[var(--color-bg)] border rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none transition-colors
                             ${entry.endSec && validateTimestamp(entry.endSec).error
                               ? 'border-[var(--color-error)] focus:border-[var(--color-error)]'
