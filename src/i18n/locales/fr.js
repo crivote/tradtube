@@ -127,6 +127,7 @@ const fr = {
   vote: {
     upvote: 'Vote positif',
     downvote: 'Vote négatif',
+    votes: 'votes',
     voteFailed: 'Échec du vote — réessayez',
   },
   report: {

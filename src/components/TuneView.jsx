@@ -82,20 +82,19 @@ function TuneView() {
     cleanupDrag = onUp;
   };
 
-  const handleVote = async (e, entry, vote, isReport = false) => {
+  const handleVote = async (e, entry) => {
     e.stopPropagation();
     if (!authUser()) { loginWithGoogle(); return; }
-    
+
     const currentVote = getEntryUserVote(entry.id, entry.userVote || 0);
-    const newUserVote = currentVote === vote ? 0 : vote;
+    const newUserVote = currentVote === 1 ? 0 : 1;
     const scoreDelta = newUserVote - currentVote;
     const newScore = (getEntryVoteScore(entry.id, entry.voteScore || 0)) + scoreDelta;
-    
+
     updateEntryVote(entry.id, newScore, newUserVote);
-    
+
     try {
-      await castVote(entry.id, vote, isReport);
-      if (isReport) showToast(t('vote.reportSubmitted'), 'success');
+      await castVote(entry.id, newUserVote);
     } catch (err) {
       updateEntryVote(entry.id, entry.voteScore, currentVote);
       showToast(t('vote.voteFailed'), 'error');
@@ -346,28 +345,25 @@ function TuneView() {
                   </Show>
 
                   {/* Votos */}
-                  <div class="flex items-center gap-1 lg:gap-1.5 flex-shrink-0">
-                    <span class={`text-sm lg:text-base font-bold w-8 lg:w-10 text-right
-                      ${entryVoteScore() > 0 ? 'text-green-400'
-                        : entryVoteScore() < 0 ? 'text-[var(--color-error)]'
-                        : 'text-[var(--color-muted)]'}`}
-                    >
-                      {entryVoteScore() > 0 ? '+' : ''}{entryVoteScore()}
-                    </span>
+                  <div class="flex items-center gap-1 flex-shrink-0">
+                    <Show when={entryVoteScore() !== 0}>
+                      <span class="text-xs text-[var(--color-muted)] font-medium mr-0.5">
+                        {entryVoteScore()} {t('vote.votes')}
+                      </span>
+                    </Show>
                     <button
-                      onClick={(e) => handleVote(e, entry, 1)}
+                      onClick={(e) => handleVote(e, entry)}
                       aria-label={t('vote.upvote')}
-                      class={`p-1.5 lg:p-1 transition-colors ${entryUserVote() === 1 ? 'text-green-400' : 'text-[var(--color-muted)] hover:text-green-400'}`}
-                    >▲</button>
-                    <button
-                      onClick={(e) => handleVote(e, entry, -1)}
-                      aria-label={t('vote.downvote')}
-                      class={`p-1.5 lg:p-1 transition-colors ${entryUserVote() === -1 ? 'text-[var(--color-error)]' : 'text-[var(--color-muted)] hover:text-[var(--color-error)]'}`}
-                    >▼</button>
+                      class={`p-1.5 transition-colors ${entryUserVote() === 1 ? 'text-green-400' : 'text-[var(--color-muted)] hover:text-green-400'}`}
+                    >
+                      <svg class="w-4 h-4" fill={entryUserVote() === 1 ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path d="M7 22V11M2 13v7a2 2 0 002 2h12.4a2 2 0 001.94-1.52l2.1-8.4A2 2 0 0018.5 10H14V5a3 3 0 00-3-3l-4 9v11" />
+                      </svg>
+                    </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setReportingEntry(entry); }}
                       aria-label={t('report.title')}
-                      class="p-1.5 lg:p-1 text-[var(--color-muted)] hover:text-yellow-400 transition-colors text-xs"
+                      class="p-1.5 text-[var(--color-muted)] hover:text-yellow-400 transition-colors text-xs"
                     >⚑</button>
                   </div>
                 </div>

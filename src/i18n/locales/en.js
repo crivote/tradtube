@@ -127,6 +127,7 @@ const en = {
   vote: {
     upvote: 'Upvote',
     downvote: 'Downvote',
+    votes: 'votes',
     voteFailed: 'Vote failed — try again',
   },
   report: {

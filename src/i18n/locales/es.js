@@ -127,6 +127,7 @@ const es = {
   vote: {
     upvote: 'Voto positivo',
     downvote: 'Voto negativo',
+    votes: 'votos',
     voteFailed: 'Voto fallido — inténtalo de nuevo',
   },
   report: {
