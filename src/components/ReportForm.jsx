@@ -28,7 +28,7 @@ export default function ReportForm(props) {
     setError('');
     try {
       await createReport({
-        video_id: props.videoId,
+        media_id: props.videoId,
         tune_id: props.tuneId,
         issue_type: issueType(),
         description: description().trim() || null,

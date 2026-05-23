@@ -5,6 +5,7 @@ import { loginWithGoogle, logout } from './lib/supabase';
 import { useI18n } from './i18n';
 import AddVideoForm from './components/AddVideoForm';
 import ReportForm from './components/ReportForm';
+import UserRecordingsView from './components/UserRecordingsView';
 import Toast from './components/Toast';
 
 function App(props) {
@@ -22,6 +23,7 @@ function App(props) {
   const navigate = useNavigate();
   const location = useLocation();
   const [generalReport, setGeneralReport] = createSignal(false);
+  const [showRecordings, setShowRecordings] = createSignal(false);
 
   onMount(async () => {
     initAuth();
@@ -120,6 +122,10 @@ function App(props) {
               >
                 {t('app.addVideo')}
               </button>
+              <button
+                onClick={() => setShowRecordings(true)}
+                class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 transition-colors"
+              >My Recordings</button>
               <Show when={authUser()?.isAdmin}>
               <button
                 onClick={() => { setShowAddForm(false); navigate(isAdminPath() ? '/' : '/admin'); }}
@@ -216,15 +222,21 @@ function App(props) {
       </div>
 
       <Show when={generalReport()}>
-        <ReportForm onClose={() => setGeneralReport(false)} />
+        <ReportForm
+          videoId={null}
+          tuneId={null}
+          onClose={() => setGeneralReport(false)}
+        />
       </Show>
 
-      <footer class="border-t border-[var(--color-border)] py-4 text-center text-xs text-[var(--color-muted)]">
-        {t('app.footer')}{' '}
-        <a href="https://thesession.org" target="_blank" class="underline hover:text-[var(--color-primary)]">
-          TheSession.org
-        </a>
-      </footer>
+      <Show when={showRecordings()}>
+        <div class="fixed inset-0 z-50 flex items-start justify-center p-4 pt-12 bg-black/60 overflow-y-auto">
+          <div class="bg-[var(--color-surface)] rounded-2xl p-6 max-w-2xl w-full shadow-2xl border border-[var(--color-border)]">
+            <UserRecordingsView onClose={() => setShowRecordings(false)} />
+          </div>
+        </div>
+      </Show>
+
       <Toast />
     </div>
   );

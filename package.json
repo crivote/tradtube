@@ -11,11 +11,13 @@
     "test:run": "vitest run --config vitest.config.js"
   },
   "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
     "@solid-primitives/i18n": "^2.2.1",
     "@solidjs/router": "^0.16.1",
     "@sqlite.org/sqlite-wasm": "3.51.2-build8",
     "@supabase/supabase-js": "^2.39.0",
     "abcjs": "^6.6.2",
+    "pg": "^8.21.0",
     "solid-js": "^1.8.11"
   },
   "devDependencies": {

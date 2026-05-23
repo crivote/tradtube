@@ -1,0 +1,236 @@
+/**
+ * TuneEntriesEditor.jsx
+ * Componente reutilizable para editar una lista de entries (tune + timestamps + instruments + key).
+ * No sabe nada de YouTube ni de grabaciones — es pura lógica de entries.
+ *
+ * Props:
+ *   entries: Store Array     — lista reactiva de entries
+ *   onAdd(tune): void        — añade entry
+ *   onRemove(index): void    — elimina entry
+ *   onUpdate(index, field, value): void  — actualiza campo
+ *   audioDuration: number?   — duración total para validación de bounds
+ *   readOnly: boolean        — deshabilita edición
+ */
+
+import { createSignal, createMemo, For, Show } from 'solid-js';
+import { searchTunes, getTuneById, getSettings } from '../lib/db';
+import { validateTimestamp } from '../lib/utils';
+import { useI18n } from '../i18n';
+import { INSTRUMENTS } from '../constants';
+
+export default function TuneEntriesEditor(props) {
+  const { t } = useI18n();
+  const instrumentLabel = (key) => t(`instruments.${key}`) ?? key;
+  const [tuneSearch, setTuneSearch] = createSignal('');
+  const [openInstrumentDropdown, setOpenInstrumentDropdown] = createSignal(null);
+
+  const tuneResults = createMemo(() => {
+    const q = tuneSearch().trim();
+    if (q.length < 2) return [];
+    const added = new Set(props.entries.map(e => e.tune.tune_id));
+    return searchTunes(q, 8).filter(t => !added.has(t.tune_id));
+  });
+
+  const handleAdd = (tune) => {
+    props.onAdd(tune);
+    setTuneSearch('');
+    setOpenInstrumentDropdown(null);
+  };
+
+  const getEndError = (entry, i) => {
+    const se = validateTimestamp(entry.startSec);
+    const ee = validateTimestamp(entry.endSec);
+    if (se.error) return 'start';
+    if (ee.error) return 'start';
+    if (se.value != null && ee.value != null && ee.value <= se.value) return 'start';
+    if (props.audioDuration != null && ee.value != null && ee.value > props.audioDuration) return 'end';
+    if (props.audioDuration != null && se.value != null && se.value > props.audioDuration) return 'end';
+    return null;
+  };
+
+  return (
+    <div class="flex flex-col gap-3">
+      <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">
+        {t('addVideo.tunesLabel')}
+      </label>
+
+      {/* Search tune */}
+      <Show when={!props.readOnly}>
+        <div class="relative">
+          <input
+            type="text"
+            placeholder={t('addVideo.searchTunePlaceholder')}
+            value={tuneSearch()}
+            onInput={e => setTuneSearch(e.target.value)}
+            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
+          />
+
+          <Show when={tuneResults().length > 0}>
+            <div class="absolute top-full mt-1 left-0 right-0 z-20 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden shadow-xl">
+              <For each={tuneResults()}>
+                {(tune) => (
+                  <button
+                    onClick={() => handleAdd(tune)}
+                    class="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)] transition-colors flex items-center justify-between gap-3 border-b border-[var(--color-border)] last:border-0"
+                  >
+                    <span class="font-medium text-[var(--color-text)] truncate">{tune.name}</span>
+                    <span class="text-[10px] text-[var(--color-muted)] flex-shrink-0">{tune.type} · {tune.meter}</span>
+                  </button>
+                )}
+              </For>
+            </div>
+          </Show>
+        </div>
+      </Show>
+
+      {/* Entries list */}
+      <Show when={props.entries.length > 0}>
+        <div class="flex flex-col gap-2">
+          <For each={props.entries}>
+            {(entry, i) => (
+              <div class="flex items-center gap-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3">
+
+                {/* Position */}
+                <span class="text-xs text-[var(--color-muted)] w-4 flex-shrink-0 text-center">{i() + 1}</span>
+
+                {/* Tune name */}
+                <div class="flex-grow min-w-0">
+                  <span class="text-sm font-semibold text-[var(--color-text)] block truncate">{entry.tune.name}</span>
+                  <span class="text-[10px] text-[var(--color-muted)]">{entry.tune.type} · {entry.tune.meter}</span>
+                </div>
+
+                {/* Timestamps */}
+                <Show when={!props.readOnly}>
+                  <div class="flex items-start gap-2 flex-shrink-0">
+                    <div class="flex flex-col items-center gap-0.5">
+                      <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">{t('addVideo.start')}</span>
+                      <input
+                        type="text"
+                        placeholder="0:00"
+                        value={entry.startSec}
+                        onInput={e => props.onUpdate(i(), 'startSec', e.target.value)}
+                        class={`w-14 text-center bg-[var(--color-bg)] border rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none transition-colors
+                          ${entry.startSec && validateTimestamp(entry.startSec).error
+                            ? 'border-[var(--color-error)] focus:border-[var(--color-error)]'
+                            : 'border-[var(--color-border)] focus:border-[var(--color-primary)]'}`}
+                      />
+                    </div>
+                    <span class="text-[var(--color-border)] text-xs mt-3">–</span>
+                    <div class="flex flex-col items-center gap-0.5">
+                      <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">{t('addVideo.end')}</span>
+                      <input
+                        type="text"
+                        placeholder="—"
+                        value={entry.endSec}
+                        onInput={e => props.onUpdate(i(), 'endSec', e.target.value)}
+                        onBlur={() => {
+                          const endSec = props.entries[i()].endSec;
+                          if (endSec && i() + 1 < props.entries.length && !props.entries[i() + 1].startSec) {
+                            props.onUpdate(i() + 1, 'startSec', endSec);
+                          }
+                        }}
+                        class={`w-14 text-center bg-[var(--color-bg)] border rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none transition-colors
+                          ${entry.endSec && validateTimestamp(entry.endSec).error
+                            ? 'border-[var(--color-error)] focus:border-[var(--color-error)]'
+                            : 'border-[var(--color-border)] focus:border-[var(--color-primary)]'}`}
+                      />
+                    </div>
+                    <Show when={getEndError(entry, i())}>
+                      <span class="text-[9px] text-[var(--color-error)] mt-5 whitespace-nowrap">
+                        {(() => {
+                          const se = validateTimestamp(entry.startSec);
+                          const ee = validateTimestamp(entry.endSec);
+                          return validateTimestamp(entry.startSec).error
+                           || validateTimestamp(entry.endSec).error
+                           || (se.value != null && ee.value != null && ee.value <= se.value ? t('addVideo.endAfterStart') : '')
+                           || (props.audioDuration != null && ee.value != null && ee.value > props.audioDuration
+                             ? `End > ${Math.floor(props.audioDuration / 60)}:${String(props.audioDuration % 60).padStart(2, '0')}`
+                             : '');
+                        })()}
+                      </span>
+                    </Show>
+                  </div>
+                </Show>
+
+                {/* Instruments */}
+                <Show when={!props.readOnly}>
+                  <div class="relative flex-shrink-0" data-instrument-dropdown>
+                    <button
+                      type="button"
+                      onClick={() => setOpenInstrumentDropdown(openInstrumentDropdown() === i() ? null : i())}
+                      aria-expanded={openInstrumentDropdown() === i()}
+                      aria-haspopup="listbox"
+                      class="flex items-center gap-1 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors cursor-pointer min-w-[80px]"
+                      title={t('addVideo.instruments')}
+                    >
+                      <span class={entry.instruments.length === 0 ? 'text-[var(--color-muted)]' : ''}>
+                        {entry.instruments.length === 0 ? '—' : entry.instruments.map(ins => instrumentLabel(ins)).join(', ')}
+                      </span>
+                      <svg class={`w-3 h-3 text-[var(--color-muted)] transition-transform ${openInstrumentDropdown() === i() ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    <Show when={openInstrumentDropdown() === i()}>
+                      <div class="absolute top-full left-0 mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl z-30 py-1 min-w-[140px]">
+                        <For each={Object.keys(INSTRUMENTS)}>
+                          {(key) => {
+                            const isSelected = () => entry.instruments.includes(key);
+                            return (
+                              <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-[var(--color-primary)]/10 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected()}
+                                  onChange={() => {
+                                    const current = entry.instruments;
+                                    const newInstruments = isSelected()
+                                      ? current.filter(ins => ins !== key)
+                                      : [...current, key];
+                                    props.onUpdate(i(), 'instruments', newInstruments);
+                                  }}
+                                  class="rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                                />
+                                <span class="text-xs text-[var(--color-text)]">{instrumentLabel(key)}</span>
+                              </label>
+                            );
+                          }}
+                        </For>
+                      </div>
+                    </Show>
+                  </div>
+                </Show>
+
+                {/* Key */}
+                <Show when={!props.readOnly && getSettings(entry.tune.tune_id).length > 0}>
+                  <select
+                    value={entry.key ?? ''}
+                    onChange={e => props.onUpdate(i(), 'key', e.target.value || null)}
+                    class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-1.5 py-0.5 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+                  >
+                    <option value="">—</option>
+                    <For each={[...new Set(getSettings(entry.tune.tune_id).map(s => s.key))]}>
+                      {(k) => <option value={k}>{k}</option>}
+                    </For>
+                  </select>
+                </Show>
+
+                {/* Remove */}
+                <Show when={!props.readOnly}>
+                  <button
+                    onClick={() => props.onRemove(i())}
+                    class="text-[var(--color-muted)] hover:text-[var(--color-error)] transition-colors text-sm flex-shrink-0 ml-1"
+                  >✕</button>
+                </Show>
+              </div>
+            )}
+          </For>
+        </div>
+      </Show>
+
+      <Show when={props.entries.length === 0 && !props.readOnly}>
+        <p class="text-xs text-[var(--color-muted)] py-2">
+          {t('addVideo.noEntries')}
+        </p>
+      </Show>
+    </div>
+  );
+}

@@ -7,12 +7,14 @@ import { Show, For, createEffect, createSignal, onCleanup } from 'solid-js';
 import { useParams, useNavigate } from '@solidjs/router';
 import { useAppStore } from '../store/appStore';
 import { castVote, loginWithGoogle, getVideoById } from '../lib/supabase';
-import { formatTime } from '../lib/utils';
+import { formatTime, extractYoutubeId } from '../lib/utils';
 import { useI18n } from '../i18n';
 import YoutubePlayer from './YoutubePlayer';
 import SheetMusic from './SheetMusic';
 import SameTypeTunes from './SameTypeTunes';
 import AddVideoForm from './AddVideoForm';
+import AddRecordingFlow from './AddRecordingFlow';
+import AudioPlayer from './AudioPlayer';
 import ReportForm from './ReportForm';
 
 function TuneView() {
@@ -37,9 +39,11 @@ function TuneView() {
   const [splitPct, setSplitPct] = createSignal(25);
   const [editingVideo, setEditingVideo] = createSignal(null);
   const [reportingEntry, setReportingEntry] = createSignal(null);
+  const [showRecordingFlow, setShowRecordingFlow] = createSignal(false);
+  const [mediaTab, setMediaTab] = createSignal('videos');
 
   const handleEditVideo = async (entry) => {
-    const videoId = entry.tune_videos?.id;
+    const videoId = entry.tune_media?.id;
     if (!videoId) return;
     const video = await getVideoById(videoId);
     if (video) setEditingVideo(video);
@@ -172,9 +176,19 @@ function TuneView() {
           </p>
         </div>
 
-        {/* Sheet music toggle */}
-        <Show when={activeEntry()}>
-          <label class="flex items-center gap-2 cursor-pointer select-none flex-shrink-0 mt-1" onClick={() => setShowSheet(v => !v)}>
+        {/* Sheet music toggle + Record */}
+        <div class="flex items-center gap-3 flex-shrink-0 mt-1">
+          <Show when={authUser()}>
+            <button
+              onClick={() => setShowRecordingFlow(true)}
+              class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20 transition-colors font-semibold"
+            >
+              <svg class="w-3.5 h-3.5" fill="currentColor" stroke="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg>
+              Record
+            </button>
+          </Show>
+          <Show when={activeEntry()}>
+            <label class="flex items-center gap-2 cursor-pointer select-none" onClick={() => setShowSheet(v => !v)}>
             <span class="text-xs text-[var(--color-muted)]">{t('tune.sheet')}</span>
             <button
               type="button"
@@ -190,6 +204,7 @@ function TuneView() {
           </label>
         </Show>
       </div>
+      </div>
 
       {/* Reproductor activo */}
       <Show when={activeEntry()}>
@@ -200,14 +215,31 @@ function TuneView() {
             ? { flex: `0 0 ${splitPct()}%`, 'min-width': window.innerWidth >= 1024 ? '160px' : '100%' }
             : { width: '100%' }
           }
-          class="lg:flex-none">
-            <YoutubePlayer
-              youtubeId={activeEntry()?.tune_videos?.youtube_id}
-              startSec={activeEntry()?.start_sec}
-              endSec={activeEntry()?.end_sec}
-              autoplay={true}
-              onEnd={handleVideoEnd}
-            />
+                    class="lg:flex-none">
+            <Show
+              when={activeEntry()?.tune_media?.source_type === 'user_recording'}
+              fallback={
+                <YoutubePlayer
+                  youtubeId={extractYoutubeId(activeEntry()?.tune_media?.media_uri)}
+                  startSec={activeEntry()?.start_sec}
+                  endSec={activeEntry()?.end_sec}
+                  autoplay={true}
+                  onEnd={handleVideoEnd}
+                />
+              }
+            >
+              <div class="rounded-xl overflow-hidden border border-[var(--color-border)] bg-black flex items-center justify-center p-4 aspect-video">
+                <AudioPlayer
+                  mediaUri={activeEntry()?.tune_media?.media_uri}
+                  startSec={activeEntry()?.start_sec}
+                  endSec={activeEntry()?.end_sec}
+                  autoplay={true}
+                  onEnd={handleVideoEnd}
+                  performerName={activeEntry()?.tune_media?.performer_name}
+                  notes={activeEntry()?.tune_media?.recording_notes}
+                />
+              </div>
+            </Show>
           </div>
 
           {/* Draggable divider */}
@@ -254,18 +286,46 @@ function TuneView() {
         </p>
       </Show>
 
-      {/* Lista de entries */}
+      {/* Lista de entries con tabs */}
       <Show when={!loadingEntries() && tuneEntries().length > 0}>
         <div class="flex flex-col gap-2">
-          <h3 class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider mb-1">
-            {t('tune.videos', { count: tuneEntries().length })}
-          </h3>
-          <For each={tuneEntries()}>
+          {/* Tabs */}
+          <div class="flex gap-1 border-b border-[var(--color-border)] pb-0 mb-1">
+            <button
+              onClick={() => setMediaTab('videos')}
+              class={`text-xs px-4 py-2 -mb-px border-b-2 transition-colors font-semibold
+                ${mediaTab() === 'videos'
+                  ? 'border-[var(--color-primary)] text-[var(--color-text)]'
+                  : 'border-transparent text-[var(--color-muted)] hover:text-[var(--color-text)]'}`}
+            >
+              Videos{() => {
+                const c = tuneEntries().filter(e => e.tune_media?.source_type !== 'user_recording').length;
+                return c > 0 ? ` (${c})` : '';
+              }}
+            </button>
+            <button
+              onClick={() => setMediaTab('recordings')}
+              class={`text-xs px-4 py-2 -mb-px border-b-2 transition-colors font-semibold
+                ${mediaTab() === 'recordings'
+                  ? 'border-[var(--color-primary)] text-[var(--color-text)]'
+                  : 'border-transparent text-[var(--color-muted)] hover:text-[var(--color-text)]'}`}
+            >
+              Recordings{() => {
+                const c = tuneEntries().filter(e => e.tune_media?.source_type === 'user_recording').length;
+                return c > 0 ? ` (${c})` : '';
+              }}
+            </button>
+          </div>
+
+          <For each={tuneEntries().filter(e => mediaTab() === 'videos'
+            ? e.tune_media?.source_type !== 'user_recording'
+            : e.tune_media?.source_type === 'user_recording'
+          )}>
             {(entry) => {
               const isActive = () => activeEntry()?.id === entry.id;
               const startFmt = formatTime(entry.start_sec);
               const endFmt   = formatTime(entry.end_sec);
-              const sourceType = entry.tune_videos?.source_type;
+              const sourceType = entry.tune_media?.source_type;
               const label    = sourceType ? t(`sourceTypes.${sourceType}`) ?? sourceType : t('tune.unknown');
               const entryVoteScore = () => getEntryVoteScore(entry.id, entry.voteScore || 0);
               const entryUserVote = () => getEntryUserVote(entry.id, entry.userVote || 0);
@@ -289,14 +349,14 @@ function TuneView() {
 
                   {/* Metadatos */}
                   <div class="flex-grow min-w-0 flex flex-col gap-1">
-                    <Show when={entry.tune_videos?.title}>
+                    <Show when={entry.tune_media?.title}>
                       <div class="flex items-center gap-1.5">
                         <span class="text-sm text-[var(--color-text)] font-medium truncate">
-                          {entry.tune_videos.title}
+                          {entry.tune_media.title}
                         </span>
-                        <Show when={entry.tune_videos?.thesession_recording_id}>
+                        <Show when={entry.tune_media?.thesession_recording_id}>
                           <a
-                            href={`https://thesession.org/recordings/${entry.tune_videos.thesession_recording_id}`}
+                            href={`https://thesession.org/recordings/${entry.tune_media.thesession_recording_id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             class="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors flex-shrink-0"
@@ -381,9 +441,16 @@ function TuneView() {
 
       <Show when={reportingEntry()}>
         <ReportForm
-          videoId={reportingEntry().tune_videos?.id}
+          videoId={reportingEntry().tune_media?.id}
           tuneId={reportingEntry().tune_id}
           onClose={() => setReportingEntry(null)}
+        />
+      </Show>
+
+      <Show when={showRecordingFlow()}>
+        <AddRecordingFlow
+          initialTune={selectedTune()}
+          onClose={() => setShowRecordingFlow(false)}
         />
       </Show>
 

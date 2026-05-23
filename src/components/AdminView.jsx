@@ -10,12 +10,13 @@ import { createSignal, createEffect, onMount, For, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import {
   getPendingVideos,
-  getLatestApprovedVideos, getVideosByTune,
-  approveVideo, deleteVideo,
+  getLatestMedia, getVideosByTune,
+  reviewVideo, deleteVideo,
   getReports, updateReport, getPendingReportsCount,
+  supabase,
 } from '../lib/supabase';
 import { getTuneById, searchTunes } from '../lib/db';
-import { formatTime } from '../lib/utils';
+import { formatTime, extractYoutubeId } from '../lib/utils';
 import { useI18n } from '../i18n';
 import YoutubePlayer from './YoutubePlayer';
 import AddVideoForm from './AddVideoForm';
@@ -28,9 +29,8 @@ function formatDate(iso) {
 }
 
 const STATUS_STYLE = {
-  approved: 'text-green-400 border-green-400/30 bg-green-400/10',
-  pending:  'text-[var(--color-warning)] border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10',
-  rejected: 'text-[var(--color-error)] border-[var(--color-error)]/30 bg-[var(--color-error)]/10',
+  reviewed: 'text-green-400 border-green-400/30 bg-green-400/10',
+  new:      'text-[var(--color-warning)] border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10',
 };
 
 const REPORT_STATUS_STYLE = {
@@ -43,7 +43,7 @@ const REPORT_STATUS_STYLE = {
 function enrichVideos(data) {
   return data.map(v => ({
     ...v,
-    tune_video_entries: v.tune_video_entries.map(e => ({
+    tune_media_entries: v.tune_media_entries.map(e => ({
       ...e,
       tune: getTuneById(e.tune_id),
     })),
@@ -75,11 +75,11 @@ function VideoRow(props) {
   const { video, onEdit, onDelete, actionId } = props;
   const { t } = useI18n();
   const isBusy = () => actionId() === video.id;
-  const statusLabels = { approved: t('admin.statusApproved'), pending: t('admin.statusPending'), rejected: t('admin.statusRejected') };
+  const statusLabels = { reviewed: t('admin.statusReviewed'), new: t('admin.statusNew') };
   return (
     <div class="flex items-start gap-4 p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl">
       <img
-        src={`https://img.youtube.com/vi/${video.youtube_id}/mqdefault.jpg`}
+        src={`https://img.youtube.com/vi/${extractYoutubeId(video.media_uri)}/mqdefault.jpg`}
         alt="" class="w-24 h-14 object-cover rounded-lg flex-shrink-0 bg-[var(--color-border)]"
       />
       <div class="flex-grow min-w-0">
@@ -87,7 +87,7 @@ function VideoRow(props) {
           <p class="text-sm text-[var(--color-text)] font-semibold truncate">{video.title}</p>
         </Show>
         <div class="flex items-center gap-2 flex-wrap mt-0.5">
-          <span class="text-xs font-mono text-[var(--color-muted)]">{video.youtube_id}</span>
+          <span class="text-xs font-mono text-[var(--color-muted)]">{extractYoutubeId(video.media_uri)}</span>
           <span class="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-muted)]">
             {t(`sourceTypes.${video.source_type}`) ?? video.source_type}
           </span>
@@ -96,7 +96,7 @@ function VideoRow(props) {
           </span>
           <span class="text-[10px] text-[var(--color-muted)]">{formatDate(video.created_at)}</span>
         </div>
-        <TuneChips entries={video.tune_video_entries} />
+        <TuneChips entries={video.tune_media_entries} />
       </div>
       <div class="flex items-center gap-2 flex-shrink-0">
         <button
@@ -136,53 +136,32 @@ function PendingTab(props) {
   const togglePreview = (video) => {
     if (expandedId() === video.id) { setExpandedId(null); setPreviewEntry(null); return; }
     setExpandedId(video.id);
-    const first = video.tune_video_entries[0];
-    setPreviewEntry(first ? { ...first, youtube_id: video.youtube_id } : null);
+    const first = video.tune_media_entries[0];
+    setPreviewEntry(first ? { ...first, youtube_id: extractYoutubeId(video.media_uri) } : null);
   };
 
-  const handleApprove = async (video) => {
+  const handleReview = async (video) => {
     setActionId(video.id);
     try {
-      await approveVideo(video.id);
+      await reviewVideo(video.id);
       const next = videos().filter(v => v.id !== video.id);
       setVideos(next);
       props.onCountLoaded(next.length);
       if (expandedId() === video.id) { setExpandedId(null); setPreviewEntry(null); }
       loadVideoData();
-      showToast(t('admin.approved', { id: video.youtube_id }), 'success', 4000, {
+      showToast(t('admin.reviewed', { id: extractYoutubeId(video.media_uri) }), 'success', 4000, {
         label: t('admin.undo'),
         onClick: async () => {
-          await deleteVideo(video.id);
+          // Undo: revert to 'new' status
+          await supabase.from('tune_media').update({ status: 'new' }).eq('id', video.id);
           setVideos(prev => [video, ...prev]);
           props.onCountLoaded(videos().length + 1);
           loadVideoData();
-          showToast(t('admin.approvalUndone'), 'info');
+          showToast(t('admin.reviewUndone'), 'info');
         },
       });
     } catch {
-      showToast(t('admin.failApprove'), 'error');
-    } finally { setActionId(null); }
-  };
-
-  const handleReject = async (video) => {
-    setActionId(video.id);
-    try {
-      await deleteVideo(video.id);
-      const next = videos().filter(v => v.id !== video.id);
-      setVideos(next);
-      props.onCountLoaded(next.length);
-      if (expandedId() === video.id) { setExpandedId(null); setPreviewEntry(null); }
-      showToast(t('admin.deleted', { id: video.youtube_id }), 'warning', 4000, {
-        label: t('admin.undo'),
-        onClick: async () => {
-          await approveVideo(video.id);
-          setVideos(prev => [video, ...prev]);
-          props.onCountLoaded(videos().length + 1);
-          showToast(t('admin.deletionUndone'), 'info');
-        },
-      });
-    } catch {
-      showToast(t('admin.failDelete'), 'error');
+      showToast(t('admin.failReview'), 'error');
     } finally { setActionId(null); }
   };
 
@@ -214,7 +193,7 @@ function PendingTab(props) {
 
                   <div class="flex items-start gap-4 p-4 bg-[var(--color-surface)]">
                     <img
-                      src={`https://img.youtube.com/vi/${video.youtube_id}/mqdefault.jpg`}
+                      src={`https://img.youtube.com/vi/${extractYoutubeId(video.media_uri)}/mqdefault.jpg`}
                       alt="" class="w-28 h-16 object-cover rounded-lg flex-shrink-0 bg-[var(--color-border)]"
                     />
                     <div class="flex-grow min-w-0">
@@ -222,7 +201,7 @@ function PendingTab(props) {
                         <p class="text-sm text-[var(--color-text)] font-semibold truncate">{video.title}</p>
                       </Show>
                       <div class="flex items-center gap-2 flex-wrap mt-0.5">
-                        <span class="text-xs font-mono text-[var(--color-muted)]">{video.youtube_id}</span>
+                        <span class="text-xs font-mono text-[var(--color-muted)]">{extractYoutubeId(video.media_uri)}</span>
                         <span class="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-muted)]">
                           {t(`sourceTypes.${video.source_type}`) ?? video.source_type}
                         </span>
@@ -233,7 +212,7 @@ function PendingTab(props) {
             </span>
           </Show>
                       </div>
-                      <TuneChips entries={video.tune_video_entries} />
+                      <TuneChips entries={video.tune_media_entries} />
                     </div>
                   </div>
 
@@ -254,27 +233,22 @@ function PendingTab(props) {
                     >{t('admin.edit')}</button>
                     <div class="flex-grow" />
                     <button
-                      onClick={() => handleReject(video)}
-                      disabled={isBusy()}
-                      class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-error)]/30 text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors disabled:opacity-30"
-                    >{isBusy() ? '…' : t('admin.reject')}</button>
-                    <button
-                      onClick={() => handleApprove(video)}
+                      onClick={() => handleReview(video)}
                       disabled={isBusy()}
                       class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-primary)]/50 bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20 transition-colors disabled:opacity-30"
-                    >{isBusy() ? '…' : t('admin.approve')}</button>
+                    >{isBusy() ? '…' : t('admin.review')}</button>
                   </div>
 
                   <Show when={isExpanded()}>
                     <div class="border-t border-[var(--color-border)] bg-[var(--color-bg)] p-4 flex flex-col gap-3">
-                      <Show when={video.tune_video_entries.length > 1}>
+                      <Show when={video.tune_media_entries.length > 1}>
                         <div class="flex gap-2 flex-wrap">
-                          <For each={video.tune_video_entries}>
+                          <For each={video.tune_media_entries}>
                             {(entry) => {
                               const isActive = () => previewEntry()?.id === entry.id;
                               return (
                                 <button
-                                  onClick={() => setPreviewEntry({ ...entry, youtube_id: video.youtube_id })}
+                                  onClick={() => setPreviewEntry({ ...entry, youtube_id: extractYoutubeId(video.media_uri) })}
                                   class={`text-xs px-3 py-1 rounded-full border transition-colors
                                     ${isActive()
                                       ? 'border-[var(--color-warning)]/60 bg-[var(--color-warning)]/10 text-[var(--color-warning)]'
@@ -308,8 +282,8 @@ function PendingTab(props) {
   );
 }
 
-// ── Tab: Latest Approved ──────────────────────────────────────────────────────
-function LatestApprovedTab(props) {
+// ── Tab: Latest Media ──────────────────────────────────────────────────────
+function LatestMediaTab(props) {
   const { t } = useI18n();
   const [videos, setVideos] = createSignal([]);
   const [loading, setLoading] = createSignal(true);
@@ -317,14 +291,14 @@ function LatestApprovedTab(props) {
 
   const load = async () => {
     setLoading(true);
-    setVideos(enrichVideos(await getLatestApprovedVideos()));
+    setVideos(enrichVideos(await getLatestMedia()));
     setLoading(false);
   };
   onMount(load);
   props.onRegisterRefresh(() => load());
 
   const handleDelete = async (video) => {
-    if (!confirm(`Delete "${video.title || video.youtube_id}"? This cannot be undone.`)) return;
+    if (!confirm(`Delete "${video.title || extractYoutubeId(video.media_uri)}"? This cannot be undone.`)) return;
     setActionId(video.id);
     try {
       await deleteVideo(video.id);
@@ -401,7 +375,7 @@ function SearchByTuneTab(props) {
   });
 
   const handleDelete = async (video) => {
-    if (!confirm(`Delete "${video.title || video.youtube_id}"? This cannot be undone.`)) return;
+    if (!confirm(`Delete "${video.title || extractYoutubeId(video.media_uri)}"? This cannot be undone.`)) return;
     setActionId(video.id);
     try {
       await deleteVideo(video.id);
@@ -569,20 +543,20 @@ function ReportsTab(props) {
                           {reportStatusLabel(report.status)}
                         </span>
                       </div>
-                      <Show when={report.tune_videos}>
+                      <Show when={report.tune_media}>
                         <div class="text-xs text-[var(--color-muted)] flex items-center gap-2 flex-wrap">
-                          <Show when={report.tune_videos.title}>
-                            <span class="truncate max-w-[200px]">{report.tune_videos.title}</span>
+                          <Show when={report.tune_media.title}>
+                            <span class="truncate max-w-[200px]">{report.tune_media.title}</span>
                           </Show>
-                          <span class="font-mono">{report.tune_videos.youtube_id}</span>
+                          <span class="font-mono">{extractYoutubeId(report.tune_media.media_uri)}</span>
                           <a
-                            href={`https://www.youtube.com/watch?v=${report.tune_videos.youtube_id}`}
+                            href={report.tune_media.media_uri}
                             target="_blank" rel="noopener noreferrer"
                             class="text-[var(--color-primary)] hover:underline"
                           >{t('report.viewVideo')}</a>
                           <Show when={props.onEdit}>
                             <button
-                              onClick={() => props.onEdit(report.tune_videos)}
+                              onClick={() => props.onEdit(report.tune_media)}
                               class="text-xs px-2 py-0.5 rounded-lg border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 transition-colors"
                             >{t('admin.edit')}</button>
                           </Show>
@@ -683,7 +657,7 @@ function AdminView() {
 
   const TABS = [
     ['pending', t('admin.pending')],
-    ['latest', t('admin.latestApproved')],
+    ['latest', t('admin.latestMedia')],
     ['byTune', t('admin.searchByTune')],
     ['reports', t('admin.reports')],
   ];
@@ -739,7 +713,7 @@ function AdminView() {
           />
         </Show>
         <Show when={tab() === 'latest'}>
-          <LatestApprovedTab
+          <LatestMediaTab
             onEdit={setEditingVideo}
             onRegisterRefresh={(fn) => { refreshLatest = fn; }}
           />
