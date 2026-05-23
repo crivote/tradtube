@@ -17,6 +17,7 @@
     "@sqlite.org/sqlite-wasm": "3.51.2-build8",
     "@supabase/supabase-js": "^2.39.0",
     "abcjs": "^6.6.2",
+    "lucide-solid": "^1.16.0",
     "pg": "^8.21.0",
     "solid-js": "^1.8.11"
   },

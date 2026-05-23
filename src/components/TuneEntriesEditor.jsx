@@ -13,6 +13,7 @@
  */
 
 import { createSignal, createMemo, For, Show } from 'solid-js';
+import { ChevronDown } from 'lucide-solid';
 import { searchTunes, getTuneById, getSettings } from '../lib/db';
 import { validateTimestamp } from '../lib/utils';
 import { useI18n } from '../i18n';
@@ -166,9 +167,7 @@ export default function TuneEntriesEditor(props) {
                       <span class={entry.instruments.length === 0 ? 'text-[var(--color-muted)]' : ''}>
                         {entry.instruments.length === 0 ? '—' : entry.instruments.map(ins => instrumentLabel(ins)).join(', ')}
                       </span>
-                      <svg class={`w-3 h-3 text-[var(--color-muted)] transition-transform ${openInstrumentDropdown() === i() ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                      </svg>
+                      <ChevronDown size={12} class={`text-[var(--color-muted)] transition-transform ${openInstrumentDropdown() === i() ? 'rotate-180' : ''}`} />
                     </button>
                     <Show when={openInstrumentDropdown() === i()}>
                       <div class="absolute top-full left-0 mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl z-30 py-1 min-w-[140px]">

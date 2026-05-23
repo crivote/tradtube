@@ -5,6 +5,7 @@
 
 import { Show, For, createEffect, createSignal, onCleanup } from 'solid-js';
 import { useParams, useNavigate } from '@solidjs/router';
+import { ExternalLink, Mic, ThumbsUp } from 'lucide-solid';
 import { useAppStore } from '../store/appStore';
 import { castVote, loginWithGoogle, getVideoById } from '../lib/supabase';
 import { formatTime, extractYoutubeId } from '../lib/utils';
@@ -160,9 +161,7 @@ function TuneView() {
               class="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors"
               title={`View ${selectedTune()?.name} on TheSession.org`}
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
+              <ExternalLink size={20} />
             </a>
           </div>
           <p class="text-sm text-[var(--color-muted)] capitalize">
@@ -183,7 +182,7 @@ function TuneView() {
               onClick={() => setShowRecordingFlow(true)}
               class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20 transition-colors font-semibold"
             >
-              <svg class="w-3.5 h-3.5" fill="currentColor" stroke="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg>
+              <Mic size={14} />
               Record
             </button>
           </Show>
@@ -363,9 +362,7 @@ function TuneView() {
                             title="View recording on TheSession.org"
                             onClick={e => e.stopPropagation()}
                           >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
+                            <ExternalLink size={16} />
                           </a>
                         </Show>
                       </div>
@@ -416,9 +413,7 @@ function TuneView() {
                       aria-label={t('vote.upvote')}
                       class={`p-1.5 transition-colors ${entryUserVote() === 1 ? 'text-green-400' : 'text-[var(--color-muted)] hover:text-green-400'}`}
                     >
-                      <svg class="w-4 h-4" fill={entryUserVote() === 1 ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path d="M7 22V11M2 13v7a2 2 0 002 2h12.4a2 2 0 001.94-1.52l2.1-8.4A2 2 0 0018.5 10H14V5a3 3 0 00-3-3l-4 9v11" />
-                      </svg>
+                      <ThumbsUp size={16} fill={entryUserVote() === 1 ? 'currentColor' : 'none'} stroke-width="1.5" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setReportingEntry(entry); }}

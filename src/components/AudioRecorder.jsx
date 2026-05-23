@@ -12,6 +12,7 @@
  */
 
 import { createSignal, createEffect, onCleanup, Show } from 'solid-js';
+import { Mic } from 'lucide-solid';
 import { audioBufferToWav, trimAudioBuffer, getBufferDuration } from '../lib/audioUtils';
 
 const RECORD_LIMIT_SEC = 600; // 10 minutos
@@ -466,7 +467,7 @@ export default function AudioRecorder(props) {
           onClick={requestMic}
           class="w-full py-10 rounded-2xl border-2 border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors flex flex-col items-center gap-3"
         >
-          <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+          <Mic size={40} />
           <span class="font-semibold">Record</span>
         </button>
       </Show>

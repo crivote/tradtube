@@ -220,7 +220,7 @@ export function useAppStore() {
   });
 
   // Cargar entries cuando se selecciona un tune
-  createEffect(async () => {
+  createEffect(() => {
     const tune = selectedTune();
     if (!tune) { setTuneEntries([]); setActiveEntry(null); return; }
 
@@ -230,27 +230,36 @@ export function useAppStore() {
     setVoteScores(new Map());
     setUserVotes(new Map());
 
-    try {
-      const entries = await getEntriesForTune(tune.tune_id);
-      
-      const scores = new Map();
-      const votes = new Map();
-      for (const e of entries) {
-        scores.set(e.id, e.voteScore);
-        votes.set(e.id, e.userVote);
-      }
-      setVoteScores(scores);
-      setUserVotes(votes);
-      
-      setTuneEntries(entries);
+    let cancelled = false;
+    onCleanup(() => { cancelled = true; });
 
-      if (entries.length > 0) setActiveEntry(entries[0]);
-    } catch (err) {
-      console.error('Tune entries effect error:', err);
-      setTuneEntries([]);
-    } finally {
-      setLoadingEntries(false);
-    }
+    const load = async () => {
+      try {
+        const entries = await getEntriesForTune(tune.tune_id);
+        if (cancelled) return;
+
+        const scores = new Map();
+        const votes = new Map();
+        for (const e of entries) {
+          scores.set(e.id, e.voteScore);
+          votes.set(e.id, e.userVote);
+        }
+        setVoteScores(scores);
+        setUserVotes(votes);
+
+        setTuneEntries(entries);
+
+        if (entries.length > 0) setActiveEntry(entries[0]);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Tune entries effect error:', err);
+        setTuneEntries([]);
+      } finally {
+        if (!cancelled) setLoadingEntries(false);
+      }
+    };
+
+    load();
   });
 
   // Carga un tune por ID desde SQLite y lo establece como seleccionado.

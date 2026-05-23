@@ -8,6 +8,7 @@
  */
 
 import { createEffect, createSignal, onCleanup } from 'solid-js';
+import { RotateCcw } from 'lucide-solid';
 import { useI18n } from '../i18n';
 
 const SPEED_STOPS = [0.5, 0.75, 1];
@@ -142,10 +143,7 @@ function YoutubePlayer(props) {
           title={t('tune.restart')}
           class="text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors p-1 rounded flex-shrink-0"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 9a9 9 0 009 4.5A9 9 0 0020 4" />
-          </svg>
+          <RotateCcw size={16} />
         </button>
         <div class="relative flex-1">
           <input

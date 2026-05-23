@@ -1,5 +1,6 @@
 import { For, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
+import { ExternalLink } from 'lucide-solid';
 import { useAppStore } from '../store/appStore';
 import { loginWithGoogle } from '../lib/supabase';
 import { useI18n } from '../i18n';
@@ -177,9 +178,7 @@ function SearchView() {
                             class="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors flex-shrink-0 leading-none"
                             title={`TheSession #${tune.tune_id}${tune.composer ? ` · ${tune.composer}` : ''}`}
                           >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
+                            <ExternalLink size={16} />
                           </a>
                         </div>
                         <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">

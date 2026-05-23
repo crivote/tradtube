@@ -4,6 +4,7 @@
  */
 
 import { createSignal, onMount, For, Show } from 'solid-js';
+import { Mic } from 'lucide-solid';
 import { getUserRecordings, toggleHidden, deleteRecording } from '../lib/supabase';
 import { useAppStore } from '../store/appStore';
 
@@ -101,7 +102,7 @@ export default function UserRecordingsView(props) {
                 <div class={`border rounded-xl overflow-hidden ${rec.hidden ? 'border-[var(--color-warning)]/30 opacity-60' : 'border-[var(--color-border)]'} bg-[var(--color-surface)]`}>
                   <div class="flex items-start gap-4 p-4">
                     <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center">
-                      <svg class="w-5 h-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" fill="currentColor" opacity="0.2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                      <Mic size={20} class="text-[var(--color-primary)]" />
                     </div>
 
                     <div class="flex-grow min-w-0">
