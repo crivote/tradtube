@@ -493,6 +493,12 @@ export default function AudioRecorder(props) {
       {/* RECORDED */}
       <Show when={state() === STATES.RECORDED}>
         <div class="flex flex-col gap-3">
+          <Show when={errorMsg()}>
+            <div class="p-3 rounded-lg bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 text-sm text-[var(--color-error)]">
+              {errorMsg()}
+            </div>
+          </Show>
+
           <div class="relative w-full h-20">
             <canvas
               ref={setStaticCanvasEl}
