@@ -59,6 +59,7 @@ export async function addVideoWithEntries({ youtube_id, source_type, title, chan
       title: title ?? null, channel: channel ?? null,
       thesession_recording_id: thesession_recording_id ?? null,
       added_by: user.id,
+      status: 'new',
     }])
     .select()
     .single();
@@ -432,12 +433,12 @@ export async function deleteRecording(mediaId) {
 
 // ── Reports ──────────────────────────────────────────────────────────────────
 
-export async function createReport({ video_id, tune_id, issue_type, description, email }) {
+export async function createReport({ media_id, tune_id, issue_type, description, email }) {
   const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase
     .from('tune_media_reports')
     .insert({
-      media_id: video_id ?? null,
+      media_id: media_id ?? null,
       tune_id: tune_id ?? null,
       user_id: user?.id ?? null,
       email: email || null,
@@ -460,6 +461,19 @@ export async function getReports(status) {
   if (status) query = query.eq('status', status);
 
   const { data, error } = await query;
+  if (error) { console.error(error); return []; }
+  return data ?? [];
+}
+
+export async function getMyReports() {
+  const { data, error } = await supabase
+    .from('tune_media_reports')
+    .select(`
+      id, created_at, media_id, tune_id, issue_type, description, status, admin_comments, closed_at,
+      tune_media (id, media_uri, title, source_type, status)
+    `)
+    .order('created_at', { ascending: false });
+
   if (error) { console.error(error); return []; }
   return data ?? [];
 }

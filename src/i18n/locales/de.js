@@ -173,6 +173,10 @@ const de = {
   login: {
     failed: 'Anmeldung fehlgeschlagen \u2014 bitte versuche es erneut',
   },
+  myReports: {
+    title: 'Meine Meldungen',
+    empty: 'Du hast noch keine Meldungen eingereicht.',
+  },
   sourceTypes: {
     studio: 'Studioaufnahme',
     album: 'Album / Schallplatte',

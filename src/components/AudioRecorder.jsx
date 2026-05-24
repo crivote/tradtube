@@ -14,6 +14,7 @@
 import { createSignal, createEffect, onCleanup, Show } from 'solid-js';
 import { Mic } from 'lucide-solid';
 import { audioBufferToWav, trimAudioBuffer, getBufferDuration } from '../lib/audioUtils';
+import { blobToDataUrl } from '../lib/utils';
 
 const RECORD_LIMIT_SEC = 600; // 10 minutos
 
@@ -135,11 +136,7 @@ export default function AudioRecorder(props) {
     }
     if (elapsedTimer) clearInterval(elapsedTimer);
     if (animFrame) cancelAnimationFrame(animFrame);
-    const url = objectUrl();
-    if (url) {
-      URL.revokeObjectURL(url);
-      setObjectUrl(null);
-    }
+    setObjectUrl(null);
     analyser = null;
     mediaRecorder = null;
     chunks = [];
@@ -212,11 +209,8 @@ export default function AudioRecorder(props) {
     mediaRecorder.onstop = async () => {
       blob = new Blob(chunks, { type: capturedMimeType });
 
-      // Revoke old URL if exists
-      const oldUrl = objectUrl();
-      if (oldUrl) URL.revokeObjectURL(oldUrl);
-      const url = URL.createObjectURL(blob);
-      setObjectUrl(url);
+      const dataUrl = await blobToDataUrl(blob);
+      setObjectUrl(dataUrl);
 
       // Decode to get duration and waveform peaks
       try {
@@ -301,10 +295,8 @@ export default function AudioRecorder(props) {
       const opusBlob = new Blob([output], { type: 'audio/ogg; codecs=opus' });
       setFileSize(opusBlob.size);
 
-      const oldUrl = objectUrl();
-      if (oldUrl) URL.revokeObjectURL(oldUrl);
-      const url = URL.createObjectURL(opusBlob);
-      setObjectUrl(url);
+      const dataUrl = await blobToDataUrl(opusBlob);
+      setObjectUrl(dataUrl);
       blob = opusBlob;
 
       setDuration(trimmedDuration);

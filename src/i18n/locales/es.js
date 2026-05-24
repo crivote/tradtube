@@ -173,6 +173,10 @@ const es = {
   login: {
     failed: 'Inicio de sesi\u00f3n fallido \u2014 int\u00e9ntalo de nuevo',
   },
+  myReports: {
+    title: 'Mis reportes',
+    empty: 'A\u00fan no has enviado ning\u00fan reporte.',
+  },
   sourceTypes: {
     studio: 'Grabaci\u00f3n de estudio',
     album: '\u00c1lbum / disco',

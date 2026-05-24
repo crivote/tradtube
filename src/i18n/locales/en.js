@@ -173,6 +173,10 @@ const en = {
   login: {
     failed: 'Login failed \u2014 please try again',
   },
+  myReports: {
+    title: 'My Reports',
+    empty: 'You haven\u2019t submitted any reports yet.',
+  },
   sourceTypes: {
     studio: 'Studio recording',
     album: 'Album / record',

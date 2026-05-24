@@ -7,6 +7,7 @@ import { useI18n } from './i18n';
 import AddVideoForm from './components/AddVideoForm';
 import ReportForm from './components/ReportForm';
 import UserRecordingsView from './components/UserRecordingsView';
+import MyReports from './components/MyReports';
 import Toast from './components/Toast';
 
 function App(props) {
@@ -25,6 +26,7 @@ function App(props) {
   const location = useLocation();
   const [generalReport, setGeneralReport] = createSignal(false);
   const [showRecordings, setShowRecordings] = createSignal(false);
+  const [showMyReports, setShowMyReports] = createSignal(false);
 
   onMount(async () => {
     initAuth();
@@ -123,6 +125,10 @@ function App(props) {
                 onClick={() => setShowRecordings(true)}
                 class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 transition-colors"
               >My Recordings</button>
+              <button
+                onClick={() => setShowMyReports(true)}
+                class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 transition-colors"
+              >My Reports</button>
               <Show when={authUser()?.isAdmin}>
               <button
                 onClick={() => { setShowAddForm(false); navigate(isAdminPath() ? '/' : '/admin'); }}
@@ -230,6 +236,10 @@ function App(props) {
             <UserRecordingsView onClose={() => setShowRecordings(false)} />
           </div>
         </div>
+      </Show>
+
+      <Show when={showMyReports()}>
+        <MyReports onClose={() => setShowMyReports(false)} />
       </Show>
 
       <Toast />

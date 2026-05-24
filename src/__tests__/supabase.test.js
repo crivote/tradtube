@@ -210,7 +210,7 @@ describe('Phase 0B — Schema migration tune_media + media_uri', () => {
         .setResult(null);
       mockFrom.mockReturnValue(mockQB);
 
-      await supabaseModule.createReport({ video_id: 99, tune_id: 5, issue_type: 'other', description: 'test' });
+      await supabaseModule.createReport({ media_id: 'abc-123', tune_id: 5, issue_type: 'other', description: 'test' });
 
       expect(mockFrom).toHaveBeenCalledWith('tune_media_reports');
     });

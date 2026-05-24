@@ -173,6 +173,10 @@ const fr = {
   login: {
     failed: '\u00c9chec de connexion \u2014 veuillez r\u00e9essayer',
   },
+  myReports: {
+    title: 'Mes signalements',
+    empty: 'Vous n\u2019avez pas encore envoy\u00e9 de signalement.',
+  },
   sourceTypes: {
     studio: 'Enregistrement studio',
     album: 'Album / disque',

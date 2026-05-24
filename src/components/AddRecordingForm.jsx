@@ -10,9 +10,9 @@
  *   onCancel(): void
  */
 
-import { createSignal, createEffect, onCleanup, Show } from 'solid-js';
+import { createSignal, createEffect, Show } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
-import { parseSec } from '../lib/utils';
+import { parseSec, blobToDataUrl } from '../lib/utils';
 import { useI18n } from '../i18n';
 import { useAppStore } from '../store/appStore';
 import TuneEntriesEditor from './TuneEntriesEditor';
@@ -33,13 +33,15 @@ export default function AddRecordingForm(props) {
 
   const [entries, setEntries] = createStore(initialEntries);
 
-  // Audio preview object URL
-  let objectUrl;
+  const [objectUrl, setObjectUrl] = createSignal(null);
   createEffect(() => {
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
-    if (props.blob) objectUrl = URL.createObjectURL(props.blob);
+    const blob = props.blob;
+    if (blob) {
+      blobToDataUrl(blob).then(setObjectUrl);
+    } else {
+      setObjectUrl(null);
+    }
   });
-  onCleanup(() => { if (objectUrl) URL.revokeObjectURL(objectUrl); });
 
   const validate = () => {
     if (!performerName().trim()) return t('addVideo.addOneTune'); // reuse: "add at least one tune" style msg — custom needed
@@ -94,7 +96,7 @@ export default function AddRecordingForm(props) {
       <Show when={props.blob}>
         <div class="flex flex-col gap-2">
           <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">Preview</label>
-          <audio controls src={objectUrl} class="w-full h-10 rounded-lg" />
+          <audio controls src={objectUrl()} class="w-full h-10 rounded-lg" />
           <p class="text-[10px] text-[var(--color-muted)]">
             {Math.floor(props.durationSeconds / 60)}:{String(props.durationSeconds % 60).padStart(2, '0')}
           </p>

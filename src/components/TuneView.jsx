@@ -418,8 +418,9 @@ function TuneView() {
                     <button
                       onClick={(e) => { e.stopPropagation(); setReportingEntry(entry); }}
                       aria-label={t('report.title')}
-                      class="p-1.5 text-[var(--color-muted)] hover:text-yellow-400 transition-colors text-xs"
-                    >⚑</button>
+                      class="p-1.5 text-red-400/60 hover:text-red-400 transition-colors text-base"
+                      title={t('report.title')}
+                    >⚠</button>
                   </div>
                 </div>
               );
