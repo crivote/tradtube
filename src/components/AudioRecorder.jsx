@@ -108,20 +108,6 @@ export default function AudioRecorder(props) {
 
   // ── helpers ──
 
-  // Reactive redraw when canvas mounts or trim/waveform changes
-  createEffect(() => {
-    const canvas = staticCanvasEl();
-    if (!canvas) return;
-    // Depend on these signals so effect re-fires on changes
-    state();
-    trimStart();
-    trimEnd();
-    waveformPeaks();
-    duration();
-    playbackTime();
-    redrawStaticWaveform(canvas);
-  });
-
   const cleanup = () => {
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
@@ -145,6 +131,8 @@ export default function AudioRecorder(props) {
 
   onCleanup(cleanup);
 
+  const handleBeforeUnload = (e) => { e.preventDefault(); };
+
   // beforeunload when there's unsaved work
   const registerUnload = () => {
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -152,7 +140,6 @@ export default function AudioRecorder(props) {
   const unregisterUnload = () => {
     window.removeEventListener('beforeunload', handleBeforeUnload);
   };
-  const handleBeforeUnload = (e) => { e.preventDefault(); };
 
   // ── actions ──
 
@@ -166,7 +153,8 @@ export default function AudioRecorder(props) {
       analyser.fftSize = 256;
       source.connect(analyser);
 
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+      const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+      mimeType = mime;
       mediaRecorder = new MediaRecorder(mediaStream, { mimeType });
 
       mediaRecorder.ondataavailable = (e) => {
