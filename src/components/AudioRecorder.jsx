@@ -260,7 +260,8 @@ export default function AudioRecorder(props) {
 
   let ffmpegIframe = null;
   let ffmpegReady = false;
-  let ffmpegPending = null;
+  let ffmpegReadyPromise = null;
+  const ffmpegPending = new Map();
 
   const getFfmpegIframe = () => {
     if (ffmpegIframe) return ffmpegIframe;
@@ -275,13 +276,13 @@ export default function AudioRecorder(props) {
       const msg = event.data;
       if (msg.type === 'ready') {
         ffmpegReady = true;
-        if (ffmpegPending?.resolveReady) ffmpegPending.resolveReady();
+        if (ffmpegReadyPromise) { ffmpegReadyPromise.resolve(); ffmpegReadyPromise = null; }
       } else if (msg.type === 'result') {
-        if (ffmpegPending?.resolve) ffmpegPending.resolve(msg.output);
-        ffmpegPending = null;
+        const entry = ffmpegPending.get(msg.requestId);
+        if (entry) { entry.resolve(msg.output); ffmpegPending.delete(msg.requestId); }
       } else if (msg.type === 'error') {
-        if (ffmpegPending?.reject) ffmpegPending.reject(new Error(msg.error));
-        ffmpegPending = null;
+        const entry = ffmpegPending.get(msg.requestId);
+        if (entry) { entry.reject(new Error(msg.error)); ffmpegPending.delete(msg.requestId); }
       }
     };
     window.addEventListener('message', handler);
@@ -296,6 +297,12 @@ export default function AudioRecorder(props) {
       ffmpegIframe.remove();
       ffmpegIframe = null;
     }
+    ffmpegReadyPromise?.reject?.(new Error('Component unmounted'));
+    ffmpegReadyPromise = null;
+    for (const entry of ffmpegPending.values()) {
+      entry.reject(new Error('Component unmounted'));
+    }
+    ffmpegPending.clear();
   });
 
   const convertToOpus = async (wavBlob, trimmedDuration) => {
@@ -304,10 +311,9 @@ export default function AudioRecorder(props) {
       const iframe = getFfmpegIframe();
 
       if (!ffmpegReady) {
-        await new Promise((resolve) => {
-          ffmpegPending = { resolveReady: resolve };
+        await new Promise((resolve, reject) => {
+          ffmpegReadyPromise = { resolve, reject };
         });
-        ffmpegPending = null;
       }
 
       setState(STATES.CONVERTING);
@@ -315,12 +321,12 @@ export default function AudioRecorder(props) {
 
       const wavBuffer = await wavBlob.arrayBuffer();
 
+      const requestId = crypto.randomUUID();
       const output = await new Promise((resolve, reject) => {
-        const requestId = crypto.randomUUID();
-        ffmpegPending = { requestId, resolve, reject };
+        ffmpegPending.set(requestId, { resolve, reject });
         iframe.contentWindow.postMessage(
           { type: 'convert', requestId, wavBuffer },
-          '*',
+          window.location.origin,
           [wavBuffer]
         );
       });

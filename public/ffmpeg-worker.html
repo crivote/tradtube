@@ -6,13 +6,14 @@
 const CORE_URL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js';
 
 let ffmpeg = null;
+let origin = '';
 
 async function init() {
   const { FFmpeg } = await import(CORE_URL);
   ffmpeg = new FFmpeg();
   ffmpeg.on('log', () => {});
   await ffmpeg.load();
-  parent.postMessage({ type: 'ready' }, '*');
+  parent.postMessage({ type: 'ready' }, origin || '*');
 }
 
 async function convert(wavBuffer) {
@@ -25,12 +26,13 @@ init();
 
 window.addEventListener('message', async (event) => {
   if (event.data.type !== 'convert') return;
+  if (!origin) origin = event.origin;
   const { requestId, wavBuffer } = event.data;
   try {
     const output = await convert(wavBuffer);
-    event.source.postMessage({ type: 'result', requestId }, '*', [output.buffer]);
+    event.source.postMessage({ type: 'result', requestId, output }, origin, [output.buffer]);
   } catch (err) {
-    event.source.postMessage({ type: 'error', requestId, error: err.message || String(err) }, '*');
+    event.source.postMessage({ type: 'error', requestId, error: err.message || String(err) }, origin);
   }
 });
 </script>
