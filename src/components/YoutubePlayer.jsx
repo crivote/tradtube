@@ -11,8 +11,6 @@ import { createEffect, createSignal, onCleanup } from 'solid-js';
 import { RotateCcw } from 'lucide-solid';
 import { useI18n } from '../i18n';
 
-const SPEED_STOPS = [0.5, 0.75, 1];
-
 // ── IFrame API loader (singleton global) ────────────────────────────────────
 let ytApiReady = false;
 const ytCallbacks = [];
@@ -149,26 +147,16 @@ function YoutubePlayer(props) {
             type="range"
             min="0.5"
             max="1"
-            step="0.25"
+            step="0.05"
             value={speed()}
             onInput={e => setSpeed(parseFloat(e.target.value))}
             class="speed-slider w-full"
             aria-label={`Playback speed: ${speed()}x`}
             aria-valuetext={`${speed()}x`}
           />
-          <div class="flex justify-between text-[11px] text-[var(--color-muted)] mt-0.5 gap-1">
-            {SPEED_STOPS.map(v => (
-              <button
-                onClick={() => setSpeed(v)}
-                aria-label={`Set speed to ${v}x`}
-                aria-pressed={speed() === v}
-                class={`px-1.5 py-0.5 rounded min-w-[32px] hover:text-[var(--color-text)] transition-colors cursor-pointer
-                  ${speed() === v ? 'text-[var(--color-primary)] font-semibold' : ''}`}
-              >
-                {v}x
-              </button>
-            ))}
-          </div>
+           <div class="flex justify-center text-[11px] text-[var(--color-muted)] mt-0.5">
+             <span class="text-[var(--color-primary)] font-semibold">{speed()}x</span>
+           </div>
         </div>
       </div>
     </div>
