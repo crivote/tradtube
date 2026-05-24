@@ -155,29 +155,49 @@ export function getRandomTunes(limit = 2) {
 /**
  * Obtiene el conteo de tunes por tipo (solo los que tienen vídeos)
  */
+let _typeIndexCreated = false;
+
 export function getCountsByType(types, videoCounts) {
   if (!_db || !types?.length) return {};
 
+  if (!_typeIndexCreated) {
+    try { _db.exec('CREATE INDEX IF NOT EXISTS idx_tunes_type ON tunes(type)'); } catch {}
+    _typeIndexCreated = true;
+  }
+
   const placeholders = types.map(() => '?').join(', ');
   const rows = _db.exec({
-    sql: `SELECT tune_id, type FROM tunes WHERE type IN (${placeholders})`,
+    sql: `SELECT type, COUNT(*) as cnt FROM tunes WHERE type IN (${placeholders}) GROUP BY type`,
     bind: types,
     returnValue: 'resultRows',
     rowMode: 'object',
   });
 
+  const totalByType = {};
+  for (const row of rows) totalByType[row.type] = row.cnt;
+
   const tuneIdsWithVideos = videoCounts?.size ? new Set(videoCounts.keys()) : null;
+
+  if (tuneIdsWithVideos && tuneIdsWithVideos.size > 0) {
+    const withVideosRows = _db.exec({
+      sql: `SELECT type, COUNT(*) as cnt FROM tunes WHERE tune_id IN (${Array.from(tuneIdsWithVideos).map(() => '?').join(',')}) AND type IN (${placeholders}) GROUP BY type`,
+      bind: [...tuneIdsWithVideos, ...types],
+      returnValue: 'resultRows',
+      rowMode: 'object',
+    });
+    const withVideosByType = {};
+    for (const row of withVideosRows) withVideosByType[row.type] = row.cnt;
+
+    const result = {};
+    for (const type of types) {
+      result[type] = { total: totalByType[type] ?? 0, withVideos: withVideosByType[type] ?? 0 };
+    }
+    return result;
+  }
+
   const result = {};
   for (const type of types) {
-    result[type] = { total: 0, withVideos: 0 };
+    result[type] = { total: totalByType[type] ?? 0, withVideos: 0 };
   }
-
-  for (const row of rows) {
-    result[row.type].total++;
-    if (tuneIdsWithVideos?.has(row.tune_id)) {
-      result[row.type].withVideos++;
-    }
-  }
-
   return result;
 }
