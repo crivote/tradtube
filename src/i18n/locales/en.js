@@ -83,7 +83,7 @@ const en = {
     close: '\u2715 Close',
     cancel: 'Cancel',
     updated: '\u2713 Video updated',
-    saved: '\u2713 Video saved \u2014 pending approval',
+    saved: '\u2713 Video published',
     addAnother: 'Add another',
     youtubeLabel: 'YouTube URL or video ID',
     youtubePlaceholder: 'https://www.youtube.com/watch?v=\u2026 or video ID',

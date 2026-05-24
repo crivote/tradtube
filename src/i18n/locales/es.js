@@ -83,7 +83,7 @@ const es = {
     close: '\u2715 Cerrar',
     cancel: 'Cancelar',
     updated: '\u2713 V\u00eddeo actualizado',
-    saved: '\u2713 V\u00eddeo guardado \u2014 pendiente de aprobaci\u00f3n',
+    saved: '\u2713 V\u00eddeo publicado',
     addAnother: 'A\u00f1adir otro',
     youtubeLabel: 'URL de YouTube o ID del v\u00eddeo',
     youtubePlaceholder: 'https://www.youtube.com/watch?v=\u2026 o ID del v\u00eddeo',

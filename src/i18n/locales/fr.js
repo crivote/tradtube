@@ -83,7 +83,7 @@ const fr = {
     close: '\u2715 Fermer',
     cancel: 'Annuler',
     updated: '\u2713 Vid\u00e9o mise \u00e0 jour',
-    saved: '\u2713 Vid\u00e9o enregistr\u00e9e \u2014 en attente d\u2019approbation',
+    saved: '\u2713 Vid\u00e9o publi\u00e9e',
     addAnother: 'Ajouter une autre',
     youtubeLabel: 'URL YouTube ou ID de la vid\u00e9o',
     youtubePlaceholder: 'https://www.youtube.com/watch?v=\u2026 ou ID vid\u00e9o',

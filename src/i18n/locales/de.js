@@ -83,7 +83,7 @@ const de = {
     close: '\u2715 Schlie\u00dfen',
     cancel: 'Abbrechen',
     updated: '\u2713 Video aktualisiert',
-    saved: '\u2713 Video gespeichert \u2014 ausstehende Genehmigung',
+    saved: '\u2713 Video ver\u00f6ffentlicht',
     addAnother: 'Weiteres hinzuf\u00fcgen',
     youtubeLabel: 'YouTube-URL oder Video-ID',
     youtubePlaceholder: 'https://www.youtube.com/watch?v=\u2026 oder Video-ID',
