@@ -91,9 +91,10 @@ createEffect(() => {
   }
 });
 
+const tuneIdsByInstrument = new Map();
+
 export function useAppStore() {
 
-  // Inicializar DB al montar la app
   const loadVideoData = async () => {
     try {
       const { counts, thumbnails } = await getVideoCountsByTune();
@@ -142,8 +143,6 @@ export function useAppStore() {
     });
     return () => subscription.unsubscribe();
   };
-
-  const tuneIdsByInstrument = new Map();
 
   const loadInstrumentFilter = async (instrument) => {
     if (tuneIdsByInstrument.has(instrument)) return tuneIdsByInstrument.get(instrument);

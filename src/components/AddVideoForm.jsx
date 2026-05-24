@@ -8,10 +8,10 @@
 
 import { createSignal, createMemo, createEffect, onCleanup, Show } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
-import { searchTunes, getTuneById, getSettings } from '../lib/db';
+import { searchTunes, getTuneById, getSettings, findMatchingTunes } from '../lib/db';
 import { addVideoWithEntries, updateVideoWithEntries, checkYoutubeIdExists } from '../lib/supabase';
 import { resolveTrackTunes } from '../lib/thesession';
-import { extractYoutubeId, parseSec, formatSec, cleanTitleForDisplay, findMatchingTunes } from '../lib/utils';
+import { extractYoutubeId, parseSec, formatSec, cleanTitleForDisplay } from '../lib/utils';
 import { useI18n } from '../i18n';
 import { useAppStore } from '../store/appStore';
 import TheSessionImportModal from './TheSessionImportModal';

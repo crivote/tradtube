@@ -42,7 +42,7 @@ describe('cleanTitleForDisplay', () => {
   });
 });
 
-import { STOP_WORDS } from '../lib/utils';
+import { STOP_WORDS } from '../lib/db';
 
 describe('STOP_WORDS', () => {
   it('contains common words that should be filtered', () => {

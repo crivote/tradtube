@@ -67,7 +67,6 @@ function YoutubePlayer(props) {
         start: Math.floor(startSec ?? 0),
         autoplay: autoplay ? 1 : 0,
         rel: 0,
-        modestbranding: 1,
       },
       events: {
         onReady() {

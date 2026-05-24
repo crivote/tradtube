@@ -196,6 +196,8 @@ export async function deleteVideo(videoId) {
 }
 
 export async function updateVideoWithEntries(videoId, { source_type, title, channel, thesession_recording_id, unavailable, entries }) {
+  // NOTE: delete+insert is not transactional — if inserts fail the video
+  // is left without entries. A Postgres RPC would fix this properly.
   const { error: ve } = await supabase
     .from('tune_media').update({ source_type, title: title ?? null, channel: channel ?? null, thesession_recording_id: thesession_recording_id ?? null, unavailable: unavailable ?? false }).eq('id', videoId);
   if (ve) throw ve;
@@ -240,6 +242,8 @@ export async function getPendingReportsCount() {
 
 /**
  * Devuelve un Map<tune_id, clipCount> para los badges de búsqueda.
+ * No filtra por status — incluye vídeos pendientes de revisión
+ * para que los badges reflejen todo el contenido disponible.
  */
 export async function getVideoCountsByTune() {
   const { data, error } = await supabase
