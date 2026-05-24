@@ -13,16 +13,42 @@ export default function AudioPlayer(props) {
   const [currentTime, setCurrentTime] = createSignal(0);
 
   // rAF polling — ~16ms precision vs timeupdate's ~250ms
+  // Pauses polling when audio is paused to save CPU
   createEffect(() => {
     const el = audioEl;
     if (!el) return;
+
     let raf;
+    let running = false;
+
     const poll = () => {
       raf = requestAnimationFrame(poll);
       setCurrentTime(el.currentTime);
     };
-    raf = requestAnimationFrame(poll);
-    onCleanup(() => cancelAnimationFrame(raf));
+
+    const startPoll = () => {
+      if (running) return;
+      running = true;
+      raf = requestAnimationFrame(poll);
+    };
+
+    const stopPoll = () => {
+      running = false;
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+    };
+
+    el.addEventListener('play', startPoll);
+    el.addEventListener('pause', stopPoll);
+    el.addEventListener('ended', stopPoll);
+
+    if (!el.paused) startPoll();
+
+    onCleanup(() => {
+      stopPoll();
+      el.removeEventListener('play', startPoll);
+      el.removeEventListener('pause', stopPoll);
+      el.removeEventListener('ended', stopPoll);
+    });
   });
 
   const handleTimeUpdate = () => {

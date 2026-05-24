@@ -95,22 +95,25 @@ export function useAppStore() {
 
   // Inicializar DB al montar la app
   const loadVideoData = async () => {
-    const { counts, thumbnails } = await getVideoCountsByTune();
-    setVideoCountsByTune(counts);
-    setVideoThumbnailsByTune(thumbnails);
-    setVideoDataReady(true);
+    try {
+      const { counts, thumbnails } = await getVideoCountsByTune();
+      setVideoCountsByTune(counts);
+      setVideoThumbnailsByTune(thumbnails);
+      setVideoDataReady(true);
 
-    // Set placeholder examples only from tunes with videos
-    const tunesWithVideos = Array.from(counts.keys());
-    if (tunesWithVideos.length > 0) {
-      const shuffled = tunesWithVideos.sort(() => Math.random() - 0.5);
-      const sample = shuffled.slice(0, 2);
-      const randomTunes = sample.map(id => getTuneById(id)).filter(Boolean);
-      setPlaceholderExamples(randomTunes.map(t => t.name));
+      const tunesWithVideos = Array.from(counts.keys());
+      if (tunesWithVideos.length > 0) {
+        const shuffled = tunesWithVideos.sort(() => Math.random() - 0.5);
+        const sample = shuffled.slice(0, 2);
+        const randomTunes = sample.map(id => getTuneById(id)).filter(Boolean);
+        setPlaceholderExamples(randomTunes.map(t => t.name));
+      }
+
+      setTypeCounts(getCountsByType(TUNE_TYPES, counts));
+    } catch (err) {
+      console.error('Failed to load video data:', err);
+      showToast('Failed to load video data. Please reload.', 'error', 0);
     }
-
-    // Load type counts (tunes with videos)
-    setTypeCounts(getCountsByType(TUNE_TYPES, counts));
   };
 
   const loadDB = async () => {

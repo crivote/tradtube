@@ -12,7 +12,7 @@
  *   readOnly: boolean        — deshabilita edición
  */
 
-import { createSignal, createMemo, For, Show } from 'solid-js';
+import { createSignal, createMemo, createEffect, onCleanup, For, Show } from 'solid-js';
 import { ChevronDown } from 'lucide-solid';
 import { searchTunes, getTuneById, getSettings } from '../lib/db';
 import { validateTimestamp } from '../lib/utils';
@@ -24,6 +24,18 @@ export default function TuneEntriesEditor(props) {
   const instrumentLabel = (key) => t(`instruments.${key}`) ?? key;
   const [tuneSearch, setTuneSearch] = createSignal('');
   const [openInstrumentDropdown, setOpenInstrumentDropdown] = createSignal(null);
+
+  createEffect(() => {
+    const idx = openInstrumentDropdown();
+    if (idx == null) return;
+    const handler = (e) => {
+      if (!e.target.closest('[data-instrument-dropdown]')) {
+        setOpenInstrumentDropdown(null);
+      }
+    };
+    document.addEventListener('click', handler);
+    onCleanup(() => document.removeEventListener('click', handler));
+  });
 
   const tuneResults = createMemo(() => {
     const q = tuneSearch().trim();
@@ -38,14 +50,23 @@ export default function TuneEntriesEditor(props) {
     setOpenInstrumentDropdown(null);
   };
 
+  const settingsCache = new Map();
+
+  const getCachedSettings = (tuneId) => {
+    if (settingsCache.has(tuneId)) return settingsCache.get(tuneId);
+    const val = getSettings(tuneId);
+    settingsCache.set(tuneId, val);
+    return val;
+  };
+
   const getEndError = (entry, i) => {
     const se = validateTimestamp(entry.startSec);
     const ee = validateTimestamp(entry.endSec);
     if (se.error) return 'start';
-    if (ee.error) return 'start';
+    if (ee.error) return 'end';
     if (se.value != null && ee.value != null && ee.value <= se.value) return 'start';
     if (props.audioDuration != null && ee.value != null && ee.value > props.audioDuration) return 'end';
-    if (props.audioDuration != null && se.value != null && se.value > props.audioDuration) return 'end';
+    if (props.audioDuration != null && se.value != null && se.value > props.audioDuration) return 'start';
     return null;
   };
 
@@ -199,14 +220,14 @@ export default function TuneEntriesEditor(props) {
                 </Show>
 
                 {/* Key */}
-                <Show when={!props.readOnly && getSettings(entry.tune.tune_id).length > 0}>
+                <Show when={!props.readOnly && getCachedSettings(entry.tune.tune_id).length > 0}>
                   <select
                     value={entry.key ?? ''}
                     onChange={e => props.onUpdate(i(), 'key', e.target.value || null)}
                     class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-1.5 py-0.5 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
                   >
                     <option value="">—</option>
-                    <For each={[...new Set(getSettings(entry.tune.tune_id).map(s => s.key))]}>
+                    <For each={[...new Set(getCachedSettings(entry.tune.tune_id).map(s => s.key))]}>
                       {(k) => <option value={k}>{k}</option>}
                     </For>
                   </select>
