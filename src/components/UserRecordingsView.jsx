@@ -63,7 +63,7 @@ export default function UserRecordingsView(props) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `recording-${recording.id.slice(0, 8)}.wav`;
+      a.download = `recording-${recording.id.slice(0, 8)}.ogg`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {

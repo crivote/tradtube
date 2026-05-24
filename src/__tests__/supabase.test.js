@@ -262,8 +262,8 @@ describe('Phase 2 — addRecordingWithEntries', () => {
     mockStorageFrom = mockClient.storage.from;
   });
 
-  it('uploads blob to user-recordings/{userId}/{uuid}.wav', async () => {
-    const mockStorage = { upload: vi.fn().mockResolvedValue({ data: {}, error: null }), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://x.supabase.co/rec.wav' } })), remove: vi.fn().mockResolvedValue({}) };
+  it('uploads blob to user-recordings/{userId}/{uuid}.ogg', async () => {
+    const mockStorage = { upload: vi.fn().mockResolvedValue({ data: {}, error: null }), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://x.supabase.co/rec.ogg' } })), remove: vi.fn().mockResolvedValue({}) };
     mockStorageFrom.mockReturnValue(mockStorage);
 
     const mockQB = createMockQueryBuilder().setResult({ id: 'media-1' });
@@ -277,12 +277,12 @@ describe('Phase 2 — addRecordingWithEntries', () => {
     });
 
     expect(mockStorageFrom).toHaveBeenCalledWith('user-recordings');
-    expect(mockStorage.upload.mock.calls[0][0]).toMatch(/^test-user-id\/[a-f0-9-]+\.wav$/);
+    expect(mockStorage.upload.mock.calls[0][0]).toMatch(/^test-user-id\/[a-f0-9-]+\.ogg$/);
     expect(mockStorage.upload.mock.calls[0][1]).toBeInstanceOf(Blob);
   });
 
   it('inserts into tune_media with source_type user_recording', async () => {
-    const mockStorage = { upload: vi.fn().mockResolvedValue({ data: {}, error: null }), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://x.supabase.co/rec.wav' } })), remove: vi.fn().mockResolvedValue({}) };
+    const mockStorage = { upload: vi.fn().mockResolvedValue({ data: {}, error: null }), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://x.supabase.co/rec.ogg' } })), remove: vi.fn().mockResolvedValue({}) };
     mockStorageFrom.mockReturnValue(mockStorage);
 
     const mockQB = createMockQueryBuilder().setResult({ id: 'media-1' });
@@ -306,7 +306,7 @@ describe('Phase 2 — addRecordingWithEntries', () => {
   });
 
   it('inserts entries with media_id', async () => {
-    const mockStorage = { upload: vi.fn().mockResolvedValue({ data: {}, error: null }), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://x.supabase.co/rec.wav' } })), remove: vi.fn().mockResolvedValue({}) };
+    const mockStorage = { upload: vi.fn().mockResolvedValue({ data: {}, error: null }), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://x.supabase.co/rec.ogg' } })), remove: vi.fn().mockResolvedValue({}) };
     mockStorageFrom.mockReturnValue(mockStorage);
 
     // First from() call: tune_media insert (.select().single())
@@ -338,7 +338,7 @@ describe('Phase 2 — addRecordingWithEntries', () => {
   });
 
   it('rolls back storage if tune_media insert fails', async () => {
-    const mockStorage = { upload: vi.fn().mockResolvedValue({ data: {}, error: null }), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://x.supabase.co/rec.wav' } })), remove: vi.fn().mockResolvedValue({}) };
+    const mockStorage = { upload: vi.fn().mockResolvedValue({ data: {}, error: null }), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://x.supabase.co/rec.ogg' } })), remove: vi.fn().mockResolvedValue({}) };
     mockStorageFrom.mockReturnValue(mockStorage);
 
     const mockQB = createMockQueryBuilder().setResult(null, { message: 'DB error' });
@@ -357,7 +357,7 @@ describe('Phase 2 — addRecordingWithEntries', () => {
   });
 
   it('rolls back storage and tune_media if entries insert fails', async () => {
-    const mockStorage = { upload: vi.fn().mockResolvedValue({ data: {}, error: null }), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://x.supabase.co/rec.wav' } })), remove: vi.fn().mockResolvedValue({}) };
+    const mockStorage = { upload: vi.fn().mockResolvedValue({ data: {}, error: null }), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://x.supabase.co/rec.ogg' } })), remove: vi.fn().mockResolvedValue({}) };
     mockStorageFrom.mockReturnValue(mockStorage);
 
     const mockQB1 = createMockQueryBuilder().setResult({ id: 'media-1' });
@@ -379,7 +379,7 @@ describe('Phase 2 — addRecordingWithEntries', () => {
   });
 
   it('refreshes session before upload', async () => {
-    const mockStorage = { upload: vi.fn().mockResolvedValue({ data: {}, error: null }), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://x.supabase.co/rec.wav' } })), remove: vi.fn().mockResolvedValue({}) };
+    const mockStorage = { upload: vi.fn().mockResolvedValue({ data: {}, error: null }), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://x.supabase.co/rec.ogg' } })), remove: vi.fn().mockResolvedValue({}) };
     mockStorageFrom.mockReturnValue(mockStorage);
 
     const mockQB = createMockQueryBuilder().setResult({ id: 'media-1' });

@@ -52,8 +52,8 @@ export function createMockSupabaseClient(overrides = {}) {
   const from = overrides.from ?? vi.fn(() => createMockQueryBuilder());
 
   const storageFrom = overrides.storageFrom ?? vi.fn(() => ({
-    upload: vi.fn().mockResolvedValue({ data: { path: 'test.wav' }, error: null }),
-    getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://example.supabase.co/storage/v1/object/public/user-recordings/test.wav' } })),
+    upload: vi.fn().mockResolvedValue({ data: { path: 'test.ogg' }, error: null }),
+    getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://example.supabase.co/storage/v1/object/public/user-recordings/test.ogg' } })),
     remove: vi.fn().mockResolvedValue({ data: {}, error: null }),
   }));
 

@@ -25,6 +25,8 @@ const STATES = {
   RECORDING: 'recording',
   RECORDED: 'recorded',
   TRIMMING: 'trimming',
+  CONVERTING_LOADING_WASM: 'converting_loading_wasm',
+  CONVERTING: 'converting',
   READY: 'ready',
   MIC_ERROR: 'mic_error',
 };
@@ -36,6 +38,7 @@ export default function AudioRecorder(props) {
   const [trimStart, setTrimStart] = createSignal(0);
   const [trimEnd, setTrimEnd] = createSignal(0);
   const [duration, setDuration] = createSignal(0);
+  const [conversionProgress, setConversionProgress] = createSignal(0);
   const [fileSize, setFileSize] = createSignal(0);
   const [micLevel, setMicLevel] = createSignal(0);
   const [objectUrl, setObjectUrl] = createSignal(null);
@@ -248,18 +251,47 @@ export default function AudioRecorder(props) {
       const wavBlob = audioBufferToWav(trimmed);
       const trimmedDuration = getBufferDuration(trimmed);
 
-      setFileSize(wavBlob.size);
+      await convertToOpus(wavBlob, trimmedDuration);
+    } catch (err) {
+      setErrorMsg('Error processing audio: ' + (err.message || 'Unknown error'));
+      if (state() !== STATES.READY) setState(STATES.RECORDED);
+    }
+  };
 
-      const dataUrl = await blobToDataUrl(wavBlob);
+  const convertToOpus = async (wavBlob, trimmedDuration) => {
+    setState(STATES.CONVERTING_LOADING_WASM);
+    try {
+      const { createFFmpeg } = await import('@ffmpeg/ffmpeg');
+      const ffmpeg = createFFmpeg({
+        log: false,
+        corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+        progress: ({ ratio }) => {
+          setConversionProgress(Math.round(ratio * 100));
+        },
+      });
+
+      await ffmpeg.load();
+
+      setState(STATES.CONVERTING);
+      setConversionProgress(0);
+
+      ffmpeg.FS('writeFile', 'input.wav', new Uint8Array(await wavBlob.arrayBuffer()));
+      await ffmpeg.run('-i', 'input.wav', '-c:a', 'libopus', '-b:a', '96k', 'output.ogg');
+      const output = ffmpeg.FS('readFile', 'output.ogg');
+
+      const opusBlob = new Blob([output], { type: 'audio/ogg; codecs=opus' });
+      setFileSize(opusBlob.size);
+
+      const dataUrl = await blobToDataUrl(opusBlob);
       setObjectUrl(dataUrl);
-      blob = wavBlob;
+      blob = opusBlob;
 
       setDuration(trimmedDuration);
       setState(STATES.READY);
       unregisterUnload();
-      props.onAudioReady(wavBlob, trimmedDuration);
+      props.onAudioReady(opusBlob, trimmedDuration);
     } catch (err) {
-      setErrorMsg('Error processing audio: ' + (err.message || 'Unknown error'));
+      setErrorMsg('Conversion error: ' + (err.message || 'Unknown error'));
       if (state() !== STATES.READY) setState(STATES.RECORDED);
     }
   };
@@ -272,6 +304,7 @@ export default function AudioRecorder(props) {
     setTrimEnd(0);
     setDuration(0);
     setErrorMsg('');
+    setConversionProgress(0);
     setFileSize(0);
     setMicLevel(0);
     setWaveformPeaks([]);
@@ -511,7 +544,7 @@ export default function AudioRecorder(props) {
               Record Again
             </button>
             <button onClick={applyTrimAndConvert} class="flex-1 py-3 rounded-xl bg-[var(--color-primary)] text-black font-semibold text-sm hover:opacity-90 transition-colors">
-              Apply Trim
+              Apply Trim & Convert
             </button>
           </div>
         </div>
@@ -525,6 +558,25 @@ export default function AudioRecorder(props) {
         </div>
       </Show>
 
+      {/* CONVERTING_LOADING_WASM */}
+      <Show when={state() === STATES.CONVERTING_LOADING_WASM}>
+        <div class="flex flex-col items-center gap-3 py-16">
+          <div class="w-5 h-5 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+          <span class="text-sm text-[var(--color-muted)]">Loading audio converter…</span>
+        </div>
+      </Show>
+
+      {/* CONVERTING */}
+      <Show when={state() === STATES.CONVERTING}>
+        <div class="flex flex-col gap-3 py-10">
+          <div class="w-full bg-[var(--color-bg)] rounded-full h-3 overflow-hidden">
+            <div class="h-full bg-[var(--color-primary)] rounded-full transition-all duration-200" style={`width: ${conversionProgress()}%`} />
+          </div>
+          <span class="text-sm text-[var(--color-muted)] text-center">Converting to Opus… {conversionProgress()}%</span>
+        </div>
+      </Show>
+
+      {/* READY */}
       <Show when={state() === STATES.READY}>
         <div class="flex flex-col gap-3">
           <div class="relative w-full h-20">
