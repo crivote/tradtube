@@ -332,11 +332,11 @@ export async function addRecordingWithEntries({ blob, performer_name, recording_
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Must be logged in');
 
-  const fileName = `${user.id}/${crypto.randomUUID()}.ogg`;
+  const fileName = `${user.id}/${crypto.randomUUID()}.wav`;
 
   const { error: storageError } = await supabase.storage
     .from('user-recordings')
-    .upload(fileName, blob, { contentType: 'audio/ogg; codecs=opus', upsert: false });
+    .upload(fileName, blob, { contentType: 'audio/wav', upsert: false });
   if (storageError) throw new Error('Failed to upload recording');
 
   const { data: urlData } = supabase.storage

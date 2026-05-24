@@ -2,14 +2,14 @@
   command = "npm run build"
   publish = "dist"
 
-# COOP + COEP: necesarios para SQLite WASM y ffmpeg.wasm
-# credentialless habilita SharedArrayBuffer sin romper iframes de YouTube
-# (a diferencia de require-corp)
+# COOP: same-origin — seguridad cross-window sin bloquear iframes externos
+# COEP eliminado: sqlite-wasm usa sqlite3_deserialize con ArrayBuffer normal,
+# no necesita SharedArrayBuffer. ffmpeg.wasm también se eliminó del pipeline
+# (se sube WAV directamente después del trim).
 [[headers]]
   for = "/*"
   [headers.values]
     Cross-Origin-Opener-Policy = "same-origin"
-    Cross-Origin-Embedder-Policy = "credentialless"
 
 # SPA routing: todas las rutas apuntan a index.html
 [[redirects]]

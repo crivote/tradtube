@@ -6,11 +6,10 @@ export default defineConfig({
   server: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'credentialless',
     },
   },
   optimizeDeps: {
-    exclude: ['@sqlite.org/sqlite-wasm', '@ffmpeg/ffmpeg'],
+    exclude: ['@sqlite.org/sqlite-wasm'],
   },
   worker: {
     format: 'es',
