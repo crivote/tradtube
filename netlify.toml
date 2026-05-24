@@ -3,12 +3,20 @@
   publish = "dist"
 
 # COOP: same-origin — required for SQLite WASM.
-# Sin COEP: ffmpeg.wasm usa core single-threaded (0.11.x) que no
-# necesita SharedArrayBuffer, así que los iframes de YouTube funcionan.
+# Sin COEP en la página principal: los iframes de YouTube funcionan.
+# ffmpeg.wasm corre en un iframe aislado (/ffmpeg-worker.html) que sí tiene COEP.
 [[headers]]
   for = "/*"
   [headers.values]
     Cross-Origin-Opener-Policy = "same-origin"
+
+# COOP + COEP solo para el worker de ffmpeg (iframe aislado)
+# credentialless permite cargar el core desde CDN sin CORP headers
+[[headers]]
+  for = "/ffmpeg-worker.html"
+  [headers.values]
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Embedder-Policy = "credentialless"
 
 # SPA routing: todas las rutas apuntan a index.html
 [[redirects]]

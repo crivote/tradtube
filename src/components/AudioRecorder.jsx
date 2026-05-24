@@ -258,26 +258,72 @@ export default function AudioRecorder(props) {
     }
   };
 
+  let ffmpegIframe = null;
+  let ffmpegReady = false;
+  let ffmpegPending = null;
+
+  const getFfmpegIframe = () => {
+    if (ffmpegIframe) return ffmpegIframe;
+
+    ffmpegIframe = document.createElement('iframe');
+    ffmpegIframe.src = '/ffmpeg-worker.html';
+    ffmpegIframe.style.display = 'none';
+    document.body.appendChild(ffmpegIframe);
+
+    const handler = (event) => {
+      if (event.source !== ffmpegIframe?.contentWindow) return;
+      const msg = event.data;
+      if (msg.type === 'ready') {
+        ffmpegReady = true;
+        if (ffmpegPending?.resolveReady) ffmpegPending.resolveReady();
+      } else if (msg.type === 'result') {
+        if (ffmpegPending?.resolve) ffmpegPending.resolve(msg.output);
+        ffmpegPending = null;
+      } else if (msg.type === 'error') {
+        if (ffmpegPending?.reject) ffmpegPending.reject(new Error(msg.error));
+        ffmpegPending = null;
+      }
+    };
+    window.addEventListener('message', handler);
+    ffmpegIframe._handler = handler;
+
+    return ffmpegIframe;
+  };
+
+  onCleanup(() => {
+    if (ffmpegIframe) {
+      if (ffmpegIframe._handler) window.removeEventListener('message', ffmpegIframe._handler);
+      ffmpegIframe.remove();
+      ffmpegIframe = null;
+    }
+  });
+
   const convertToOpus = async (wavBlob, trimmedDuration) => {
     setState(STATES.CONVERTING_LOADING_WASM);
     try {
-      const { createFFmpeg } = await import('@ffmpeg/ffmpeg');
-      const ffmpeg = createFFmpeg({
-        log: false,
-        corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
-        progress: ({ ratio }) => {
-          setConversionProgress(Math.round(ratio * 100));
-        },
-      });
+      const iframe = getFfmpegIframe();
 
-      await ffmpeg.load();
+      if (!ffmpegReady) {
+        await new Promise((resolve) => {
+          ffmpegPending = { resolveReady: resolve };
+        });
+        ffmpegPending = null;
+      }
 
       setState(STATES.CONVERTING);
       setConversionProgress(0);
 
-      ffmpeg.FS('writeFile', 'input.wav', new Uint8Array(await wavBlob.arrayBuffer()));
-      await ffmpeg.run('-i', 'input.wav', '-c:a', 'libopus', '-b:a', '96k', 'output.ogg');
-      const output = ffmpeg.FS('readFile', 'output.ogg');
+      const wavBuffer = await wavBlob.arrayBuffer();
+
+      const output = await new Promise((resolve, reject) => {
+        const requestId = crypto.randomUUID();
+        ffmpegPending = { requestId, resolve, reject };
+        iframe.contentWindow.postMessage(
+          { type: 'convert', requestId, wavBuffer },
+          '*',
+          [wavBuffer]
+        );
+      });
 
       const opusBlob = new Blob([output], { type: 'audio/ogg; codecs=opus' });
       setFileSize(opusBlob.size);
