@@ -183,40 +183,55 @@ export function useAppStore() {
   });
 
   // Filtrar por tipo — solo tunes con vídeos (solo si no hay búsqueda de texto)
-  createEffect(async () => {
+  createEffect(() => {
     const type = filterType();
     const instrument = filterInstrument();
     const q = searchQuery();
-    if (!type || !dbReady() || !videoDataReady() || q.trim().length >= 2) return;
-    try {
-      let all = searchTunesByType(type, 500);
-      const counts = videoCountsByTune();
-      all = all.filter(t => counts.has(t.tune_id));
-      if (instrument) {
-        const ids = await loadInstrumentFilter(instrument);
-        all = all.filter(t => ids.has(t.tune_id));
+    if (!type || !dbReady() || !videoDataReady() || q.trim().length >= 2) { setSearchResults([]); return; }
+
+    let cancelled = false;
+    onCleanup(() => { cancelled = true; });
+
+    (async () => {
+      try {
+        let all = searchTunesByType(type, 500);
+        if (cancelled) return;
+        const counts = videoCountsByTune();
+        all = all.filter(t => counts.has(t.tune_id));
+        if (instrument) {
+          const ids = await loadInstrumentFilter(instrument);
+          if (cancelled) return;
+          all = all.filter(t => ids.has(t.tune_id));
+        }
+        if (!cancelled) setSearchResults(all);
+      } catch (err) {
+        console.error('Type filter effect error:', err);
+        if (!cancelled) setSearchResults([]);
       }
-      setSearchResults(all);
-    } catch (err) {
-      console.error('Type filter effect error:', err);
-      setSearchResults([]);
-    }
+    })();
   });
 
   // Filtrar solo por instrumento (sin tipo)
-  createEffect(async () => {
+  createEffect(() => {
     const type = filterType();
     const instrument = filterInstrument();
-    if (type || !instrument || !dbReady() || !videoDataReady()) return;
-    try {
-      const ids = await loadInstrumentFilter(instrument);
-      const counts = videoCountsByTune();
-      const all = Array.from(ids).map(id => getTuneById(id)).filter(Boolean);
-      setSearchResults(all.filter(t => counts.has(t.tune_id)));
-    } catch (err) {
-      console.error('Instrument filter effect error:', err);
-      setSearchResults([]);
-    }
+    if (type || !instrument || !dbReady() || !videoDataReady()) { setSearchResults([]); return; }
+
+    let cancelled = false;
+    onCleanup(() => { cancelled = true; });
+
+    (async () => {
+      try {
+        const ids = await loadInstrumentFilter(instrument);
+        if (cancelled) return;
+        const counts = videoCountsByTune();
+        const all = Array.from(ids).map(id => getTuneById(id)).filter(Boolean);
+        if (!cancelled) setSearchResults(all.filter(t => counts.has(t.tune_id)));
+      } catch (err) {
+        console.error('Instrument filter effect error:', err);
+        if (!cancelled) setSearchResults([]);
+      }
+    })();
   });
 
   // Cargar entries cuando se selecciona un tune

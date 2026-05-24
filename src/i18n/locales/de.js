@@ -113,6 +113,7 @@ const de = {
     update: 'Video aktualisieren',
     alreadyRegistered: 'Dieses Video ist bereits registriert',
     addOneTune: 'F\u00fcge mindestens eine Melodie hinzu, um einzureichen',
+    enterPerformerName: 'Gib den Namen des Interpreten ein',
     enterValidUrl: 'Gib eine g\u00fcltige YouTube-URL ein',
     unavailable: 'Nicht verf\u00fcgbar',
     unavailableDesc: 'Als nicht verf\u00fcgbar markieren (auf YouTube nicht mehr zug\u00e4nglich)',

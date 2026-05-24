@@ -44,8 +44,8 @@ export default function AddRecordingForm(props) {
   });
 
   const validate = () => {
-    if (!performerName().trim()) return t('addVideo.addOneTune'); // reuse: "add at least one tune" style msg — custom needed
-    if (entries.length === 0) return 'Add at least one tune';
+    if (!performerName().trim()) return t('addVideo.enterPerformerName');
+    if (entries.length === 0) return t('addVideo.addOneTune');
     for (let i = 0; i < entries.length; i++) {
       const e = entries[i];
       const s = parseSec(e.startSec);

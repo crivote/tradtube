@@ -113,6 +113,7 @@ const es = {
     update: 'Actualizar v\u00eddeo',
     alreadyRegistered: 'Este v\u00eddeo ya est\u00e1 registrado',
     addOneTune: 'A\u00f1ade al menos una melod\u00eda para enviar',
+    enterPerformerName: 'Introduce el nombre del int\u00e9rprete',
     enterValidUrl: 'Introduce una URL de YouTube v\u00e1lida',
     unavailable: 'No disponible',
     unavailableDesc: 'Marcar como no disponible (ya no accesible en YouTube)',

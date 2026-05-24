@@ -113,6 +113,7 @@ const en = {
     update: 'Update video',
     alreadyRegistered: 'This video is already registered',
     addOneTune: 'Add at least one tune to submit',
+    enterPerformerName: 'Enter performer name',
     enterValidUrl: 'Enter a valid YouTube URL',
     unavailable: 'Unavailable',
     unavailableDesc: 'Mark as unavailable (no longer accessible on YouTube)',

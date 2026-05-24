@@ -7,6 +7,7 @@
 import { DB_PATH } from '../constants';
 
 let _db = null;
+let _initPromise = null;
 
 export function getDB() {
   return _db;
@@ -14,6 +15,9 @@ export function getDB() {
 
 export async function initDB() {
   if (_db) return _db;
+  if (_initPromise) return _initPromise;
+
+  _initPromise = (async () => {
 
   const sqlite3InitModule = (await import('@sqlite.org/sqlite-wasm')).default;
   const sqlite3 = await sqlite3InitModule({ print: () => {}, printErr: () => {} });
@@ -36,6 +40,9 @@ export async function initDB() {
   );
 
   return _db;
+})();
+
+return _initPromise;
 }
 
 /**

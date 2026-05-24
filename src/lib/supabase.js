@@ -354,7 +354,8 @@ export async function addRecordingWithEntries({ blob, performer_name, recording_
     }).select().single();
 
   if (mediaError) {
-    await supabase.storage.from('user-recordings').remove([fileName]);
+    const r = await supabase.storage.from('user-recordings').remove([fileName]);
+    if (r.error) console.error('Rollback: failed to remove storage file after media insert error', r.error);
     throw new Error('Failed to save recording');
   }
 
@@ -372,8 +373,10 @@ export async function addRecordingWithEntries({ blob, performer_name, recording_
     })));
 
   if (entriesError) {
-    await supabase.from('tune_media').delete().eq('id', media.id);
-    await supabase.storage.from('user-recordings').remove([fileName]);
+    const r1 = await supabase.from('tune_media').delete().eq('id', media.id);
+    if (r1.error) console.error('Rollback: failed to delete tune_media', r1.error);
+    const r2 = await supabase.storage.from('user-recordings').remove([fileName]);
+    if (r2.error) console.error('Rollback: failed to remove storage file', r2.error);
     throw new Error('Failed to save tune entries');
   }
 
@@ -426,7 +429,8 @@ export async function deleteRecording(mediaId) {
     const bucketIdx = pathParts.indexOf('user-recordings');
     if (bucketIdx !== -1) {
       const filePath = pathParts.slice(bucketIdx + 1).join('/');
-      await supabase.storage.from('user-recordings').remove([filePath]);
+      const { error: removeError } = await supabase.storage.from('user-recordings').remove([filePath]);
+      if (removeError) console.error('Failed to remove recording file from storage:', removeError);
     }
   }
 }
@@ -466,12 +470,17 @@ export async function getReports(status) {
 }
 
 export async function getMyReports() {
+  await supabase.auth.refreshSession();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const { data, error } = await supabase
     .from('tune_media_reports')
     .select(`
       id, created_at, media_id, tune_id, issue_type, description, status, admin_comments, closed_at,
       tune_media (id, media_uri, title, source_type, status)
     `)
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
   if (error) { console.error(error); return []; }

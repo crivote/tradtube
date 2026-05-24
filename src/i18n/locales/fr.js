@@ -113,6 +113,7 @@ const fr = {
     update: 'Mettre \u00e0 jour la vid\u00e9o',
     alreadyRegistered: 'Cette vid\u00e9o est d\u00e9j\u00e0 enregistr\u00e9e',
     addOneTune: 'Ajoutez au moins un morceau pour soumettre',
+    enterPerformerName: "Entrez le nom de l'interpr\u00e8te",
     enterValidUrl: 'Entrez une URL YouTube valide',
     unavailable: 'Indisponible',
     unavailableDesc: 'Marquer comme indisponible (plus accessible sur YouTube)',
