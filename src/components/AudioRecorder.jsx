@@ -280,9 +280,16 @@ export default function AudioRecorder(props) {
       } else if (msg.type === 'result') {
         const entry = ffmpegPending.get(msg.requestId);
         if (entry) { entry.resolve(msg.output); ffmpegPending.delete(msg.requestId); }
+      } else if (msg.type === 'progress') {
+        setConversionProgress(msg.progress);
       } else if (msg.type === 'error') {
-        const entry = ffmpegPending.get(msg.requestId);
-        if (entry) { entry.reject(new Error(msg.error)); ffmpegPending.delete(msg.requestId); }
+        if (msg.requestId) {
+          const entry = ffmpegPending.get(msg.requestId);
+          if (entry) { entry.reject(new Error(msg.error)); ffmpegPending.delete(msg.requestId); }
+        } else {
+          setErrorMsg('Audio converter failed to load. Check your connection and try again.');
+          setState(STATES.RECORDED);
+        }
       }
     };
     window.addEventListener('message', handler);

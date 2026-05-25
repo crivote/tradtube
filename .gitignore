@@ -10,3 +10,4 @@ AGENTS.md
 .agents/
 .claude/
 draft_landing_design.png
+public/ffmpeg-core-worker.js

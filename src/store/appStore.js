@@ -189,7 +189,10 @@ export function useAppStore() {
     const type = filterType();
     const instrument = filterInstrument();
     const q = searchQuery();
-    if (!type || !dbReady() || !videoDataReady() || q.trim().length >= 2) { setSearchResults([]); return; }
+    if (!type || !dbReady() || !videoDataReady() || q.trim().length >= 2) {
+      if (!dbReady() || !videoDataReady()) setSearchResults([]);
+      return;
+    }
 
     let cancelled = false;
     onCleanup(() => { cancelled = true; });
@@ -217,7 +220,10 @@ export function useAppStore() {
   createEffect(() => {
     const type = filterType();
     const instrument = filterInstrument();
-    if (type || !instrument || !dbReady() || !videoDataReady()) { setSearchResults([]); return; }
+    if (type || !instrument || !dbReady() || !videoDataReady()) {
+      if (!dbReady() || !videoDataReady()) setSearchResults([]);
+      return;
+    }
 
     let cancelled = false;
     onCleanup(() => { cancelled = true; });

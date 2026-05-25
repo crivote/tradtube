@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "npm run copy-ffmpeg-worker && vite",
+    "build": "npm run copy-ffmpeg-worker && vite build",
     "preview": "vite preview",
     "test": "vitest --config vitest.config.js",
-    "test:run": "vitest run --config vitest.config.js"
+    "test:run": "vitest run --config vitest.config.js",
+    "copy-ffmpeg-worker": "cp node_modules/@ffmpeg/ffmpeg/dist/esm/worker.js public/ffmpeg-core-worker.js"
   },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",

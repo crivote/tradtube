@@ -3,26 +3,45 @@
 <head><meta charset="UTF-8"><title>FFmpeg Worker</title></head>
 <body>
 <script type="module">
-const CORE_URL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js';
+const BASE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core-mt@0.12.10/dist/esm';
+const FFMPEG_URL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js';
 
 let ffmpeg = null;
 let origin = '';
 
 async function init() {
-  const { FFmpeg } = await import(CORE_URL);
+  const { FFmpeg } = await import(FFMPEG_URL);
   ffmpeg = new FFmpeg();
+
   ffmpeg.on('log', () => {});
-  await ffmpeg.load();
+  ffmpeg.on('progress', ({ progress }) => {
+    if (origin) {
+      parent.postMessage({ type: 'progress', progress: Math.round(progress * 100) }, origin);
+    }
+  });
+
+  await ffmpeg.load({
+    classWorkerURL: '/ffmpeg-core-worker.js',
+    coreURL:   `${BASE}/ffmpeg-core.js`,
+    wasmURL:   `${BASE}/ffmpeg-core.wasm`,
+    workerURL: `${BASE}/ffmpeg-core.worker.js`,
+  });
+
   parent.postMessage({ type: 'ready' }, origin || '*');
 }
 
 async function convert(wavBuffer) {
   await ffmpeg.writeFile('input.wav', new Uint8Array(wavBuffer));
   await ffmpeg.exec(['-i', 'input.wav', '-c:a', 'libopus', '-b:a', '96k', 'output.ogg']);
-  return await ffmpeg.readFile('output.ogg');
+  const data = await ffmpeg.readFile('output.ogg');
+  await ffmpeg.deleteFile('input.wav');
+  await ffmpeg.deleteFile('output.ogg');
+  return data;
 }
 
-init();
+init().catch(err => {
+  parent.postMessage({ type: 'error', error: err.message || String(err) }, '*');
+});
 
 window.addEventListener('message', async (event) => {
   if (event.data.type !== 'convert') return;
@@ -30,9 +49,16 @@ window.addEventListener('message', async (event) => {
   const { requestId, wavBuffer } = event.data;
   try {
     const output = await convert(wavBuffer);
-    event.source.postMessage({ type: 'result', requestId, output }, origin, [output.buffer]);
+    event.source.postMessage(
+      { type: 'result', requestId, output },
+      origin,
+      [output.buffer]
+    );
   } catch (err) {
-    event.source.postMessage({ type: 'error', requestId, error: err.message || String(err) }, origin);
+    event.source.postMessage(
+      { type: 'error', requestId, error: err.message || String(err) },
+      origin
+    );
   }
 });
 </script>
