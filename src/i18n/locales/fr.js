@@ -121,8 +121,12 @@ const fr = {
   },
   theSession: {
     title: 'Importer depuis TheSession',
-    desc: 'Collez une URL d\u2019enregistrement ou un ID pour charger sa liste de pistes',
+    desc: 'Recherchez un enregistrement pour importer sa liste de pistes',
     placeholder: 'https://thesession.org/recordings/158 ou ID d\u2019enregistrement',
+    searchPlaceholder: 'Rechercher un enregistrement\u2026',
+    searching: 'Recherche\u2026',
+    noResults: 'Aucun enregistrement trouv\u00e9',
+    back: 'Retour \u00e0 la recherche',
     noTracklist: 'Aucune liste de pistes disponible.',
     import: 'Importer',
   },

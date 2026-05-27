@@ -35,6 +35,17 @@ export async function fetchRecording(id) {
 }
 
 /**
+ * Busca recordings en TheSession por nombre.
+ * Devuelve la respuesta JSON con { pages, page, total, recordings }.
+ */
+export async function searchRecordings(query, page = 1) {
+  const q = encodeURIComponent(query.trim());
+  const res = await fetch(`${BASE}/recordings/search?q=${q}&format=json&page=${page}`);
+  if (!res.ok) throw new Error(`TheSession error ${res.status}`);
+  return res.json();
+}
+
+/**
  * Resuelve las tunes de un track contra el SQLite local.
  * getTuneByIdFn debe ser getTuneById de lib/db.js (síncrona).
  *

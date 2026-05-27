@@ -125,8 +125,12 @@ const en = {
   },
   theSession: {
     title: 'Import from TheSession',
-    desc: 'Paste a recording URL or ID to load its tracklist',
+    desc: 'Search for a recording to import its tracklist',
     placeholder: 'https://thesession.org/recordings/158 or recording ID',
+    searchPlaceholder: 'Search for a recording\u2026',
+    searching: 'Searching\u2026',
+    noResults: 'No recordings found',
+    back: 'Back to search',
     noTracklist: 'No tracklist data available.',
     import: 'Import',
   },

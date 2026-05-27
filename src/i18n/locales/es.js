@@ -121,8 +121,12 @@ const es = {
   },
   theSession: {
     title: 'Importar desde TheSession',
-    desc: 'Pega una URL de grabaci\u00f3n o ID para cargar su lista de temas',
+    desc: 'Busca una grabaci\u00f3n para importar su lista de temas',
     placeholder: 'https://thesession.org/recordings/158 o ID de grabaci\u00f3n',
+    searchPlaceholder: 'Buscar una grabaci\u00f3n\u2026',
+    searching: 'Buscando\u2026',
+    noResults: 'No se encontraron grabaciones',
+    back: 'Volver a la b\u00fasqueda',
     noTracklist: 'No hay datos de lista de temas disponibles.',
     import: 'Importar',
   },

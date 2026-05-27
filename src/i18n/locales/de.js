@@ -121,8 +121,12 @@ const de = {
   },
   theSession: {
     title: 'Von TheSession importieren',
-    desc: 'F\u00fcge eine Aufnahme-URL oder ID ein, um die Titelliste zu laden',
+    desc: 'Suche eine Aufnahme, um die Titelliste zu importieren',
     placeholder: 'https://thesession.org/recordings/158 oder Aufnahme-ID',
+    searchPlaceholder: 'Aufnahme suchen\u2026',
+    searching: 'Suche\u2026',
+    noResults: 'Keine Aufnahmen gefunden',
+    back: 'Zur\u00fcck zur Suche',
     noTracklist: 'Keine Titellistendaten verf\u00fcgbar.',
     import: 'Importieren',
   },
