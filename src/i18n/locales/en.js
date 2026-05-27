@@ -19,6 +19,8 @@ const en = {
     heroTitle: 'Find any tune',
     heroSubtitle:
       'Search 5,000+ traditional tunes and hear real performances \u2014 sessions, concerts, and recordings at the exact right moment.',
+    heroCta: 'Have a video of a tune? Log in with Google to add it!',
+    heroCtaButton: 'Log in with Google',
     tunesWithVideos: 'tunes with videos',
     tryLabel: 'Try:',
     placeholder: 'Search for any tune\u2026',
@@ -44,6 +46,8 @@ const en = {
     sheet: 'Sheet',
     loadingVideos: 'Loading videos\u2026',
     noVideosYet: 'No videos yet for this tune.',
+    addVideoCta: 'Add a video for this tune',
+    loginToAddCta: 'Log in with Google to add a video for this tune!',
     videos: 'Videos ({{count}})',
     restart: 'Restart',
     unknown: 'Unknown',
