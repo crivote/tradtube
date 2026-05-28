@@ -19,6 +19,8 @@ const de = {
     heroTitle: 'Finde jede Melodie',
     heroSubtitle:
       'Durchsuche \u00fcber 5.000 traditionelle Melodien und h\u00f6re echte Darbietungen \u2014 Sessions, Konzerte und Aufnahmen im genau richtigen Moment.',
+    heroCta: 'Hast du ein Video einer Melodie? Melde dich mit Google an, um es hinzuzuf\u00fcgen!',
+    heroCtaButton: 'Mit Google anmelden',
     tunesWithVideos: 'Melodien mit Videos',
     tryLabel: 'Versuche:',
     placeholder: 'Nach einer Melodie suchen\u2026',
@@ -44,6 +46,8 @@ const de = {
     sheet: 'Noten',
     loadingVideos: 'Videos werden geladen\u2026',
     noVideosYet: 'Noch keine Videos f\u00fcr diese Melodie.',
+    addVideoCta: 'Video f\u00fcr diese Melodie hinzuf\u00fcgen',
+    loginToAddCta: 'Hast du ein Video? Melde dich mit Google an, um es dieser Melodie hinzuzuf\u00fcgen.',
     videos: 'Videos ({{count}})',
     restart: 'Neustart',
     unknown: 'Unbekannt',

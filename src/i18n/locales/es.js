@@ -19,6 +19,8 @@ const es = {
     heroTitle: 'Encuentra cualquier melod\u00eda',
     heroSubtitle:
       'Busca entre m\u00e1s de 5,000 melod\u00edas tradicionales y escucha interpretaciones reales \u2014 sesiones, conciertos y grabaciones en el momento exacto.',
+    heroCta: '\u00bfTienes un v\u00eddeo de una melod\u00eda? \u00a1Identif\u00edcate con Google para a\u00f1adirlo!',
+    heroCtaButton: 'Identif\u00edcate con Google',
     tunesWithVideos: 'melod\u00edas con v\u00eddeos',
     tryLabel: 'Prueba:',
     placeholder: 'Buscar cualquier melod\u00eda\u2026',
@@ -44,6 +46,8 @@ const es = {
     sheet: 'Partitura',
     loadingVideos: 'Cargando v\u00eddeos\u2026',
     noVideosYet: 'A\u00fan no hay v\u00eddeos para esta melod\u00eda.',
+    addVideoCta: 'A\u00f1adir un v\u00eddeo para esta melod\u00eda',
+    loginToAddCta: '\u00bfTienes un v\u00eddeo? Identif\u00edcate con Google para a\u00f1adirlo a esta melod\u00eda.',
     videos: 'V\u00eddeos ({{count}})',
     restart: 'Reiniciar',
     unknown: 'Desconocido',

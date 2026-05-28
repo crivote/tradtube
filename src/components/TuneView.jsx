@@ -284,8 +284,8 @@ function TuneView() {
           <Show
             when={authUser()}
             fallback={
-              <div class="flex flex-col items-center gap-3 py-4 px-4 rounded-xl border border-dashed border-[var(--color-primary)]/30 bg-[var(--color-primary)]/5">
-                <p class="text-sm text-[var(--color-text)]/80">
+              <div class="flex flex-col items-center gap-3 py-6 px-6 rounded-2xl border border-[var(--color-border)] bg-white/60 dark:bg-white/5">
+                <p class="text-sm text-[var(--color-text)]/90 font-medium">
                   {t('tune.loginToAddCta')}
                 </p>
                 <button
@@ -295,7 +295,7 @@ function TuneView() {
                     catch (err) { setLoggingIn(false); }
                   }}
                   disabled={loggingIn()}
-                  class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--color-primary)] text-white font-semibold text-sm hover:bg-[var(--color-primary)]/90 transition-colors disabled:opacity-50"
+                  class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-[var(--color-primary)]/40 text-[var(--color-primary)] font-semibold text-sm hover:bg-[var(--color-primary)]/10 transition-colors disabled:opacity-50"
                 >
                   <svg class="w-5 h-5" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
@@ -308,14 +308,15 @@ function TuneView() {
               </div>
             }
           >
-            <div class="flex flex-col items-center gap-3 py-4">
-              <p class="text-[var(--color-muted)] text-sm">
+            <div class="flex flex-col items-center gap-3 py-6 px-6 rounded-2xl border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5">
+              <p class="text-[var(--color-text)]/80 text-sm">
                 {t('tune.noVideosYet')}
               </p>
               <button
                 onClick={() => openAddFormForTune(selectedTune())}
-                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-dashed border-[var(--color-primary)]/50 text-[var(--color-primary)] font-semibold text-sm hover:bg-[var(--color-primary)]/10 transition-colors"
+                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--color-primary)] text-white font-semibold text-sm hover:bg-[var(--color-primary)]/90 transition-colors shadow-sm"
               >
+                <span class="text-base leading-none">+</span>
                 {t('tune.addVideoCta')}
               </button>
             </div>

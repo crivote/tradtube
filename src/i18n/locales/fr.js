@@ -19,6 +19,8 @@ const fr = {
     heroTitle: 'Trouver un morceau',
     heroSubtitle:
       'Recherchez parmi plus de 5\u00a0000 morceaux traditionnels et \u00e9coutez des interpr\u00e9tations r\u00e9elles \u2014 sessions, concerts et enregistrements au bon moment.',
+    heroCta: 'Tu as une vid\u00e9o d\u2019un morceau ? Connecte-toi avec Google pour l\u2019ajouter !',
+    heroCtaButton: 'Se connecter avec Google',
     tunesWithVideos: 'morceaux avec vid\u00e9os',
     tryLabel: 'Essayez\u00a0:',
     placeholder: 'Rechercher un morceau\u2026',
@@ -44,6 +46,8 @@ const fr = {
     sheet: 'Partition',
     loadingVideos: 'Chargement des vid\u00e9os\u2026',
     noVideosYet: 'Pas encore de vid\u00e9o pour ce morceau.',
+    addVideoCta: 'Ajouter une vid\u00e9o pour ce morceau',
+    loginToAddCta: 'Tu as une vid\u00e9o ? Connecte-toi avec Google pour l\u2019ajouter \u00e0 ce morceau.',
     videos: 'Vid\u00e9os ({{count}})',
     restart: 'Recommencer',
     unknown: 'Inconnu',

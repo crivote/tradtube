@@ -61,8 +61,8 @@ function SearchView() {
               {t('search.heroSubtitle')}
             </p>
             <Show when={authInitialized() && !authUser()}>
-              <div class="flex flex-col items-center gap-3 mt-4 p-4 rounded-xl border border-dashed border-[var(--color-primary)]/30 bg-[var(--color-primary)]/5">
-                <p class="text-sm text-[var(--color-text)]/80">
+              <div class="flex flex-col items-center gap-3 mt-6 p-6 rounded-2xl border border-[var(--color-border)] bg-white/60 dark:bg-white/5">
+                <p class="text-sm text-[var(--color-text)]/90 font-medium">
                   {t('search.heroCta')}
                 </p>
                 <button
@@ -72,7 +72,7 @@ function SearchView() {
                     catch (err) { setLoggingIn(false); }
                   }}
                   disabled={loggingIn()}
-                  class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--color-primary)] text-white font-semibold text-sm hover:bg-[var(--color-primary)]/90 transition-colors disabled:opacity-50"
+                  class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-[var(--color-primary)]/40 text-[var(--color-primary)] font-semibold text-sm hover:bg-[var(--color-primary)]/10 transition-colors disabled:opacity-50"
                 >
                   <svg class="w-5 h-5" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
