@@ -28,6 +28,7 @@ export async function getEntriesForTune(tuneId) {
     `)
     .eq('tune_id', tuneId)
     .eq('tune_media.hidden', false)
+    .neq('tune_media.status', 'llm_guess')
     .order('position', { ascending: true });
 
   if (error) { console.error(error); return []; }
@@ -147,7 +148,7 @@ export async function getPendingVideos() {
       id, media_uri, source_type, status, unavailable, title, channel, added_by, created_at,
       tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
     `)
-    .eq('status', 'new')
+    .in('status', ['new', 'llm_guess'])
     .order('created_at', { ascending: false });
 
   if (error) { console.error(error); return []; }
@@ -226,7 +227,7 @@ export async function getPendingCount() {
   const { count, error } = await supabase
     .from('tune_media')
     .select('id', { count: 'exact', head: true })
-    .eq('status', 'new');
+    .in('status', ['new', 'llm_guess']);
   if (error) { console.error(error); return 0; }
   return count || 0;
 }
@@ -242,15 +243,15 @@ export async function getPendingReportsCount() {
 
 /**
  * Devuelve un Map<tune_id, clipCount> para los badges de búsqueda.
- * No filtra por status — incluye vídeos pendientes de revisión
- * para que los badges reflejen todo el contenido disponible.
+ * Excluye vídeos con status 'llm_guess' (no visibles para público).
  */
 export async function getVideoCountsByTune() {
   const { data, error } = await supabase
     .from('tune_media')
     .select('id, media_uri, tune_media_entries(tune_id)')
     .eq('unavailable', false)
-    .eq('hidden', false);
+    .eq('hidden', false)
+    .neq('status', 'llm_guess');
 
   if (error) { console.error(error); return { counts: new Map(), thumbnails: new Map() }; }
 
@@ -274,7 +275,8 @@ export async function getTuneIdsByInstrument(instrument) {
     .select('tune_id, instruments, tune_media!inner(unavailable, hidden)')
     .contains('instruments', [instrument])
     .eq('tune_media.unavailable', false)
-    .eq('tune_media.hidden', false);
+    .eq('tune_media.hidden', false)
+    .neq('tune_media.status', 'llm_guess');
 
   if (error) { console.error(error); return new Set(); }
   return new Set((data || []).map(e => e.tune_id));

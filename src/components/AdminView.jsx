@@ -142,6 +142,7 @@ function PendingTab(props) {
 
   const handleReview = async (video) => {
     setActionId(video.id);
+    const previousStatus = video.status;
     try {
       await reviewVideo(video.id);
       const next = videos().filter(v => v.id !== video.id);
@@ -152,8 +153,8 @@ function PendingTab(props) {
       showToast(t('admin.reviewed', { id: extractYoutubeId(video.media_uri) }), 'success', 4000, {
         label: t('admin.undo'),
         onClick: async () => {
-          // Undo: revert to 'new' status
-          await supabase.from('tune_media').update({ status: 'new' }).eq('id', video.id);
+          // Undo: revert to previous status
+          await supabase.from('tune_media').update({ status: previousStatus }).eq('id', video.id);
           setVideos(prev => [video, ...prev]);
           props.onCountLoaded(videos().length + 1);
           loadVideoData();

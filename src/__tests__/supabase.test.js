@@ -95,34 +95,34 @@ describe('Phase 0A — Moderation refactor', () => {
     });
   });
 
-  describe('getPendingCount — uses status new', () => {
-    it('counts by status = new', async () => {
+  describe('getPendingCount — uses status new and llm_guess', () => {
+    it('counts by status in [new, llm_guess]', async () => {
       const mockQB = createMockQueryBuilder()
         .setResult(null, null, 5);
       mockFrom.mockReturnValue(mockQB);
 
       const count = await supabaseModule.getPendingCount();
 
-      // Verify eq was called with 'status', 'new'
-      const eqCalls = mockQB.eq.mock.calls;
-      const statusCall = eqCalls.find(call => call[0] === 'status');
+      // Verify in was called with 'status', ['new', 'llm_guess']
+      const inCalls = mockQB.in.mock.calls;
+      const statusCall = inCalls.find(call => call[0] === 'status');
       expect(statusCall).toBeDefined();
-      expect(statusCall[1]).toBe('new');
+      expect(statusCall[1]).toEqual(['new', 'llm_guess']);
     });
   });
 
-  describe('getPendingVideos — uses status new', () => {
-    it('filters by status = new', async () => {
+  describe('getPendingVideos — uses status new and llm_guess', () => {
+    it('filters by status in [new, llm_guess]', async () => {
       const mockQB = createMockQueryBuilder()
         .setResult([]);
       mockFrom.mockReturnValue(mockQB);
 
       await supabaseModule.getPendingVideos();
 
-      const eqCalls = mockQB.eq.mock.calls;
-      const statusCall = eqCalls.find(call => call[0] === 'status');
+      const inCalls = mockQB.in.mock.calls;
+      const statusCall = inCalls.find(call => call[0] === 'status');
       expect(statusCall).toBeDefined();
-      expect(statusCall[1]).toBe('new');
+      expect(statusCall[1]).toEqual(['new', 'llm_guess']);
     });
   });
 
