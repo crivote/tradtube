@@ -362,22 +362,20 @@ function AddVideoForm(props) {
         </Show>
 
         {/* ── TheSession recording import ──────────────────────────────── */}
-        <Show when={!isEdit()}>
-          <div class="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => setShowImportModal(true)}
-              class="w-full py-2.5 rounded-xl text-sm border border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-primary)]/50 hover:text-[var(--color-primary)] transition-colors"
-            >
-              {t('addVideo.importTracklist')}
-            </button>
-            <Show when={skippedTuneNames().length > 0}>
-              <p class="text-xs text-[var(--color-warning)]/80 bg-[var(--color-warning)]/5 border border-[var(--color-warning)]/20 rounded-lg px-3 py-2">
-                {t('addVideo.skipped', { tunes: skippedTuneNames().join(', ') })}
-              </p>
-            </Show>
-          </div>
-        </Show>
+        <div class="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setShowImportModal(true)}
+            class="w-full py-2.5 rounded-xl text-sm border border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-primary)]/50 hover:text-[var(--color-primary)] transition-colors"
+          >
+            {t('addVideo.importTracklist')}
+          </button>
+          <Show when={skippedTuneNames().length > 0}>
+            <p class="text-xs text-[var(--color-warning)]/80 bg-[var(--color-warning)]/5 border border-[var(--color-warning)]/20 rounded-lg px-3 py-2">
+              {t('addVideo.skipped', { tunes: skippedTuneNames().join(', ') })}
+            </p>
+          </Show>
+        </div>
 
         {/* ── Tunes in this video ──────────────────────────────────────── */}
         <TuneEntriesEditor
