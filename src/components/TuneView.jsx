@@ -186,8 +186,7 @@ function TuneView() {
               Record
             </button>
           </Show>
-          <Show when={activeEntry()}>
-            <label class="flex items-center gap-2 cursor-pointer select-none" onClick={() => setShowSheet(v => !v)}>
+          <label class="flex items-center gap-2 cursor-pointer select-none" onClick={() => setShowSheet(v => !v)}>
             <span class="text-xs text-[var(--color-muted)]">{t('tune.sheet')}</span>
             <button
               type="button"
@@ -201,7 +200,6 @@ function TuneView() {
               />
             </button>
           </label>
-        </Show>
       </div>
       </div>
 
@@ -267,6 +265,16 @@ function TuneView() {
             </div>
           </Show>
 
+        </div>
+      </Show>
+
+      {/* Sheet full-width when no video active */}
+      <Show when={!activeEntry() && showSheet()}>
+        <div class="w-full">
+          <SheetMusic
+            tune={selectedTune()}
+            settingId={null}
+          />
         </div>
       </Show>
 
