@@ -339,6 +339,20 @@ function AddVideoForm(props) {
           </select>
         </div>
 
+        {/* ── TheSession recording ID ─────────────────────────────────── */}
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">
+            {t('addVideo.thesessionRecordingId')}
+          </label>
+          <input
+            type="text"
+            placeholder={t('addVideo.thesessionRecordingIdPlaceholder')}
+            value={recordingId() ?? ''}
+            onInput={e => setRecordingId(e.target.value ? parseInt(e.target.value, 10) : null)}
+            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
+          />
+        </div>
+
         {/* ── Unavailable toggle (edit only) ─────────────────────────── */}
         <Show when={isEdit()}>
           <label class="flex items-center gap-3 cursor-pointer select-none">

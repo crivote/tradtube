@@ -127,7 +127,7 @@ export async function getLatestMedia() {
   const { data, error } = await supabase
     .from('tune_media')
     .select(`
-      id, media_uri, source_type, status, unavailable, title, channel, added_by, created_at, hidden,
+      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at, hidden,
       tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
     `)
     .eq('hidden', false)
@@ -145,7 +145,7 @@ export async function getPendingVideos() {
   const { data, error } = await supabase
     .from('tune_media')
     .select(`
-      id, media_uri, source_type, status, unavailable, title, channel, added_by, created_at,
+      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at,
       tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
     `)
     .in('status', ['new', 'llm_guess'])
@@ -171,7 +171,7 @@ export async function getVideosByTune(tuneId) {
   const { data, error: e2 } = await supabase
     .from('tune_media')
     .select(`
-      id, media_uri, source_type, status, unavailable, title, channel, added_by, created_at,
+      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at,
       tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
     `)
     .in('id', mediaIds)

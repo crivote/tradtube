@@ -121,6 +121,8 @@ const fr = {
     enterValidUrl: 'Entrez une URL YouTube valide',
     unavailable: 'Indisponible',
     unavailableDesc: 'Marquer comme indisponible (plus accessible sur YouTube)',
+    thesessionRecordingId: 'ID d\u2019enregistrement TheSession',
+    thesessionRecordingIdPlaceholder: 'ID num\u00e9rique (ex. 158)',
     removed: '\u00ab\u00a0{{name}}\u00a0\u00bb supprim\u00e9',
   },
   theSession: {

@@ -121,6 +121,8 @@ const de = {
     enterValidUrl: 'Gib eine g\u00fcltige YouTube-URL ein',
     unavailable: 'Nicht verf\u00fcgbar',
     unavailableDesc: 'Als nicht verf\u00fcgbar markieren (auf YouTube nicht mehr zug\u00e4nglich)',
+    thesessionRecordingId: 'TheSession-Aufnahme-ID',
+    thesessionRecordingIdPlaceholder: 'Numerische ID (z.B. 158)',
     removed: '"{{name}}" entfernt',
   },
   theSession: {

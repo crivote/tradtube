@@ -121,6 +121,8 @@ const es = {
     enterValidUrl: 'Introduce una URL de YouTube v\u00e1lida',
     unavailable: 'No disponible',
     unavailableDesc: 'Marcar como no disponible (ya no accesible en YouTube)',
+    thesessionRecordingId: 'ID de grabación en TheSession',
+    thesessionRecordingIdPlaceholder: 'ID numérico (ej. 158)',
     removed: '"{{name}}" eliminada',
   },
   theSession: {
