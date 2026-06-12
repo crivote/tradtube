@@ -2,6 +2,7 @@
 .env.local
 .mcp.json
 INTERNAL.md
+opencode.json
 node_modules
 dist
 supabase/.temp/
