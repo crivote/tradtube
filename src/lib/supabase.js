@@ -20,7 +20,7 @@ export async function getEntriesForTune(tuneId) {
   const { data, error } = await supabase
     .from('tune_media_entries')
     .select(`
-      id, tune_id, setting_id, start_sec, end_sec, position, instruments, key,
+      id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure,
       tune_media!inner(
         id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, created_at, hidden
       ),
@@ -76,6 +76,7 @@ export async function addVideoWithEntries({ youtube_id, source_type, title, chan
     position: e.position ?? i,
     instruments: e.instruments?.length > 0 ? e.instruments : null,
     key: e.key ?? null,
+    structure: e.structure ?? null,
   }));
 
   const { error: entriesError } = await supabase
@@ -128,7 +129,7 @@ export async function getLatestMedia() {
     .from('tune_media')
     .select(`
       id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at, hidden,
-      tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
+      tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure )
     `)
     .eq('hidden', false)
     .order('created_at', { ascending: false })
@@ -146,7 +147,7 @@ export async function getPendingVideos() {
     .from('tune_media')
     .select(`
       id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at,
-      tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
+      tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure )
     `)
     .in('status', ['new', 'llm_guess'])
     .order('created_at', { ascending: false });
@@ -172,7 +173,7 @@ export async function getVideosByTune(tuneId) {
     .from('tune_media')
     .select(`
       id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at,
-      tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position )
+      tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure )
     `)
     .in('id', mediaIds)
     .order('created_at', { ascending: false });
@@ -219,6 +220,7 @@ export async function updateVideoWithEntries(videoId, { source_type, title, chan
       position: i,
       instruments: e.instruments?.length > 0 ? e.instruments : null,
       key: e.key ?? null,
+      structure: e.structure ?? null,
     })));
   if (ie) throw ie;
 }
@@ -319,7 +321,7 @@ export async function getVideoById(videoId) {
     .select(`
       id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, created_at,
       tune_media_entries (
-        id, tune_id, setting_id, start_sec, end_sec, position, instruments, key
+        id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure
       )
     `)
     .eq('id', videoId)
@@ -376,6 +378,7 @@ export async function addRecordingWithEntries({ blob, performer_name, recording_
       position: i,
       instruments: e.instruments?.length > 0 ? e.instruments : null,
       key: e.key ?? null,
+      structure: e.structure ?? null,
     })));
 
   if (entriesError) {
@@ -395,7 +398,7 @@ export async function getUserRecordings(userId) {
   const { data, error } = await supabase
     .from('tune_media')
     .select(`id, media_uri, performer_name, recording_notes, status, hidden, created_at,
-      tune_media_entries(tune_id, start_sec, end_sec, instruments, key, position)`)
+      tune_media_entries(tune_id, start_sec, end_sec, instruments, key, structure, position)`)
     .eq('source_type', 'user_recording')
     .eq('added_by', userId)
     .order('created_at', { ascending: false });

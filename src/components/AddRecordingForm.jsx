@@ -72,6 +72,7 @@ export default function AddRecordingForm(props) {
         position: i,
         instruments: e.instruments?.length > 0 ? e.instruments : null,
         key: e.key || null,
+        structure: e.structure || null,
       })),
     });
   };
@@ -131,7 +132,7 @@ export default function AddRecordingForm(props) {
       <TuneEntriesEditor
         entries={entries}
         audioDuration={props.durationSeconds}
-        onAdd={(tune) => setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [], key: null })))}
+        onAdd={(tune) => setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [], key: null, structure: null })))}
         onRemove={(i) => setEntries(produce(e => e.splice(i, 1)))}
         onUpdate={(i, field, value) => setEntries(i, field, value)}
       />

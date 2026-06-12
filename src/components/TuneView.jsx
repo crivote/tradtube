@@ -423,6 +423,11 @@ function TuneView() {
                           {entry.key}
                         </span>
                       </Show>
+                      <Show when={entry.structure}>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-border)] text-[var(--color-muted)] w-fit font-mono">
+                          {entry.structure}
+                        </span>
+                      </Show>
                       <For each={entry.instruments ?? []}>
                         {(ins) => (
                           <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-border)] text-[var(--color-muted)] w-fit">

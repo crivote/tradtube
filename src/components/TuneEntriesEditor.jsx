@@ -233,6 +233,21 @@ export default function TuneEntriesEditor(props) {
                   </select>
                 </Show>
 
+                {/* Structure */}
+                <Show when={!props.readOnly}>
+                  <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
+                    <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">Structure</span>
+                    <input
+                      type="text"
+                      placeholder="AABB"
+                      value={entry.structure ?? ''}
+                      onInput={e => props.onUpdate(i(), 'structure', e.target.value || null)}
+                      maxlength="10"
+                      class="w-16 text-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                    />
+                  </div>
+                </Show>
+
                 {/* Remove */}
                 <Show when={!props.readOnly}>
                   <button

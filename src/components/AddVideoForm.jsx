@@ -50,9 +50,10 @@ function AddVideoForm(props) {
           endSec: e.end_sec != null ? formatSec(e.end_sec) : '',
           instruments: e.instruments ?? [],
           key: e.key ?? null,
+          structure: e.structure ?? null,
         }))
     : props.initialTune
-      ? [{ tune: props.initialTune, startSec: '', endSec: '', instruments: [], key: null }]
+      ? [{ tune: props.initialTune, startSec: '', endSec: '', instruments: [], key: null, structure: null }]
       : [];
 
   const [youtubeUrl, setYoutubeUrl] = createSignal(extractYoutubeId(props.editVideo?.media_uri) ?? '');
@@ -103,7 +104,7 @@ function AddVideoForm(props) {
         
         if (matchedTunes.length > 0) {
           for (const tune of matchedTunes) {
-            setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [], key: null })));
+            setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [], key: null, structure: null })));
           }
           setAutoMatchedCount(matchedTunes.length);
         }
@@ -127,7 +128,7 @@ function AddVideoForm(props) {
     for (const r of resolved) {
       if (r.unresolvable) { skipped.push(r.name); continue; }
       if (existing.has(r.tune.tune_id)) continue;
-      setEntries(produce(e => e.push({ tune: r.tune, startSec: '', endSec: '', instruments: [], key: null })));
+      setEntries(produce(e => e.push({ tune: r.tune, startSec: '', endSec: '', instruments: [], key: null, structure: null })));
       existing.add(r.tune.tune_id);
     }
     setSkippedTuneNames(skipped);
@@ -157,6 +158,7 @@ function AddVideoForm(props) {
         position: i,
         instruments: e.instruments?.length > 0 ? e.instruments : null,
         key: e.key || null,
+        structure: e.structure || null,
       }));
 
       if (isEdit()) {
@@ -394,7 +396,7 @@ function AddVideoForm(props) {
         {/* ── Tunes in this video ──────────────────────────────────────── */}
         <TuneEntriesEditor
           entries={entries}
-          onAdd={(tune) => setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [], key: null })))}
+          onAdd={(tune) => setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [], key: null, structure: null })))}
           onRemove={(i) => {
             const removed = entries[i];
             setEntries(produce(e => e.splice(i, 1)));
