@@ -1,0 +1,15 @@
+{
+  "": "https://opencode.ai/config.json",
+  "permission": {
+    "bash": {
+      "*": "allow",
+      "rm *": "deny",
+      "sudo *": "deny"
+    },
+    "edit": "allow",
+    "external_directory": {
+      "~/Proyectos/README.md": "allow",
+      "~/.config/forgejo/token": "allow"
+    }
+  }
+}

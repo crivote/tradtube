@@ -149,15 +149,41 @@ function AddVideoForm(props) {
   const handleSeekToTime = (seconds) => {
     const iframe = youtubeIframeRef;
     if (!iframe?.contentWindow) return;
+
+    const doSeek = (target) => {
+      iframe.contentWindow.postMessage(
+        JSON.stringify({ event: 'command', func: 'seekTo', args: [Math.max(0, target), true] }),
+        '*'
+      );
+    };
+
+    if (seconds != null) {
+      doSeek(seconds);
+      return;
+    }
+
     const dur = videoDuration();
-    const target = seconds != null
-      ? Math.max(0, seconds)
-      : dur > 0 ? Math.max(0, dur - 2.5) : null;
-    if (target == null) return;
+    if (dur > 0) {
+      doSeek(dur - 2.5);
+      return;
+    }
+
     iframe.contentWindow.postMessage(
-      JSON.stringify({ event: 'command', func: 'seekTo', args: [target, true] }),
+      JSON.stringify({ event: 'command', func: 'getDuration', args: '' }),
       '*'
     );
+    const onDuration = (event) => {
+      if (!event.origin.startsWith('https://www.youtube.com')) return;
+      try {
+        const data = JSON.parse(event.data);
+        if (data.event === 'infoDelivery' && data.info?.duration) {
+          doSeek(data.info.duration - 2.5);
+          window.removeEventListener('message', onDuration);
+        }
+      } catch {}
+    };
+    window.addEventListener('message', onDuration);
+    setTimeout(() => window.removeEventListener('message', onDuration), 5000);
   };
 
   const handleImportFromModal = (trackIdx, recordingData) => {
