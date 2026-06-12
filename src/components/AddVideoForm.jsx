@@ -8,6 +8,7 @@
 
 import { createSignal, createMemo, createEffect, onCleanup, Show } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
+import { ExternalLink } from 'lucide-solid';
 import { searchTunes, getTuneById, getSettings, findMatchingTunes } from '../lib/db';
 import { addVideoWithEntries, updateVideoWithEntries, checkYoutubeIdExists } from '../lib/supabase';
 import { resolveTrackTunes } from '../lib/thesession';
@@ -396,6 +397,17 @@ function AddVideoForm(props) {
             onInput={e => setRecordingId(e.target.value ? parseInt(e.target.value, 10) : null)}
             class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
           />
+          <Show when={recordingId()}>
+            <a
+              href={`https://thesession.org/recordings/${recordingId()}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-xs text-[var(--color-primary)] hover:underline flex items-center gap-1 w-fit"
+            >
+              <ExternalLink size={12} />
+              View on TheSession
+            </a>
+          </Show>
         </div>
 
         {/* ── Unavailable toggle (edit only) ─────────────────────────── */}
