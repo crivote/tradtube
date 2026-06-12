@@ -99,7 +99,7 @@ export default function AddRecordingForm(props) {
           <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">Preview</label>
           <audio controls src={objectUrl()} class="w-full h-10 rounded-lg" />
           <p class="text-[10px] text-[var(--color-muted)]">
-            {Math.floor(props.durationSeconds / 60)}:{String(props.durationSeconds % 60).padStart(2, '0')}
+            {Math.floor(props.durationSeconds / 60)}:{String(Math.floor(props.durationSeconds % 60)).padStart(2, '0')}
           </p>
         </div>
       </Show>

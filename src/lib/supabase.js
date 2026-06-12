@@ -335,16 +335,19 @@ export async function getVideoById(videoId) {
  * Sube una grabación de usuario a Storage, la inserta en tune_media
  * y crea sus entries. Rollback completo si cualquier paso falla.
  */
-export async function addRecordingWithEntries({ blob, performer_name, recording_notes, entries }) {
+export async function addRecordingWithEntries({ blob, ext = 'ogg', performer_name, recording_notes, entries }) {
   await supabase.auth.refreshSession();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Must be logged in');
 
-  const fileName = `${user.id}/${crypto.randomUUID()}.ogg`;
+  const fileName = `${user.id}/${crypto.randomUUID()}.${ext}`;
+
+  const contentTypeMap = { ogg: 'audio/ogg; codecs=opus', m4a: 'audio/mp4', webm: 'audio/webm;codecs=opus' };
+  const contentType = contentTypeMap[ext] ?? 'audio/ogg; codecs=opus';
 
   const { error: storageError } = await supabase.storage
     .from('user-recordings')
-    .upload(fileName, blob, { contentType: 'audio/ogg; codecs=opus', upsert: false });
+    .upload(fileName, blob, { contentType, upsert: false });
   if (storageError) throw new Error('Failed to upload recording');
 
   const { data: urlData } = supabase.storage

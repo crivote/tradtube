@@ -30,13 +30,21 @@ async function init() {
   parent.postMessage({ type: 'ready' }, origin || '*');
 }
 
-async function convert(wavBuffer) {
+async function convert(wavBuffer, outputFormat) {
+  const formatMap = {
+    'audio/ogg':  { ext: 'ogg',  codec: ['-c:a', 'libopus', '-b:a', '96k'] },
+    'audio/mp4':  { ext: 'm4a',  codec: ['-c:a', 'aac',     '-b:a', '128k'] },
+    'audio/webm': { ext: 'webm', codec: ['-c:a', 'libopus', '-b:a', '96k'] },
+  };
+  const { ext, codec } = formatMap[outputFormat] ?? formatMap['audio/ogg'];
+  const outFile = `output.${ext}`;
+
   await ffmpeg.writeFile('input.wav', new Uint8Array(wavBuffer));
-  await ffmpeg.exec(['-i', 'input.wav', '-c:a', 'libopus', '-b:a', '96k', 'output.ogg']);
-  const data = await ffmpeg.readFile('output.ogg');
+  await ffmpeg.exec(['-i', 'input.wav', ...codec, outFile]);
+  const data = await ffmpeg.readFile(outFile);
   await ffmpeg.deleteFile('input.wav');
-  await ffmpeg.deleteFile('output.ogg');
-  return data;
+  await ffmpeg.deleteFile(outFile);
+  return { data, ext, mimeType: outputFormat };
 }
 
 init().catch(err => {
@@ -46,13 +54,13 @@ init().catch(err => {
 window.addEventListener('message', async (event) => {
   if (event.data.type !== 'convert') return;
   if (!origin) origin = event.origin;
-  const { requestId, wavBuffer } = event.data;
+  const { requestId, wavBuffer, outputFormat } = event.data;
   try {
-    const output = await convert(wavBuffer);
+    const result = await convert(wavBuffer, outputFormat);
     event.source.postMessage(
-      { type: 'result', requestId, output },
+      { type: 'result', requestId, output: { data: result.data, ext: result.ext, mimeType: result.mimeType } },
       origin,
-      [output.buffer]
+      [result.data.buffer]
     );
   } catch (err) {
     event.source.postMessage(

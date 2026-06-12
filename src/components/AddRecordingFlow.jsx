@@ -17,19 +17,21 @@ import { useAppStore } from '../store/appStore';
 export default function AddRecordingFlow(props) {
   const [blob, setBlob] = createSignal(null);
   const [duration, setDuration] = createSignal(0);
+  const [ext, setExt] = createSignal('ogg');
   const [submitting, setSubmitting] = createSignal(false);
   const { showToast, loadVideoData } = useAppStore();
   const navigate = useNavigate();
 
-  const handleAudioReady = (b, d) => {
+  const handleAudioReady = (b, d, e) => {
     setBlob(b);
     setDuration(d);
+    setExt(e || 'ogg');
   };
 
   const handleSubmit = async (payload) => {
     setSubmitting(true);
     try {
-      await addRecordingWithEntries(payload);
+      await addRecordingWithEntries({ ...payload, ext: ext() });
       showToast('Recording published!', 'success');
       loadVideoData();
       const firstTuneId = payload.entries[0]?.tune_id;

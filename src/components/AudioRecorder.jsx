@@ -31,6 +31,14 @@ const STATES = {
   MIC_ERROR: 'mic_error',
 };
 
+const outputFormat = (() => {
+  const types = ['audio/ogg', 'audio/mp4', 'audio/webm'];
+  return types.find(t => {
+    const a = document.createElement('audio');
+    return a.canPlayType(t) === 'probably' || a.canPlayType(t) === 'maybe';
+  }) ?? 'audio/ogg';
+})();
+
 export default function AudioRecorder(props) {
   const [state, setState] = createSignal(STATES.IDLE);
   const [elapsed, setElapsed] = createSignal(0);
@@ -152,7 +160,14 @@ export default function AudioRecorder(props) {
       analyser.fftSize = 256;
       source.connect(analyser);
 
-      const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+      const preferredTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4;codecs=mp4a.40.2',
+        'audio/mp4',
+        '',
+      ];
+      const mime = preferredTypes.find(t => t === '' || MediaRecorder.isTypeSupported(t)) ?? '';
       mimeType = mime;
       mediaRecorder = new MediaRecorder(mediaStream, { mimeType });
 
@@ -332,13 +347,13 @@ export default function AudioRecorder(props) {
       const output = await new Promise((resolve, reject) => {
         ffmpegPending.set(requestId, { resolve, reject });
         iframe.contentWindow.postMessage(
-          { type: 'convert', requestId, wavBuffer },
+          { type: 'convert', requestId, wavBuffer, outputFormat },
           window.location.origin,
           [wavBuffer]
         );
       });
 
-      const opusBlob = new Blob([output], { type: 'audio/ogg; codecs=opus' });
+      const opusBlob = new Blob([output.data], { type: output.mimeType });
       setFileSize(opusBlob.size);
 
       const dataUrl = await blobToDataUrl(opusBlob);
@@ -348,7 +363,7 @@ export default function AudioRecorder(props) {
       setDuration(trimmedDuration);
       setState(STATES.READY);
       unregisterUnload();
-      props.onAudioReady(opusBlob, trimmedDuration);
+      props.onAudioReady(opusBlob, trimmedDuration, output.ext);
     } catch (err) {
       setErrorMsg('Conversion error: ' + (err.message || 'Unknown error'));
       if (state() !== STATES.READY) setState(STATES.RECORDED);
