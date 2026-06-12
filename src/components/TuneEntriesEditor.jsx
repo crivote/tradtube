@@ -10,12 +10,13 @@
  *   onUpdate(index, field, value): void  — actualiza campo
  *   audioDuration: number?   — duración total para validación de bounds
  *   readOnly: boolean        — deshabilita edición
+ *   onSeekToTime(seconds: number|null): void  — opcional, seek en YouTube iframe
  */
 
 import { createSignal, createMemo, createEffect, onCleanup, For, Show } from 'solid-js';
-import { ChevronDown } from 'lucide-solid';
+import { ChevronDown, SkipForward } from 'lucide-solid';
 import { searchTunes, getTuneById, getSettings } from '../lib/db';
-import { validateTimestamp } from '../lib/utils';
+import { parseSec, validateTimestamp } from '../lib/utils';
 import { useI18n } from '../i18n';
 import { INSTRUMENTS } from '../constants';
 
@@ -170,6 +171,20 @@ export default function TuneEntriesEditor(props) {
                              : '');
                         })()}
                       </span>
+                    </Show>
+                    <Show when={props.onSeekToTime}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const endVal = parseSec(entry.endSec);
+                          props.onSeekToTime(endVal != null ? Math.max(0, endVal - 2.5) : null);
+                        }}
+                        title="Seek to -2.5s before end"
+                        class="flex-shrink-0 mt-3 text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors"
+                      >
+                        <SkipForward size={15} />
+                      </button>
                     </Show>
                   </div>
                 </Show>

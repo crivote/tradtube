@@ -71,6 +71,9 @@ function AddVideoForm(props) {
   const [unavailable, setUnavailable] = createSignal(props.editVideo?.unavailable ?? false);
   const [autoMatchedCount, setAutoMatchedCount] = createSignal(0);
   const [openInstrumentDropdown, setOpenInstrumentDropdown] = createSignal(null);
+  const [videoDuration, setVideoDuration] = createSignal(0);
+
+  let youtubeIframeRef;
 
   // Click outside to close instrument dropdown
   createEffect(() => {
@@ -116,6 +119,45 @@ function AddVideoForm(props) {
     }, 400);
     onCleanup(() => clearTimeout(timer));
   });
+
+  createEffect(() => {
+    const ytId = youtubeId();
+    if (!ytId) return;
+
+    const handler = (event) => {
+      if (!event.origin.startsWith('https://www.youtube.com')) return;
+      try {
+        const data = JSON.parse(event.data);
+        if (data.event === 'onReady') {
+          if (youtubeIframeRef?.contentWindow) {
+            youtubeIframeRef.contentWindow.postMessage(
+              JSON.stringify({ event: 'command', func: 'getDuration', args: '' }),
+              '*'
+            );
+          }
+        } else if (data.event === 'infoDelivery' && data.info?.duration) {
+          setVideoDuration(data.info.duration);
+        }
+      } catch {}
+    };
+
+    window.addEventListener('message', handler);
+    onCleanup(() => window.removeEventListener('message', handler));
+  });
+
+  const handleSeekToTime = (seconds) => {
+    const iframe = youtubeIframeRef;
+    if (!iframe?.contentWindow) return;
+    const dur = videoDuration();
+    const target = seconds != null
+      ? Math.max(0, seconds)
+      : dur > 0 ? Math.max(0, dur - 2.5) : null;
+    if (target == null) return;
+    iframe.contentWindow.postMessage(
+      JSON.stringify({ event: 'command', func: 'seekTo', args: [target, true] }),
+      '*'
+    );
+  };
 
   const handleImportFromModal = (trackIdx, recordingData) => {
     const track = recordingData?.tracks?.[trackIdx];
@@ -284,7 +326,8 @@ function AddVideoForm(props) {
         <Show when={youtubeId()}>
           <div class="rounded-xl overflow-hidden border border-[var(--color-border)] aspect-video bg-black">
             <iframe
-              src={`https://www.youtube.com/embed/${youtubeId()}`}
+              ref={el => { youtubeIframeRef = el; }}
+              src={`https://www.youtube.com/embed/${youtubeId()}?enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
               class="w-full h-full"
               allowfullscreen
               title="YouTube video preview"
@@ -410,6 +453,7 @@ function AddVideoForm(props) {
             }
           }}
           onUpdate={(i, field, value) => setEntries(i, field, value)}
+          onSeekToTime={handleSeekToTime}
         />
 
         <Show when={autoMatchedCount() > 0}>
