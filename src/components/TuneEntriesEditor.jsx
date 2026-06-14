@@ -14,7 +14,7 @@
  */
 
 import { createSignal, createMemo, createEffect, onCleanup, For, Show } from 'solid-js';
-import { ChevronDown, SkipForward } from 'lucide-solid';
+import { ChevronDown, SkipForward, GripVertical } from 'lucide-solid';
 import { searchTunes, getTuneById, getSettings } from '../lib/db';
 import { parseSec, validateTimestamp } from '../lib/utils';
 import { useI18n } from '../i18n';
@@ -25,6 +25,13 @@ export default function TuneEntriesEditor(props) {
   const instrumentLabel = (key) => t(`instruments.${key}`) ?? key;
   const [tuneSearch, setTuneSearch] = createSignal('');
   const [openInstrumentDropdown, setOpenInstrumentDropdown] = createSignal(null);
+  const [dragIndex, setDragIndex] = createSignal(null);
+
+  const moveEntry = (i, dir) => {
+    const j = i + dir;
+    if (j < 0 || j >= props.entries.length) return;
+    if (props.onReorder) props.onReorder(i, j);
+  };
 
   createEffect(() => {
     const idx = openInstrumentDropdown();
@@ -111,7 +118,37 @@ export default function TuneEntriesEditor(props) {
         <div class="flex flex-col gap-2">
           <For each={props.entries}>
             {(entry, i) => (
-              <div class="flex items-center gap-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3">
+              <div
+                draggable={!props.readOnly}
+                onDragStart={() => setDragIndex(i())}
+                onDragOver={(e) => { e.preventDefault(); }}
+                onDrop={() => {
+                  const from = dragIndex();
+                  if (from === null || from === i() || !props.onReorder) return;
+                  props.onReorder(from, i());
+                }}
+                onDragEnd={() => setDragIndex(null)}
+                class={`flex items-center gap-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 transition-opacity
+                  ${dragIndex() === i() ? 'opacity-50' : ''}`}
+              >
+                {/* Reorder controls */}
+                <Show when={!props.readOnly}>
+                  <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
+                    <button
+                      onClick={() => moveEntry(i(), -1)}
+                      disabled={i() === 0}
+                      class="text-[var(--color-muted)] hover:text-[var(--color-text)] disabled:opacity-20 disabled:cursor-default leading-none text-xs"
+                    >▲</button>
+                    <div class="hidden sm:flex cursor-grab text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors">
+                      <GripVertical size={14} />
+                    </div>
+                    <button
+                      onClick={() => moveEntry(i(), 1)}
+                      disabled={i() === props.entries.length - 1}
+                      class="text-[var(--color-muted)] hover:text-[var(--color-text)] disabled:opacity-20 disabled:cursor-default leading-none text-xs"
+                    >▼</button>
+                  </div>
+                </Show>
 
                 {/* Position */}
                 <span class="text-xs text-[var(--color-muted)] w-4 flex-shrink-0 text-center">{i() + 1}</span>

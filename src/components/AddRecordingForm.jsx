@@ -134,6 +134,11 @@ export default function AddRecordingForm(props) {
         audioDuration={props.durationSeconds}
         onAdd={(tune) => setEntries(produce(e => e.push({ tune, startSec: '', endSec: '', instruments: [], key: null, structure: null })))}
         onRemove={(i) => setEntries(produce(e => e.splice(i, 1)))}
+        onReorder={(from, to) => setEntries(produce(e => {
+          const moved = e[from];
+          e.splice(from, 1);
+          e.splice(to, 0, moved);
+        }))}
         onUpdate={(i, field, value) => setEntries(i, field, value)}
       />
 
