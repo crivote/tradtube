@@ -1,9 +1,13 @@
 import { defineConfig } from 'vitest/config';
+import solidPlugin from 'vite-plugin-solid';
 
 export default defineConfig({
+  plugins: [solidPlugin()],
   test: {
-    environment: 'node',
     globals: true,
-    include: ['src/**/*.test.js'],
+    include: ['src/**/*.test.{js,jsx}'],
+  },
+  resolve: {
+    conditions: ['development', 'browser'],
   },
 });
