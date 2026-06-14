@@ -17,6 +17,7 @@ import AddVideoForm from './AddVideoForm';
 import AddRecordingFlow from './AddRecordingFlow';
 import AudioPlayer from './AudioPlayer';
 import ReportForm from './ReportForm';
+import TuneComments from './TuneComments';
 
 function TuneView() {
   const params = useParams();
@@ -480,6 +481,16 @@ function TuneView() {
           </For>
         </div>
       </Show>
+      </Show>
+
+      {/* Tune comments */}
+      <Show when={selectedTune()}>
+        <TuneComments
+          tuneId={() => selectedTune()?.tune_id}
+          authUser={authUser}
+          showToast={showToast}
+          t={t}
+        />
       </Show>
 
       {/* Más tunes del mismo tipo */}

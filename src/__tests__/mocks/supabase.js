@@ -21,6 +21,7 @@ export function createMockQueryBuilder() {
     maybeSingle: vi.fn().mockReturnThis(),
     contains: vi.fn().mockReturnThis(),
     in: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),

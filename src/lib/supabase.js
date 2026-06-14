@@ -516,3 +516,44 @@ export async function updateReport(reportId, { status, admin_comments }) {
 
   if (error) throw error;
 }
+
+// ── Comments ──────────────────────────────────────────────────────────────────
+
+export async function getComments(tuneRef, { limit = 20, offset = 0 } = {}) {
+  const { data, error } = await supabase
+    .from('tune_comments')
+    .select('id, body, created_at, edited_at, user_id, profiles!inner(display_name, avatar_url)')
+    .eq('tune_ref', tuneRef)
+    .order('created_at', { ascending: true })
+    .range(offset, offset + limit - 1);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function addComment(tuneRef, body) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Must be logged in');
+  const { data, error } = await supabase
+    .from('tune_comments')
+    .insert({ tune_ref: tuneRef, user_id: user.id, body })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateComment(commentId, body) {
+  const { error } = await supabase
+    .from('tune_comments')
+    .update({ body, edited_at: new Date().toISOString() })
+    .eq('id', commentId);
+  if (error) throw error;
+}
+
+export async function deleteComment(commentId) {
+  const { error } = await supabase
+    .from('tune_comments')
+    .delete()
+    .eq('id', commentId);
+  if (error) throw error;
+}

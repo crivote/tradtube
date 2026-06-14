@@ -395,3 +395,138 @@ describe('Phase 2 — addRecordingWithEntries', () => {
     expect(mockClient.auth.refreshSession).toHaveBeenCalled();
   });
 });
+
+describe('Phase 3 — Tune comments', () => {
+  let mockFrom;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFrom = mockClient.from;
+  });
+
+  describe('getComments', () => {
+    it('selects from tune_comments with profiles join, ordered by created_at', async () => {
+      const mockQB = createMockQueryBuilder().setResult([]);
+      mockFrom.mockReturnValue(mockQB);
+
+      await supabaseModule.getComments(123, { limit: 20, offset: 0 });
+
+      expect(mockFrom).toHaveBeenCalledWith('tune_comments');
+      expect(mockQB.select).toHaveBeenCalledWith('id, body, created_at, edited_at, user_id, profiles!inner(display_name, avatar_url)');
+      expect(mockQB.eq).toHaveBeenCalledWith('tune_ref', 123);
+      expect(mockQB.order).toHaveBeenCalledWith('created_at', { ascending: true });
+      expect(mockQB.range).toHaveBeenCalledWith(0, 19);
+    });
+
+    it('uses custom limit and offset for pagination', async () => {
+      const mockQB = createMockQueryBuilder().setResult([]);
+      mockFrom.mockReturnValue(mockQB);
+
+      await supabaseModule.getComments(456, { limit: 10, offset: 30 });
+
+      expect(mockQB.range).toHaveBeenCalledWith(30, 39);
+    });
+
+    it('returns data array on success', async () => {
+      const comments = [
+        { id: 'c1', body: 'Great tune!', user_id: 'u1' },
+      ];
+      const mockQB = createMockQueryBuilder().setResult(comments);
+      mockFrom.mockReturnValue(mockQB);
+
+      const result = await supabaseModule.getComments(123);
+
+      expect(result).toEqual(comments);
+    });
+
+    it('returns empty array when data is null', async () => {
+      const mockQB = createMockQueryBuilder().setResult(null);
+      mockFrom.mockReturnValue(mockQB);
+
+      const result = await supabaseModule.getComments(123);
+
+      expect(result).toEqual([]);
+    });
+
+    it('throws on error', async () => {
+      const mockQB = createMockQueryBuilder().setResult(null, { message: 'DB error' });
+      mockFrom.mockReturnValue(mockQB);
+
+      await expect(supabaseModule.getComments(123)).rejects.toThrow();
+    });
+  });
+
+  describe('addComment', () => {
+    it('inserts into tune_comments with user_id from auth', async () => {
+      const inserted = { id: 'c-new', tune_ref: 123, body: 'Hello', user_id: 'test-user-id' };
+      const mockQB = createMockQueryBuilder().setResult(inserted);
+      mockFrom.mockReturnValue(mockQB);
+
+      const result = await supabaseModule.addComment(123, 'Hello');
+
+      expect(mockFrom).toHaveBeenCalledWith('tune_comments');
+      expect(mockQB.insert).toHaveBeenCalledWith({ tune_ref: 123, user_id: 'test-user-id', body: 'Hello' });
+      expect(mockQB.select).toHaveBeenCalled();
+      expect(mockQB.single).toHaveBeenCalled();
+      expect(result).toEqual(inserted);
+    });
+
+    it('throws if user is not logged in', async () => {
+      mockClient.auth.getUser.mockResolvedValueOnce({ data: { user: null }, error: null });
+
+      await expect(supabaseModule.addComment(123, 'Hello')).rejects.toThrow('Must be logged in');
+    });
+
+    it('throws on insert error', async () => {
+      const mockQB = createMockQueryBuilder().setResult(null, { message: 'Insert failed' });
+      mockFrom.mockReturnValue(mockQB);
+
+      await expect(supabaseModule.addComment(123, 'Hello')).rejects.toThrow();
+    });
+  });
+
+  describe('updateComment', () => {
+    it('updates body and edited_at for given comment id', async () => {
+      const mockQB = createMockQueryBuilder().setResult(null);
+      mockFrom.mockReturnValue(mockQB);
+
+      const before = Date.now();
+      await supabaseModule.updateComment('comment-1', 'Updated body');
+      const after = Date.now();
+
+      expect(mockFrom).toHaveBeenCalledWith('tune_comments');
+      const updateArg = mockQB.update.mock.calls[0][0];
+      expect(updateArg.body).toBe('Updated body');
+      expect(new Date(updateArg.edited_at).getTime()).toBeGreaterThanOrEqual(before);
+      expect(new Date(updateArg.edited_at).getTime()).toBeLessThanOrEqual(after);
+      expect(mockQB.eq).toHaveBeenCalledWith('id', 'comment-1');
+    });
+
+    it('throws on error', async () => {
+      const mockQB = createMockQueryBuilder().setResult(null, { message: 'Update failed' });
+      mockFrom.mockReturnValue(mockQB);
+
+      await expect(supabaseModule.updateComment('comment-1', 'New')).rejects.toThrow();
+    });
+  });
+
+  describe('deleteComment', () => {
+    it('deletes from tune_comments by id', async () => {
+      const mockQB = createMockQueryBuilder().setResult(null);
+      mockFrom.mockReturnValue(mockQB);
+
+      await supabaseModule.deleteComment('comment-1');
+
+      expect(mockFrom).toHaveBeenCalledWith('tune_comments');
+      expect(mockQB.delete).toHaveBeenCalled();
+      expect(mockQB.eq).toHaveBeenCalledWith('id', 'comment-1');
+    });
+
+    it('throws on error', async () => {
+      const mockQB = createMockQueryBuilder().setResult(null, { message: 'Delete failed' });
+      mockFrom.mockReturnValue(mockQB);
+
+      await expect(supabaseModule.deleteComment('comment-1')).rejects.toThrow();
+    });
+  });
+});
