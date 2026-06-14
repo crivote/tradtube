@@ -1,4 +1,4 @@
-import { Show, For, createSignal, createEffect } from 'solid-js';
+import { Show, For, createSignal, createEffect, on } from 'solid-js';
 import { getComments, addComment, updateComment, deleteComment } from '../lib/supabase';
 
 function TuneComments(props) {
@@ -20,7 +20,7 @@ function TuneComments(props) {
     setLoading(true);
     try {
       const off = reset ? 0 : offset();
-      const result = await getComments(tuneId, { limit, offset: off });
+      const result = await getComments(tuneId(), { limit, offset: off });
       if (reset) {
         setComments(result);
         setOffset(result.length);
@@ -36,16 +36,18 @@ function TuneComments(props) {
     }
   };
 
-  createEffect(() => {
-    const id = tuneId();
-    if (id) {
+  createEffect(on(
+    () => tuneId(),
+    (id) => {
+      if (!id) return;
       setComments([]);
       setOffset(0);
       setHasMore(false);
       setLoadedInitial(false);
       loadComments(true).then(() => setLoadedInitial(true));
-    }
-  });
+    },
+    { defer: false }
+  ));
 
   const handleSubmit = async () => {
     const text = body().trim();
