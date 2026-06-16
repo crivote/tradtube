@@ -1,5 +1,5 @@
 const KEY = 'tt_recently_viewed';
-const MAX = 10;
+const MAX = 25;
 
 export function recordView(tune) {
   const list = getRecentlyViewed().filter(t => t.tune_id !== tune.tune_id);

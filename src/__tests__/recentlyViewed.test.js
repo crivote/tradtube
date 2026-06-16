@@ -48,13 +48,13 @@ describe('recentlyViewed', () => {
       expect(list[1]).toEqual(tune2);
     });
 
-    it('limits to MAX entries (10)', () => {
-      for (let i = 0; i < 15; i++) {
+    it('limits to MAX entries (25)', () => {
+      for (let i = 0; i < 30; i++) {
         recordView({ tune_id: i, name: `Tune ${i}`, type: 'reel' });
       }
       const list = getRecentlyViewed();
-      expect(list).toHaveLength(10);
-      expect(list[0].tune_id).toBe(14);
+      expect(list).toHaveLength(25);
+      expect(list[0].tune_id).toBe(29);
     });
   });
 });
