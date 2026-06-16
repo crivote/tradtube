@@ -1,9 +1,8 @@
 import { For, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { ExternalLink, ChevronLeft, ChevronRight } from 'lucide-solid';
+import { ExternalLink } from 'lucide-solid';
 import { useAppStore } from '../store/appStore';
 import { loginWithGoogle } from '../lib/supabase';
-import { getRecentlyViewed } from '../lib/recentlyViewed';
 import { useI18n } from '../i18n';
 import { INSTRUMENT_KEYS } from '../constants';
 
@@ -39,34 +38,6 @@ function SearchView() {
       return t('search.placeholderExamples', { name1: examples[0], name2: examples[1] });
     }
     return t('search.placeholder');
-  };
-
-  const recentlyViewed = () => getRecentlyViewed();
-
-  let carouselRef;
-
-  const scrollCarousel = (direction) => {
-    const container = carouselRef;
-    if (!container) return;
-    const firstCard = container.firstElementChild;
-    if (!firstCard) return;
-    const gap = 8;
-    const cardWidth = firstCard.offsetWidth + gap;
-    const maxScroll = container.scrollWidth - container.clientWidth;
-
-    if (direction === 'left') {
-      if (container.scrollLeft <= 1) {
-        container.scrollTo({ left: maxScroll, behavior: 'smooth' });
-      } else {
-        container.scrollBy({ left: -cardWidth, behavior: 'smooth' });
-      }
-    } else {
-      if (container.scrollLeft >= maxScroll - 1) {
-        container.scrollTo({ left: 0, behavior: 'smooth' });
-      } else {
-        container.scrollBy({ left: cardWidth, behavior: 'smooth' });
-      }
-    }
   };
 
   const navigate = useNavigate();
@@ -314,97 +285,6 @@ function SearchView() {
               {t('search.andAdd')}
             </p>
           </Show>
-        </div>
-      </Show>
-
-      {/* ── Recently viewed carousel ──────────────────────────────────── */}
-      <Show when={recentlyViewed().length > 0}>
-        <div class="w-full max-w-xl flex flex-col gap-2">
-          <p class="text-xs text-[var(--color-muted)] font-semibold uppercase tracking-wider">{t('search.recentlyViewed')}</p>
-          <div class="relative group/carousel">
-            <div
-              ref={el => { carouselRef = el; }}
-              class="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden scroll-smooth snap-x snap-mandatory"
-              style={{"scrollbar-width": "none", "-ms-overflow-style": "none"}}
-            >
-              <For each={recentlyViewed()}>
-                {(tune) => {
-                  const clipCount = () => videoCountsByTune().get(tune.tune_id) ?? 0;
-                  const hasVideos = () => videoDataReady() && clipCount() > 0;
-                  const typeColor = TYPE_COLOR[tune.type] ?? 'text-[var(--color-muted)]';
-
-                  return (
-                    <div
-                      onClick={() => navigate('/tune/' + tune.tune_id)}
-                      class={`flex-shrink-0 w-56 border rounded-xl px-3 py-2.5 text-left transition-all group cursor-pointer snap-start
-                        ${hasVideos()
-                          ? 'bg-green-500/10 border-green-500/20 hover:border-[var(--color-primary)]'
-                          : 'bg-[var(--color-surface)] border-[var(--color-border)] hover:border-[var(--color-muted)]/40'
-                        }`}
-                    >
-                      <div class="flex items-start gap-2 min-w-0">
-                        <div class={`w-2 h-2 rounded-full mt-[5px] flex-shrink-0 transition-colors
-                          ${hasVideos()
-                            ? 'bg-[var(--color-primary)]'
-                            : videoDataReady() ? 'bg-[var(--color-border)]' : 'bg-[var(--color-border)]/50'
-                          }`}
-                        />
-                        <div class="min-w-0 flex-1">
-                          <div class="flex items-center gap-1">
-                            <span class={`font-semibold text-sm leading-snug truncate transition-colors
-                              ${hasVideos()
-                                ? 'text-[var(--color-text)] group-hover:text-[var(--color-primary)]'
-                                : 'text-[var(--color-muted)]'
-                              }`}
-                            >
-                              {tune.name}
-                            </span>
-                            <a
-                              href={`https://thesession.org/tunes/${tune.tune_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={e => e.stopPropagation()}
-                              class="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors flex-shrink-0 leading-none"
-                            >
-                              <ExternalLink size={14} />
-                            </a>
-                          </div>
-                          <div class="flex items-center gap-1.5 mt-0.5">
-                            <span class={`text-[10px] font-bold uppercase tracking-widest ${typeColor}`}>
-                              {tune.type}
-                            </span>
-                            <Show when={videoDataReady() && hasVideos()}>
-                              <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)]">
-                                ♫ {clipCount()}
-                              </span>
-                            </Show>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }}
-              </For>
-            </div>
-
-            {/* Left arrow */}
-            <button
-              onClick={() => scrollCarousel('left')}
-              class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-7 h-7 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] shadow flex items-center justify-center text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 opacity-0 group-hover/carousel:opacity-100 transition-opacity"
-              aria-label="Scroll left"
-            >
-              <ChevronLeft size={16} />
-            </button>
-
-            {/* Right arrow */}
-            <button
-              onClick={() => scrollCarousel('right')}
-              class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 w-7 h-7 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] shadow flex items-center justify-center text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 opacity-0 group-hover/carousel:opacity-100 transition-opacity"
-              aria-label="Scroll right"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
         </div>
       </Show>
 

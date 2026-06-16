@@ -8,6 +8,7 @@ import AddVideoForm from './components/AddVideoForm';
 import ReportForm from './components/ReportForm';
 import UserRecordingsView from './components/UserRecordingsView';
 import MyReports from './components/MyReports';
+import RecentlyViewed from './components/RecentlyViewed';
 import Toast from './components/Toast';
 
 function App(props) {
@@ -211,6 +212,10 @@ function App(props) {
           </Show>
         </ErrorBoundary>
       </main>
+
+      <Show when={location.pathname === '/'}>
+        <RecentlyViewed />
+      </Show>
 
       <div class="max-w-6xl w-full mx-auto p-4 rounded-md flex justify-center bg-[var(--color-primary)] text-white/80">
         <p class="inline-flex items-center gap-1 px-4 py-1.5 text-sm">

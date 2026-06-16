@@ -33,7 +33,14 @@ describe('recentlyViewed', () => {
       recordView(tune);
       const list = getRecentlyViewed();
       expect(list).toHaveLength(1);
-      expect(list[0]).toEqual(tune);
+      expect(list[0]).toEqual({ ...tune, youtubeId: null });
+    });
+
+    it('stores youtubeId when provided', () => {
+      const tune = { tune_id: 1, name: 'The Earl\'s Chair', type: 'reel' };
+      recordView(tune, 'dQw4w9WgXcQ');
+      const list = getRecentlyViewed();
+      expect(list[0]).toEqual({ ...tune, youtubeId: 'dQw4w9WgXcQ' });
     });
 
     it('moves existing tune to front without duplicating', () => {
@@ -44,8 +51,8 @@ describe('recentlyViewed', () => {
       recordView(tune1);
       const list = getRecentlyViewed();
       expect(list).toHaveLength(2);
-      expect(list[0]).toEqual(tune1);
-      expect(list[1]).toEqual(tune2);
+      expect(list[0]).toEqual({ ...tune1, youtubeId: null });
+      expect(list[1]).toEqual({ ...tune2, youtubeId: null });
     });
 
     it('limits to MAX entries (25)', () => {

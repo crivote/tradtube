@@ -38,11 +38,18 @@ function TuneView() {
     if (dbReady()) loadTuneById(params.tuneId);
   });
 
+  let lastRecordedTuneId = null;
   createEffect(() => {
     const tune = selectedTune();
-    if (tune) {
-      recordView({ tune_id: tune.tune_id, name: tune.name, type: tune.type });
+    if (!tune) {
+      lastRecordedTuneId = null;
+      return;
     }
+    if (tune.tune_id === lastRecordedTuneId) return;
+    const entry = activeEntry();
+    const youtubeId = entry ? extractYoutubeId(entry.tune_media?.media_uri) : null;
+    recordView({ tune_id: tune.tune_id, name: tune.name, type: tune.type }, youtubeId);
+    lastRecordedTuneId = tune.tune_id;
   });
 
   // Dynamic title and meta tags for browser tab / Google / social crawlers that execute JS
