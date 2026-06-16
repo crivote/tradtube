@@ -12,6 +12,19 @@ export function recordView(tune, youtubeId = null) {
   }
 }
 
+export function updateViewYoutubeId(tune_id, youtubeId) {
+  const list = getRecentlyViewed();
+  const idx = list.findIndex(t => t.tune_id === tune_id);
+  if (idx !== -1 && list[idx].youtubeId !== youtubeId) {
+    list[idx] = { ...list[idx], youtubeId };
+    try {
+      localStorage.setItem(KEY, JSON.stringify(list));
+    } catch {
+      // localStorage unavailable (SSR, incognito, etc.)
+    }
+  }
+}
+
 export function getRecentlyViewed() {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? '[]');

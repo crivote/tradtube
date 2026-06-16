@@ -10,7 +10,7 @@ import { useAppStore } from '../store/appStore';
 import { castVote, loginWithGoogle, getVideoById } from '../lib/supabase';
 import { formatTime, extractYoutubeId } from '../lib/utils';
 import { useI18n } from '../i18n';
-import { recordView } from '../lib/recentlyViewed';
+import { recordView, updateViewYoutubeId } from '../lib/recentlyViewed';
 import YoutubePlayer from './YoutubePlayer';
 import SheetMusic from './SheetMusic';
 import SameTypeTunes from './SameTypeTunes';
@@ -50,6 +50,14 @@ function TuneView() {
     const youtubeId = entry ? extractYoutubeId(entry.tune_media?.media_uri) : null;
     recordView({ tune_id: tune.tune_id, name: tune.name, type: tune.type }, youtubeId);
     lastRecordedTuneId = tune.tune_id;
+  });
+
+  createEffect(() => {
+    const tune = selectedTune();
+    const entry = activeEntry();
+    if (!tune || !entry) return;
+    const youtubeId = extractYoutubeId(entry.tune_media?.media_uri);
+    updateViewYoutubeId(tune.tune_id, youtubeId);
   });
 
   // Dynamic title and meta tags for browser tab / Google / social crawlers that execute JS
