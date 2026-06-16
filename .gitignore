@@ -12,3 +12,4 @@ AGENTS.md
 .claude/
 draft_landing_design.png
 public/ffmpeg-core-worker.js
+netlify/edge-functions/tunes-meta.json

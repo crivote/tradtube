@@ -37,6 +37,40 @@ function TuneView() {
     if (dbReady()) loadTuneById(params.tuneId);
   });
 
+  // Dynamic title and meta tags for browser tab / Google / social crawlers that execute JS
+  createEffect(() => {
+    const tune = selectedTune();
+    if (!tune) {
+      document.title = 'TradTube — Traditional Irish tunes on video';
+      return;
+    }
+    const title = `${tune.name} — TradTube`;
+    document.title = title;
+
+    const setMeta = (selector, attr, value) => {
+      let el = document.querySelector(selector);
+      if (!el) {
+        el = document.createElement('meta');
+        if (selector.startsWith('meta[property')) {
+          el.setAttribute('property', selector.match(/property="([^"]+)"/)[1]);
+        } else if (selector.startsWith('meta[name')) {
+          el.setAttribute('name', selector.match(/name="([^"]+)"/)[1]);
+        }
+        document.head.appendChild(el);
+      }
+      el.setAttribute(attr, value);
+    };
+
+    const desc = `Traditional Irish ${tune.type}. Watch videos with precise timestamps on TradTube.`;
+    const url = `${window.location.origin}/tune/${tune.tune_id}`;
+
+    setMeta('meta[property="og:title"]', 'content', title);
+    setMeta('meta[property="og:description"]', 'content', desc);
+    setMeta('meta[property="og:url"]', 'content', url);
+    setMeta('meta[name="twitter:title"]', 'content', title);
+    setMeta('meta[name="twitter:description"]', 'content', desc);
+  });
+
   const [showSheet, setShowSheet] = createSignal(true);
   const [splitPct, setSplitPct] = createSignal(25);
   const [editingVideo, setEditingVideo] = createSignal(null);
