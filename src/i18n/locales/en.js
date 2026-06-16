@@ -37,6 +37,7 @@ const en = {
     knowGoodVideo: 'Know a good video?',
     searchAndAdd: 'Search for a tune',
     andAdd: 'and add it!',
+    recentlyViewed: 'Recently viewed',
   },
   tune: {
     backToSearch: '\u2190 Back to search',

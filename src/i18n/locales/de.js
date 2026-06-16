@@ -37,6 +37,7 @@ const de = {
     knowGoodVideo: 'Kennst du ein gutes Video?',
     searchAndAdd: 'Suche eine Melodie',
     andAdd: 'und f\u00fcge sie hinzu!',
+    recentlyViewed: 'K\u00fcrzlich angesehen',
   },
   tune: {
     backToSearch: '\u2190 Zur\u00fcck zur Suche',

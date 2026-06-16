@@ -37,6 +37,7 @@ const es = {
     knowGoodVideo: '\u00bfConoces un buen v\u00eddeo?',
     searchAndAdd: 'Busca una melod\u00eda',
     andAdd: '\u00a1y a\u00f1\u00e1dela!',
+    recentlyViewed: 'Vistas recientemente',
   },
   tune: {
     backToSearch: '\u2190 Volver a la b\u00fasqueda',

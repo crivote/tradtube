@@ -37,6 +37,7 @@ const fr = {
     knowGoodVideo: 'Vous connaissez une bonne vid\u00e9o\u00a0?',
     searchAndAdd: 'Cherchez un morceau',
     andAdd: 'et ajoutez-le\u00a0!',
+    recentlyViewed: 'Vus r\u00e9cemment',
   },
   tune: {
     backToSearch: '\u2190 Retour \u00e0 la recherche',

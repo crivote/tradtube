@@ -3,6 +3,7 @@ import { useNavigate } from '@solidjs/router';
 import { ExternalLink } from 'lucide-solid';
 import { useAppStore } from '../store/appStore';
 import { loginWithGoogle } from '../lib/supabase';
+import { getRecentlyViewed } from '../lib/recentlyViewed';
 import { useI18n } from '../i18n';
 import { INSTRUMENT_KEYS } from '../constants';
 
@@ -39,6 +40,8 @@ function SearchView() {
     }
     return t('search.placeholder');
   };
+
+  const recentlyViewed = () => getRecentlyViewed();
 
   const navigate = useNavigate();
 
@@ -84,6 +87,25 @@ function SearchView() {
                 </button>
               </div>
             </Show>
+          </div>
+        </div>
+      </Show>
+
+      {/* ── Recently viewed ────────────────────────────────────────────── */}
+      <Show when={recentlyViewed().length > 0}>
+        <div class="w-full max-w-xl flex flex-col gap-1.5">
+          <p class="text-xs text-[var(--color-muted)] font-semibold uppercase tracking-wider">{t('search.recentlyViewed')}</p>
+          <div class="flex flex-wrap gap-2">
+            <For each={recentlyViewed()}>
+              {(tune) => (
+                <button
+                  onClick={() => navigate('/tune/' + tune.tune_id)}
+                  class="text-xs px-3 py-1.5 rounded-full border border-[var(--color-primary)]/40 text-[var(--color-text)]/70 hover:border-[var(--color-primary)] hover:text-[var(--color-text)] transition-colors bg-[var(--color-surface)]"
+                >
+                  {tune.name}
+                </button>
+              )}
+            </For>
           </div>
         </div>
       </Show>

@@ -10,6 +10,7 @@ import { useAppStore } from '../store/appStore';
 import { castVote, loginWithGoogle, getVideoById } from '../lib/supabase';
 import { formatTime, extractYoutubeId } from '../lib/utils';
 import { useI18n } from '../i18n';
+import { recordView } from '../lib/recentlyViewed';
 import YoutubePlayer from './YoutubePlayer';
 import SheetMusic from './SheetMusic';
 import SameTypeTunes from './SameTypeTunes';
@@ -35,6 +36,13 @@ function TuneView() {
   // Sync selectedTune from URL param — handles both in-app nav and direct links
   createEffect(() => {
     if (dbReady()) loadTuneById(params.tuneId);
+  });
+
+  createEffect(() => {
+    const tune = selectedTune();
+    if (tune) {
+      recordView({ tune_id: tune.tune_id, name: tune.name, type: tune.type });
+    }
   });
 
   // Dynamic title and meta tags for browser tab / Google / social crawlers that execute JS
