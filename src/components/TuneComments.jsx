@@ -53,9 +53,18 @@ function TuneComments(props) {
     const text = body().trim();
     if (!text) return;
     setSubmitting(true);
+    const user = authUser();
     try {
-      await addComment(tuneId(), text);
+      const newComment = await addComment(tuneId(), text);
       setBody('');
+      setComments(prev => [...prev, {
+        ...newComment,
+        profiles: {
+          display_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
+          avatar_url: user?.user_metadata?.avatar_url || null,
+        },
+      }]);
+      setOffset(prev => prev + 1);
       showToast(t('comments.posted'), 'success');
       await loadComments(true);
     } catch {

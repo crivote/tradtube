@@ -405,14 +405,14 @@ describe('Phase 3 — Tune comments', () => {
   });
 
   describe('getComments', () => {
-    it('selects from tune_comments with profiles join, ordered by created_at', async () => {
+    it('selects from tune_comments without profiles!inner join, fetches profiles separately', async () => {
       const mockQB = createMockQueryBuilder().setResult([]);
       mockFrom.mockReturnValue(mockQB);
 
       await supabaseModule.getComments(123, { limit: 20, offset: 0 });
 
       expect(mockFrom).toHaveBeenCalledWith('tune_comments');
-      expect(mockQB.select).toHaveBeenCalledWith('id, body, created_at, edited_at, user_id, profiles!inner(display_name, avatar_url)');
+      expect(mockQB.select).toHaveBeenCalledWith('id, body, created_at, edited_at, user_id');
       expect(mockQB.eq).toHaveBeenCalledWith('tune_ref', 123);
       expect(mockQB.order).toHaveBeenCalledWith('created_at', { ascending: true });
       expect(mockQB.range).toHaveBeenCalledWith(0, 19);
@@ -427,16 +427,43 @@ describe('Phase 3 — Tune comments', () => {
       expect(mockQB.range).toHaveBeenCalledWith(30, 39);
     });
 
-    it('returns data array on success', async () => {
+    it('returns data with profiles merged from separate query on success', async () => {
       const comments = [
         { id: 'c1', body: 'Great tune!', user_id: 'u1' },
       ];
-      const mockQB = createMockQueryBuilder().setResult(comments);
-      mockFrom.mockReturnValue(mockQB);
+      const profilesData = [
+        { id: 'u1', display_name: 'Test User', avatar_url: null },
+      ];
+      const mockQB1 = createMockQueryBuilder().setResult(comments);
+      const mockQB2 = createMockQueryBuilder().setResult(profilesData);
+      mockFrom
+        .mockReturnValueOnce(mockQB1)
+        .mockReturnValueOnce(mockQB2);
 
       const result = await supabaseModule.getComments(123);
 
-      expect(result).toEqual(comments);
+      expect(mockFrom).toHaveBeenNthCalledWith(1, 'tune_comments');
+      expect(mockFrom).toHaveBeenNthCalledWith(2, 'profiles');
+      expect(result).toEqual([
+        { id: 'c1', body: 'Great tune!', user_id: 'u1', profiles: { id: 'u1', display_name: 'Test User', avatar_url: null } },
+      ]);
+    });
+
+    it('merges profiles as null when not found', async () => {
+      const comments = [
+        { id: 'c1', body: 'Great tune!', user_id: 'u1' },
+      ];
+      const mockQB1 = createMockQueryBuilder().setResult(comments);
+      const mockQB2 = createMockQueryBuilder().setResult([]);
+      mockFrom
+        .mockReturnValueOnce(mockQB1)
+        .mockReturnValueOnce(mockQB2);
+
+      const result = await supabaseModule.getComments(123);
+
+      expect(result).toEqual([
+        { id: 'c1', body: 'Great tune!', user_id: 'u1', profiles: null },
+      ]);
     });
 
     it('returns empty array when data is null', async () => {
@@ -448,11 +475,38 @@ describe('Phase 3 — Tune comments', () => {
       expect(result).toEqual([]);
     });
 
-    it('throws on error', async () => {
+    it('returns empty array when data is empty (skips profiles query)', async () => {
+      const mockQB = createMockQueryBuilder().setResult([]);
+      mockFrom.mockReturnValue(mockQB);
+
+      const result = await supabaseModule.getComments(123);
+
+      expect(result).toEqual([]);
+      expect(mockFrom).toHaveBeenCalledTimes(1);
+    });
+
+    it('throws on tune_comments error', async () => {
       const mockQB = createMockQueryBuilder().setResult(null, { message: 'DB error' });
       mockFrom.mockReturnValue(mockQB);
 
       await expect(supabaseModule.getComments(123)).rejects.toThrow();
+    });
+
+    it('still returns comments when profiles query fails', async () => {
+      const comments = [
+        { id: 'c1', body: 'Great tune!', user_id: 'u1' },
+      ];
+      const mockQB1 = createMockQueryBuilder().setResult(comments);
+      const mockQB2 = createMockQueryBuilder().setResult(null, { message: 'Profiles error' });
+      mockFrom
+        .mockReturnValueOnce(mockQB1)
+        .mockReturnValueOnce(mockQB2);
+
+      const result = await supabaseModule.getComments(123);
+
+      expect(result).toEqual([
+        { id: 'c1', body: 'Great tune!', user_id: 'u1', profiles: null },
+      ]);
     });
   });
 

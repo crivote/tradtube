@@ -522,12 +522,30 @@ export async function updateReport(reportId, { status, admin_comments }) {
 export async function getComments(tuneRef, { limit = 20, offset = 0 } = {}) {
   const { data, error } = await supabase
     .from('tune_comments')
-    .select('id, body, created_at, edited_at, user_id, profiles!inner(display_name, avatar_url)')
+    .select('id, body, created_at, edited_at, user_id')
     .eq('tune_ref', tuneRef)
     .order('created_at', { ascending: true })
     .range(offset, offset + limit - 1);
   if (error) throw error;
-  return data ?? [];
+
+  const comments = data ?? [];
+  if (comments.length === 0) return comments;
+
+  const userIds = [...new Set(comments.map(c => c.user_id))];
+  const { data: profiles, error: profileError } = await supabase
+    .from('profiles')
+    .select('id, display_name, avatar_url')
+    .in('id', userIds);
+
+  const profileMap = new Map();
+  if (!profileError && profiles) {
+    for (const p of profiles) profileMap.set(p.id, p);
+  }
+
+  return comments.map(c => ({
+    ...c,
+    profiles: profileMap.get(c.user_id) || null,
+  }));
 }
 
 export async function addComment(tuneRef, body) {
