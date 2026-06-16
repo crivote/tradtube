@@ -20,7 +20,7 @@ export function updateViewYoutubeId(tune_id, youtubeId) {
     try {
       localStorage.setItem(KEY, JSON.stringify(list));
     } catch {
-      // localStorage unavailable (SSR, incognito, etc.)
+      // localStorage unavailable
     }
   }
 }

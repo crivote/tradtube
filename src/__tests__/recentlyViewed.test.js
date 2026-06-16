@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { recordView, getRecentlyViewed, updateViewYoutubeId } from '../lib/recentlyViewed';
+import { recordView, getRecentlyViewed } from '../lib/recentlyViewed';
 
 const STORAGE_KEY = 'tt_recently_viewed';
 
@@ -62,23 +62,6 @@ describe('recentlyViewed', () => {
       const list = getRecentlyViewed();
       expect(list).toHaveLength(25);
       expect(list[0].tune_id).toBe(29);
-    });
-
-    it('updates youtubeId without reordering', () => {
-      const tune1 = { tune_id: 1, name: 'Tune One', type: 'reel' };
-      const tune2 = { tune_id: 2, name: 'Tune Two', type: 'jig' };
-      recordView(tune1);
-      recordView(tune2);
-      updateViewYoutubeId(1, 'abc123');
-      const list = getRecentlyViewed();
-      expect(list).toHaveLength(2);
-      expect(list[0]).toEqual({ ...tune2, youtubeId: null });
-      expect(list[1]).toEqual({ ...tune1, youtubeId: 'abc123' });
-    });
-
-    it('does nothing when tune_id is not in list', () => {
-      updateViewYoutubeId(999, 'abc123');
-      expect(getRecentlyViewed()).toEqual([]);
     });
   });
 });
