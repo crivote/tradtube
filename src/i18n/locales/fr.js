@@ -51,6 +51,7 @@ const fr = {
     loginToAddCta: 'Tu as une vid\u00e9o ? Connecte-toi avec Google pour l\u2019ajouter \u00e0 ce morceau.',
     videos: 'Vid\u00e9os ({{count}})',
     restart: 'Recommencer',
+    loop: 'Boucle',
     unknown: 'Inconnu',
   },
   admin: {

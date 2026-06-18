@@ -51,6 +51,7 @@ const de = {
     loginToAddCta: 'Hast du ein Video? Melde dich mit Google an, um es dieser Melodie hinzuzuf\u00fcgen.',
     videos: 'Videos ({{count}})',
     restart: 'Neustart',
+    loop: 'Schleife',
     unknown: 'Unbekannt',
   },
   admin: {

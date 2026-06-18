@@ -8,7 +8,7 @@
  */
 
 import { createEffect, createSignal, onCleanup } from 'solid-js';
-import { RotateCcw } from 'lucide-solid';
+import { RotateCcw, Repeat } from 'lucide-solid';
 import { useI18n } from '../i18n';
 
 // ── IFrame API loader (singleton global) ────────────────────────────────────
@@ -39,6 +39,8 @@ function YoutubePlayer(props) {
 
   const { t } = useI18n();
   const [speed, setSpeed] = createSignal(1);
+  const [loop, setLoop] = createSignal(false);
+  const [progress, setProgress] = createSignal(0);
 
   const clearPoll = () => {
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
@@ -75,10 +77,22 @@ function YoutubePlayer(props) {
             clearPoll();
             if (endSec != null) {
               pollInterval = setInterval(() => {
-                if (player?.getCurrentTime() >= endSec) {
-                  player.pauseVideo();
-                  clearPoll();
-                  props.onEnd?.();
+                const currentTime = player?.getCurrentTime();
+                if (currentTime == null) return;
+                const duration = endSec - startSec;
+                if (duration > 0) {
+                  const elapsed = Math.max(0, currentTime - startSec);
+                  setProgress(Math.min(1, elapsed / duration));
+                }
+                if (currentTime >= endSec) {
+                  if (loop()) {
+                    player.seekTo(startSec, true);
+                    setProgress(0);
+                  } else {
+                    player.pauseVideo();
+                    clearPoll();
+                    props.onEnd?.();
+                  }
                 }
               }, 150);
             }
@@ -100,6 +114,8 @@ function YoutubePlayer(props) {
     const endSec    = props.endSec;
     const autoplay  = props.autoplay;
     let cancelled = false;
+
+    setProgress(0);
 
     ensureYTApi(() => {
       if (!cancelled) buildPlayer(youtubeId, startSec, endSec, autoplay);
@@ -132,6 +148,16 @@ function YoutubePlayer(props) {
         class="w-full aspect-video bg-black rounded-lg overflow-hidden"
       />
 
+      {/* Progress bar */}
+      {props.endSec != null && (
+        <div class="w-full h-1 bg-[var(--color-border)] rounded-full mt-1">
+          <div
+            class="h-1 rounded-full transition-none"
+            style={{ width: `${progress() * 100}%`, 'background-color': `var(--color-primary)` }}
+          />
+        </div>
+      )}
+
       {/* Controls */}
       <div class="mt-2 px-1 flex items-center gap-3">
         <button
@@ -141,6 +167,14 @@ function YoutubePlayer(props) {
           class="text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors p-1 rounded flex-shrink-0"
         >
           <RotateCcw size={16} />
+        </button>
+        <button
+          onClick={() => setLoop(!loop())}
+          aria-label={t('tune.loop')}
+          title={t('tune.loop')}
+          class={`p-1 rounded flex-shrink-0 transition-colors ${loop() ? 'text-[var(--color-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-text)]'}`}
+        >
+          <Repeat size={16} />
         </button>
         <div class="relative flex-1">
           <input

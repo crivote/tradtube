@@ -51,6 +51,7 @@ const en = {
     loginToAddCta: 'Log in with Google to add a video for this tune!',
     videos: 'Videos ({{count}})',
     restart: 'Restart',
+    loop: 'Loop',
     unknown: 'Unknown',
   },
   admin: {

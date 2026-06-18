@@ -51,6 +51,7 @@ const es = {
     loginToAddCta: '\u00bfTienes un v\u00eddeo? Identif\u00edcate con Google para a\u00f1adirlo a esta melod\u00eda.',
     videos: 'V\u00eddeos ({{count}})',
     restart: 'Reiniciar',
+    loop: 'Bucle',
     unknown: 'Desconocido',
   },
   admin: {
