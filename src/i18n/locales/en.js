@@ -52,6 +52,11 @@ const en = {
     videos: 'Videos ({{count}})',
     restart: 'Restart',
     loop: 'Loop',
+    play: 'Play',
+    pause: 'Pause',
+    loopEnabled: 'Loop on',
+    loopDisabled: 'Loop off',
+    seek: 'Seek in segment',
     unknown: 'Unknown',
   },
   admin: {

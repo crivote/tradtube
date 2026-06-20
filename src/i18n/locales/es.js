@@ -52,6 +52,11 @@ const es = {
     videos: 'V\u00eddeos ({{count}})',
     restart: 'Reiniciar',
     loop: 'Bucle',
+    play: 'Reproducir',
+    pause: 'Pausa',
+    loopEnabled: 'Bucle activado',
+    loopDisabled: 'Bucle desactivado',
+    seek: 'Buscar en el segmento',
     unknown: 'Desconocido',
   },
   admin: {

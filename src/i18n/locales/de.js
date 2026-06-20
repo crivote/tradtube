@@ -52,6 +52,11 @@ const de = {
     videos: 'Videos ({{count}})',
     restart: 'Neustart',
     loop: 'Schleife',
+    play: 'Wiedergabe',
+    pause: 'Pause',
+    loopEnabled: 'Schleife an',
+    loopDisabled: 'Schleife aus',
+    seek: 'Im Segment suchen',
     unknown: 'Unbekannt',
   },
   admin: {

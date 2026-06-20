@@ -52,6 +52,11 @@ const fr = {
     videos: 'Vid\u00e9os ({{count}})',
     restart: 'Recommencer',
     loop: 'Boucle',
+    play: 'Lecture',
+    pause: 'Pause',
+    loopEnabled: 'Boucle activée',
+    loopDisabled: 'Boucle désactivée',
+    seek: 'Chercher dans le segment',
     unknown: 'Inconnu',
   },
   admin: {

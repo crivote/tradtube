@@ -8,8 +8,9 @@
  */
 
 import { createEffect, createSignal, onCleanup } from 'solid-js';
-import { RotateCcw, Repeat } from 'lucide-solid';
+import { RotateCcw, Repeat, Play, Pause } from 'lucide-solid';
 import { useI18n } from '../i18n';
+import { formatTime } from '../lib/utils';
 
 // ── IFrame API loader (singleton global) ────────────────────────────────────
 let ytApiReady = false;
@@ -41,6 +42,7 @@ function YoutubePlayer(props) {
   const [speed, setSpeed] = createSignal(1);
   const [loop, setLoop] = createSignal(false);
   const [progress, setProgress] = createSignal(0);
+  const [isPlaying, setIsPlaying] = createSignal(false);
 
   const clearPoll = () => {
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
@@ -74,6 +76,7 @@ function YoutubePlayer(props) {
         },
         onStateChange(event) {
           if (event.data === window.YT.PlayerState.PLAYING) {
+            setIsPlaying(true);
             clearPoll();
             if (endSec != null) {
               pollInterval = setInterval(() => {
@@ -97,9 +100,11 @@ function YoutubePlayer(props) {
               }, 150);
             }
           } else if (event.data === window.YT.PlayerState.ENDED) {
+            setIsPlaying(false);
             clearPoll();
             props.onEnd?.();
           } else {
+            setIsPlaying(false);
             clearPoll();
           }
         },
@@ -138,7 +143,27 @@ function YoutubePlayer(props) {
     if (player && st != null) {
       player.seekTo(st, true);
       player.playVideo();
+      setIsPlaying(true);
     }
+  };
+
+  const togglePlayPause = () => {
+    if (!player) return;
+    if (isPlaying()) {
+      player.pauseVideo();
+    } else {
+      player.playVideo();
+    }
+  };
+
+  const handleProgressClick = (e) => {
+    if (!player || props.endSec == null) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    const duration = props.endSec - props.startSec;
+    const targetTime = props.startSec + ratio * duration;
+    player.seekTo(targetTime, true);
+    player.playVideo();
   };
 
   return (
@@ -148,35 +173,60 @@ function YoutubePlayer(props) {
         class="w-full aspect-video bg-black rounded-lg overflow-hidden"
       />
 
-      {/* Progress bar */}
-      {props.endSec != null && (
-        <div class="w-full h-1 bg-[var(--color-border)] rounded-full mt-1">
-          <div
-            class="h-1 rounded-full transition-none"
-            style={{ width: `${progress() * 100}%`, 'background-color': `var(--color-primary)` }}
-          />
-        </div>
-      )}
-
       {/* Controls */}
-      <div class="mt-2 px-1 flex items-center gap-3">
-        <button
-          onClick={seekToStart}
-          aria-label={t('tune.restart')}
-          title={t('tune.restart')}
-          class="text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors p-1 rounded flex-shrink-0"
-        >
-          <RotateCcw size={16} />
-        </button>
+      <div class="mt-3 px-1 flex items-center gap-3">
+        {/* Playback buttons */}
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={seekToStart}
+            aria-label={t('tune.restart')}
+            title={t('tune.restart')}
+            class="text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors p-1.5 rounded"
+          >
+            <RotateCcw size={18} />
+          </button>
+          <button
+            onClick={togglePlayPause}
+            aria-label={isPlaying() ? t('tune.pause') : t('tune.play')}
+            title={isPlaying() ? t('tune.pause') : t('tune.play')}
+            class="text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors p-1.5 rounded"
+          >
+            {isPlaying() ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+          </button>
+        </div>
+
+        {/* Progress bar */}
+        {props.endSec != null && (
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between text-[11px] text-[var(--color-muted)] mb-1 font-mono">
+              <span>{formatTime(progress() * (props.endSec - props.startSec))}</span>
+              <span>-{formatTime((1 - progress()) * (props.endSec - props.startSec))}</span>
+            </div>
+            <div
+              class="w-full h-2.5 bg-[var(--color-border)] rounded-full overflow-hidden cursor-pointer hover:ring-2 hover:ring-[var(--color-primary)]/30 transition-shadow"
+              onClick={handleProgressClick}
+              title={t('tune.seek')}
+            >
+              <div
+                class="h-full rounded-full transition-none"
+                style={{ width: `${progress() * 100}%`, 'background-color': `var(--color-primary)` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Loop toggle */}
         <button
           onClick={() => setLoop(!loop())}
-          aria-label={t('tune.loop')}
-          title={t('tune.loop')}
-          class={`p-1 rounded flex-shrink-0 transition-colors ${loop() ? 'text-[var(--color-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-text)]'}`}
+          aria-label={loop() ? t('tune.loopEnabled') : t('tune.loopDisabled')}
+          title={loop() ? t('tune.loopEnabled') : t('tune.loopDisabled')}
+          class={`p-1.5 rounded flex-shrink-0 transition-colors border ${loop() ? 'text-[var(--color-primary)] bg-[var(--color-primary)]/10 border-[var(--color-primary)]/40' : 'text-[var(--color-muted)] hover:text-[var(--color-text)] border-transparent'}`}
         >
-          <Repeat size={16} />
+          <Repeat size={18} />
         </button>
-        <div class="relative flex-1">
+
+        {/* Speed slider */}
+        <div class="relative flex-shrink-0 w-24">
           <input
             type="range"
             min="0.5"
@@ -188,9 +238,9 @@ function YoutubePlayer(props) {
             aria-label={`Playback speed: ${speed()}x`}
             aria-valuetext={`${speed()}x`}
           />
-           <div class="flex justify-center text-[11px] text-[var(--color-muted)] mt-0.5">
-             <span class="text-[var(--color-primary)] font-semibold">{speed()}x</span>
-           </div>
+          <div class="flex justify-center text-[11px] text-[var(--color-muted)] mt-0.5">
+            <span class="text-[var(--color-primary)] font-semibold">{speed()}x</span>
+          </div>
         </div>
       </div>
     </div>
