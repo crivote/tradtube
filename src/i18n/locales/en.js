@@ -38,6 +38,7 @@ const en = {
     searchAndAdd: 'Search for a tune',
     andAdd: 'and add it!',
     recentlyViewed: 'Recently viewed',
+    recentlyAdded: 'New additions',
   },
   tune: {
     backToSearch: '\u2190 Back to search',

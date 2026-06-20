@@ -38,6 +38,7 @@ const fr = {
     searchAndAdd: 'Cherchez un morceau',
     andAdd: 'et ajoutez-le\u00a0!',
     recentlyViewed: 'Vus r\u00e9cemment',
+    recentlyAdded: 'Nouveaut\u00e9s',
   },
   tune: {
     backToSearch: '\u2190 Retour \u00e0 la recherche',

@@ -9,6 +9,7 @@ import ReportForm from './components/ReportForm';
 import UserRecordingsView from './components/UserRecordingsView';
 import MyReports from './components/MyReports';
 import RecentlyViewed from './components/RecentlyViewed';
+import RecentlyAdded from './components/RecentlyAdded';
 import Toast from './components/Toast';
 
 function App(props) {
@@ -214,6 +215,7 @@ function App(props) {
       </main>
 
       <Show when={location.pathname === '/'}>
+        <RecentlyAdded />
         <RecentlyViewed />
       </Show>
 

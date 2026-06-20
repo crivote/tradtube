@@ -38,6 +38,7 @@ const de = {
     searchAndAdd: 'Suche eine Melodie',
     andAdd: 'und f\u00fcge sie hinzu!',
     recentlyViewed: 'K\u00fcrzlich angesehen',
+    recentlyAdded: 'Neue Hinzuf\u00fcgungen',
   },
   tune: {
     backToSearch: '\u2190 Zur\u00fcck zur Suche',

@@ -284,6 +284,43 @@ export async function getTuneIdsByInstrument(instrument) {
   return new Set((data || []).map(e => e.tune_id));
 }
 
+/**
+ * Devuelve las adiciones recientes visibles (tune_media + entries).
+ * Si se pasa `since` (ISO string), filtra los creados desde esa fecha.
+ * Devuelve un array de { tune_id, youtubeId, created_at } sin duplicados
+ * de tune_id, ordenados de más reciente a más antiguo.
+ */
+export async function getRecentlyAddedTunes(since = null, limit = 20) {
+  let query = supabase
+    .from('tune_media')
+    .select('id, media_uri, created_at, tune_media_entries(tune_id)')
+    .eq('unavailable', false)
+    .eq('hidden', false)
+    .neq('status', 'llm_guess')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (since) {
+    query = query.gte('created_at', since);
+  }
+
+  const { data, error } = await query;
+  if (error) { console.error(error); return []; }
+
+  const seen = new Set();
+  const results = [];
+  for (const media of data || []) {
+    const youtubeId = extractYoutubeId(media.media_uri);
+    for (const entry of media.tune_media_entries || []) {
+      const tuneId = entry.tune_id;
+      if (seen.has(tuneId)) continue;
+      seen.add(tuneId);
+      results.push({ tune_id: tuneId, youtubeId, created_at: media.created_at });
+    }
+  }
+  return results;
+}
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 export async function loginWithGoogle() {
