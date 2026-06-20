@@ -156,12 +156,15 @@ function YoutubePlayer(props) {
     }
   };
 
+  const segmentDuration = () => Math.max(0, (props.endSec ?? 0) - (props.startSec ?? 0));
+  const hasSegment = () => segmentDuration() > 0;
+
   const handleProgressClick = (e) => {
-    if (!player || props.endSec == null) return;
+    if (!player || !hasSegment()) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-    const duration = props.endSec - props.startSec;
-    const targetTime = props.startSec + ratio * duration;
+    const duration = segmentDuration();
+    const targetTime = (props.startSec ?? 0) + ratio * duration;
     player.seekTo(targetTime, true);
     player.playVideo();
   };
@@ -174,7 +177,7 @@ function YoutubePlayer(props) {
       />
 
       {/* Controls */}
-      <div class="mt-3 px-1 flex items-center gap-3">
+      <div class="mt-3 px-1 flex items-center gap-3 flex-wrap sm:flex-nowrap">
         {/* Playback buttons */}
         <div class="flex items-center gap-1 flex-shrink-0">
           <button
@@ -196,11 +199,11 @@ function YoutubePlayer(props) {
         </div>
 
         {/* Progress bar */}
-        {props.endSec != null && (
-          <div class="flex-1 min-w-0">
+        {hasSegment() && (
+          <div class="flex-1 min-w-[120px] order-last sm:order-none w-full sm:w-auto">
             <div class="flex justify-between text-[11px] text-[var(--color-muted)] mb-1 font-mono">
-              <span>{formatTime(progress() * (props.endSec - props.startSec))}</span>
-              <span>-{formatTime((1 - progress()) * (props.endSec - props.startSec))}</span>
+              <span>{formatTime(progress() * segmentDuration())}</span>
+              <span>-{formatTime((1 - progress()) * segmentDuration())}</span>
             </div>
             <div
               class="w-full h-2.5 bg-[var(--color-border)] rounded-full overflow-hidden cursor-pointer hover:ring-2 hover:ring-[var(--color-primary)]/30 transition-shadow"
