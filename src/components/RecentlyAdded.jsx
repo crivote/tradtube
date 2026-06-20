@@ -23,10 +23,14 @@ function RecentlyAdded() {
   let carouselRef;
 
   onMount(async () => {
-    const since = getLastVisit();
-    const recent = await loadRecentlyAdded(since);
-    setTunes(recent);
-    setLastVisit();
+    try {
+      const since = getLastVisit();
+      const recent = await loadRecentlyAdded(since);
+      setTunes(recent);
+      setLastVisit();
+    } catch (err) {
+      console.error('Failed to load recently added tunes:', err);
+    }
   });
 
   const scrollCarousel = (direction) => {

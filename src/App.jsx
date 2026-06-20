@@ -215,7 +215,9 @@ function App(props) {
       </main>
 
       <Show when={location.pathname === '/'}>
-        <RecentlyAdded />
+        <Show when={dbReady()}>
+          <RecentlyAdded />
+        </Show>
         <RecentlyViewed />
       </Show>
 
