@@ -57,6 +57,19 @@ export function formatTime(sec) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+/**
+ * Normaliza los timestamps de un clip de media.
+ * - startSec nulo -> 0
+ * - endSec nulo   -> duración total conocida (si está disponible)
+ * Devuelve { startSec, endSec } para pasar como props a reproductores.
+ */
+export function normalizeMediaTimestamps(startSec, endSec, duration) {
+  return {
+    startSec: startSec ?? 0,
+    endSec: endSec ?? duration ?? null,
+  };
+}
+
 export function cleanTitleForDisplay(title, matchedTunes) {
   if (!matchedTunes.length) return title;
   

@@ -10,7 +10,7 @@
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 import { RotateCcw, Repeat, Play, Pause } from 'lucide-solid';
 import { useI18n } from '../i18n';
-import { formatTime } from '../lib/utils';
+import { formatTime, normalizeMediaTimestamps } from '../lib/utils';
 
 // ── IFrame API loader (singleton global) ────────────────────────────────────
 let ytApiReady = false;
@@ -43,9 +43,40 @@ function YoutubePlayer(props) {
   const [loop, setLoop] = createSignal(false);
   const [progress, setProgress] = createSignal(0);
   const [isPlaying, setIsPlaying] = createSignal(false);
+  const [mediaDuration, setMediaDuration] = createSignal(null);
+
+  const effectiveTimestamps = () => normalizeMediaTimestamps(props.startSec, props.endSec, mediaDuration());
+  const effectiveStartSec = () => effectiveTimestamps().startSec;
+  const effectiveEndSec = () => effectiveTimestamps().endSec;
 
   const clearPoll = () => {
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+  };
+
+  const startPoll = () => {
+    clearPoll();
+    pollInterval = setInterval(() => {
+      const currentTime = player?.getCurrentTime?.();
+      if (currentTime == null) return;
+      const start = effectiveStartSec();
+      const end = effectiveEndSec();
+      if (end == null) return;
+      const duration = end - start;
+      if (duration > 0) {
+        const elapsed = Math.max(0, currentTime - start);
+        setProgress(Math.min(1, elapsed / duration));
+      }
+      if (currentTime >= end) {
+        if (loop()) {
+          player.seekTo(start, true);
+          setProgress(0);
+        } else {
+          player.pauseVideo();
+          clearPoll();
+          props.onEnd?.();
+        }
+      }
+    }, 150);
   };
 
   const destroyPlayer = () => {
@@ -73,39 +104,16 @@ function YoutubePlayer(props) {
       events: {
         onReady() {
           player.setPlaybackRate(speed());
+          setMediaDuration(player.getDuration());
         },
         onStateChange(event) {
           if (event.data === window.YT.PlayerState.PLAYING) {
             setIsPlaying(true);
-            clearPoll();
-            if (endSec != null) {
-              pollInterval = setInterval(() => {
-                const currentTime = player?.getCurrentTime();
-                if (currentTime == null) return;
-                const duration = endSec - startSec;
-                if (duration > 0) {
-                  const elapsed = Math.max(0, currentTime - startSec);
-                  setProgress(Math.min(1, elapsed / duration));
-                }
-                if (currentTime >= endSec) {
-                  if (loop()) {
-                    player.seekTo(startSec, true);
-                    setProgress(0);
-                  } else {
-                    player.pauseVideo();
-                    clearPoll();
-                    props.onEnd?.();
-                  }
-                }
-              }, 150);
-            }
           } else if (event.data === window.YT.PlayerState.ENDED) {
             setIsPlaying(false);
-            clearPoll();
             props.onEnd?.();
           } else {
             setIsPlaying(false);
-            clearPoll();
           }
         },
       },
@@ -121,12 +129,23 @@ function YoutubePlayer(props) {
     let cancelled = false;
 
     setProgress(0);
+    setMediaDuration(null);
 
     ensureYTApi(() => {
       if (!cancelled) buildPlayer(youtubeId, startSec, endSec, autoplay);
     });
 
     onCleanup(() => { cancelled = true; });
+  });
+
+  // Iniciar/detener polling de segmento según estado de reproducción y timestamps efectivos
+  createEffect(() => {
+    if (isPlaying() && effectiveEndSec() != null) {
+      startPoll();
+    } else {
+      clearPoll();
+    }
+    onCleanup(clearPoll);
   });
 
   // Aplicar velocidad al player
@@ -139,7 +158,7 @@ function YoutubePlayer(props) {
   onCleanup(destroyPlayer);
 
   const seekToStart = () => {
-    const st = props.startSec;
+    const st = effectiveStartSec();
     if (player && st != null) {
       player.seekTo(st, true);
       player.playVideo();
@@ -156,15 +175,15 @@ function YoutubePlayer(props) {
     }
   };
 
-  const segmentDuration = () => Math.max(0, (props.endSec ?? 0) - (props.startSec ?? 0));
-  const hasSegment = () => segmentDuration() > 0;
+  const segmentDuration = () => Math.max(0, (effectiveEndSec() ?? 0) - (effectiveStartSec() ?? 0));
+  const hasSegment = () => effectiveEndSec() != null && segmentDuration() > 0;
 
   const handleProgressClick = (e) => {
     if (!player || !hasSegment()) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
     const duration = segmentDuration();
-    const targetTime = (props.startSec ?? 0) + ratio * duration;
+    const targetTime = (effectiveStartSec() ?? 0) + ratio * duration;
     player.seekTo(targetTime, true);
     player.playVideo();
   };

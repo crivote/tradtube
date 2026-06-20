@@ -7,10 +7,16 @@
  */
 
 import { createEffect, createSignal, onCleanup, Show } from 'solid-js';
+import { normalizeMediaTimestamps } from '../lib/utils';
 
 export default function AudioPlayer(props) {
   let audioEl = null;
   const [currentTime, setCurrentTime] = createSignal(0);
+  const [duration, setDuration] = createSignal(null);
+
+  const effectiveTimestamps = () => normalizeMediaTimestamps(props.startSec, props.endSec, duration());
+  const effectiveStartSec = () => effectiveTimestamps().startSec;
+  const effectiveEndSec = () => effectiveTimestamps().endSec;
 
   // rAF polling — ~16ms precision vs timeupdate's ~250ms
   // Pauses polling when audio is paused to save CPU
@@ -52,18 +58,21 @@ export default function AudioPlayer(props) {
   });
 
   const handleTimeUpdate = () => {
-    if (!audioEl || props.endSec == null) return;
-    if (audioEl.currentTime >= props.endSec) {
+    if (!audioEl) return;
+    const end = effectiveEndSec();
+    if (end == null) return;
+    if (audioEl.currentTime >= end) {
       audioEl.pause();
-      audioEl.currentTime = props.startSec ?? 0;
+      audioEl.currentTime = effectiveStartSec();
       props.onEnd?.();
     }
   };
 
   // Seek to start_sec when audio loads
   const handleLoadedMetadata = () => {
-    if (audioEl && props.startSec != null) {
-      audioEl.currentTime = props.startSec;
+    setDuration(audioEl?.duration ?? null);
+    if (audioEl) {
+      audioEl.currentTime = effectiveStartSec();
     }
   };
 
@@ -99,11 +108,11 @@ export default function AudioPlayer(props) {
         </p>
       </Show>
 
-      <Show when={props.startSec != null}>
+      <Show when={effectiveStartSec() != null}>
         <div class="flex items-center gap-2 text-[10px] text-[var(--color-muted)] font-mono">
-          <span>{fmt(props.startSec)}</span>
-          <Show when={props.endSec != null}>
-            <span>– {fmt(props.endSec)}</span>
+          <span>{fmt(effectiveStartSec())}</span>
+          <Show when={effectiveEndSec() != null}>
+            <span>– {fmt(effectiveEndSec())}</span>
           </Show>
           <Show when={currentTime() > 0}>
             <span class="text-[var(--color-primary)]">| now: {fmt(currentTime())}</span>
