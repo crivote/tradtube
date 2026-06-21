@@ -285,6 +285,22 @@ export async function getTuneIdsByInstrument(instrument) {
 }
 
 /**
+ * Devuelve los tune_id más similares según la tabla tune_similarities.
+ * Ordenados por score descendente. Devuelve un array de tune_id_b.
+ */
+export async function getSimilarTunes(tuneId, limit = 15) {
+  const { data, error } = await supabase
+    .from('tune_similarities')
+    .select('tune_id_b, score')
+    .eq('tune_id_a', tuneId)
+    .order('score', { ascending: false })
+    .limit(limit);
+
+  if (error) { console.error(error); return []; }
+  return (data || []).map(r => r.tune_id_b);
+}
+
+/**
  * Devuelve las adiciones recientes visibles (tune_media + entries).
  * Si se pasa `since` (ISO string), filtra los creados desde esa fecha.
  * Devuelve un array de { tune_id, youtubeId, created_at } sin duplicados
