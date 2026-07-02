@@ -3,11 +3,10 @@
  * Fila horizontal de otras tunes del mismo tipo que tienen vídeos.
  */
 
-import { createSignal, onMount, createMemo, For, Show } from 'solid-js';
+import { createMemo, For, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { useAppStore } from '../store/appStore';
-import { searchTunesByType, getTuneById } from '../lib/db';
-import { getSimilarTunes } from '../lib/supabase';
+import { searchTunesByType } from '../lib/db';
 import { useI18n } from '../i18n';
 
 function seededShuffle(arr, seed) {
@@ -29,55 +28,28 @@ function SameTypeTunes() {
   const { t } = useI18n();
   const navigate = useNavigate();
 
-  const [similarIds, setSimilarIds] = createSignal([]);
-  const [loading, setLoading] = createSignal(true);
-
-  onMount(async () => {
-    const tune = selectedTune();
-    if (!tune) {
-      setLoading(false);
-      return;
-    }
-    try {
-      const ids = await getSimilarTunes(tune.tune_id);
-      setSimilarIds(ids);
-    } catch (err) {
-      console.error('Failed to load similar tunes:', err);
-    } finally {
-      setLoading(false);
-    }
-  });
-
   const related = createMemo(() => {
     const tune = selectedTune();
     if (!tune || !videoDataReady()) return [];
 
     const counts = videoCountsByTune();
 
-    const similarTunes = similarIds()
-      .map(id => getTuneById(id))
-      .filter(t => t && t.tune_id !== tune.tune_id && counts.has(t.tune_id));
-
-    const usedIds = new Set(similarTunes.map(t => t.tune_id));
-    usedIds.add(tune.tune_id);
-
-    const fallbackPool = searchTunesByType(tune.type, 500)
-      .filter(t => !usedIds.has(t.tune_id) && counts.has(t.tune_id));
-
-    const shuffledFallback = seededShuffle(fallbackPool, tune.tune_id);
-
-    return [...similarTunes, ...shuffledFallback].slice(0, 5);
+    return seededShuffle(
+      searchTunesByType(tune.type, 500)
+        .filter(t => t.tune_id !== tune.tune_id && counts.has(t.tune_id)),
+      tune.tune_id,
+    ).slice(0, 5);
   });
 
   return (
     <>
-      <Show when={loading() || !videoDataReady()}>
+      <Show when={!videoDataReady()}>
         <div class="flex items-center gap-3 py-8 justify-center">
           <div class="w-5 h-5 border-2 border-[var(--color-warning)] border-t-transparent rounded-full animate-spin" />
           <span class="text-sm text-[var(--color-muted)]">{t('admin.loading')}</span>
         </div>
       </Show>
-      <Show when={!loading() && videoDataReady() && related().length > 0}>
+      <Show when={videoDataReady() && related().length > 0}>
         <div class="flex flex-col gap-3 mt-2">
           <h3 class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider capitalize">
             {t('sameType.more', { type: selectedTune()?.type })}
