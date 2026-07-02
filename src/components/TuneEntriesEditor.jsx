@@ -15,7 +15,7 @@
 
 import { createSignal, createMemo, createEffect, onCleanup, For, Show } from 'solid-js';
 import { ChevronDown, SkipForward, GripVertical } from 'lucide-solid';
-import { searchTunes, getTuneById, getSettings } from '../lib/db';
+import { searchTunes, getTuneById } from '../lib/db';
 import { parseSec, validateTimestamp } from '../lib/utils';
 import { useI18n } from '../i18n';
 import { INSTRUMENTS } from '../constants';
@@ -58,14 +58,18 @@ export default function TuneEntriesEditor(props) {
     setOpenInstrumentDropdown(null);
   };
 
-  const settingsCache = new Map();
-
-  const getCachedSettings = (tuneId) => {
-    if (settingsCache.has(tuneId)) return settingsCache.get(tuneId);
-    const val = getSettings(tuneId);
-    settingsCache.set(tuneId, val);
-    return val;
-  };
+  // Lista estatica de tonalidades, ordenada por frecuencia real de uso en
+  // el corpus completo de TheSession (23 combinaciones nota+modo -- solo
+  // Major/Minor/Dorian/Mixolydian aparecen en el repertorio tradicional).
+  // Stopgap hasta que el selector abierto nota+modo este maduro (issue #33).
+  // Mismo formato que usaba antes settings.key, para no romper entradas
+  // ya guardadas (issue #31).
+  const KEY_OPTIONS = [
+    'Gmajor', 'Dmajor', 'Amajor', 'Adorian', 'Eminor', 'Edorian', 'Bminor',
+    'Amixolydian', 'Aminor', 'Dmixolydian', 'Cmajor', 'Fmajor', 'Gminor',
+    'Dminor', 'Ddorian', 'Gdorian', 'Emajor', 'Gmixolydian', 'Bdorian',
+    'Cdorian', 'Fdorian', 'Emixolydian', 'Bmixolydian'
+  ];
 
   const getEndError = (entry, i) => {
     const se = validateTimestamp(entry.startSec);
@@ -272,14 +276,14 @@ export default function TuneEntriesEditor(props) {
                 </Show>
 
                 {/* Key */}
-                <Show when={!props.readOnly && getCachedSettings(entry.tune.tune_id).length > 0}>
+                <Show when={!props.readOnly}>
                   <select
                     value={entry.key ?? ''}
                     onChange={e => props.onUpdate(i(), 'key', e.target.value || null)}
                     class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-1.5 py-0.5 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
                   >
                     <option value="">—</option>
-                    <For each={[...new Set(getCachedSettings(entry.tune.tune_id).map(s => s.key))]}>
+                    <For each={KEY_OPTIONS}>
                       {(k) => <option value={k}>{k}</option>}
                     </For>
                   </select>

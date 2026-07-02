@@ -8,7 +8,6 @@ import TuneEntriesEditor from '../../components/TuneEntriesEditor';
 
 vi.mock('../../lib/db', () => ({
   searchTunes: vi.fn(),
-  getSettings: vi.fn(),
   getTuneById: vi.fn(),
   initDB: vi.fn(),
   searchTunesByType: vi.fn(),
@@ -17,7 +16,7 @@ vi.mock('../../lib/db', () => ({
   getSimilarTunes: vi.fn(),
 }));
 
-import { searchTunes, getSettings } from '../../lib/db';
+import { searchTunes } from '../../lib/db';
 
 const tuneA = {
   tune_id: 1,
@@ -57,7 +56,6 @@ describe('TuneEntriesEditor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     searchTunes.mockReturnValue([]);
-    getSettings.mockReturnValue([]);
   });
 
   it('shows empty message when there are no entries', async () => {
@@ -147,16 +145,17 @@ describe('TuneEntriesEditor', () => {
     expect(onUpdate).toHaveBeenCalledWith(0, 'structure', 'ABAB');
   });
 
-  it('shows key selector when settings are available', async () => {
-    getSettings.mockReturnValue([{ id: 1, key: 'D' }, { id: 2, key: 'G' }]);
+  it('shows key selector with static frequency-ordered options', async () => {
     renderEditor({ entries: [entryA] });
 
     await waitFor(() => {
       expect(screen.getByText('The Wind')).toBeDefined();
     });
 
-    expect(screen.getByText('D')).toBeDefined();
-    expect(screen.getByText('G')).toBeDefined();
+    // Lista estatica (issue #31) -- ya no depende de settings por tune.
+    expect(screen.getByText('Gmajor')).toBeDefined();
+    expect(screen.getByText('Dmajor')).toBeDefined();
+    expect(screen.getByText('Bmixolydian')).toBeDefined();
   });
 
   it('does not show search or edit controls in readOnly mode', async () => {
