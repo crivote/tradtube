@@ -94,7 +94,7 @@ function TuneView() {
     setMeta('meta[name="twitter:description"]', 'content', desc);
   });
 
-  const [showSheet, setShowSheet] = createSignal(true);
+  const [showSheet, setShowSheet] = createSignal(false);
   const [splitPct, setSplitPct] = createSignal(25);
   const [editingVideo, setEditingVideo] = createSignal(null);
   const [reportingEntry, setReportingEntry] = createSignal(null);
