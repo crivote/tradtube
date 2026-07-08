@@ -170,7 +170,7 @@ function SheetMusic(props) {
             </div>
           </Show>
 
-          <div class="px-3 py-1 overflow-y-auto max-h-[420px]">
+          <div class="px-3 py-1">
             <div ref={containerRef} class="w-full [&_svg]:w-full [&_svg]:h-auto" />
           </div>
 
