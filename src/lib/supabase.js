@@ -22,7 +22,7 @@ export async function getEntriesForTune(tuneId) {
     .select(`
       id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure,
       tune_media!inner(
-        id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, created_at, hidden
+        id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, created_at, hidden, bpm
       ),
       tune_media_votes ( vote, user_id )
     `)
@@ -47,7 +47,7 @@ export async function getEntriesForTune(tuneId) {
 /**
  * Añade un vídeo de YouTube con sus entries.
  */
-export async function addVideoWithEntries({ youtube_id, source_type, title, channel, thesession_recording_id, entries }) {
+export async function addVideoWithEntries({ youtube_id, source_type, title, channel, thesession_recording_id, bpm, entries }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Must be logged in to add a video');
 
@@ -59,6 +59,7 @@ export async function addVideoWithEntries({ youtube_id, source_type, title, chan
       media_uri, source_type,
       title: title ?? null, channel: channel ?? null,
       thesession_recording_id: thesession_recording_id ?? null,
+      bpm: bpm ?? null,
       added_by: user.id,
       status: 'new',
     }])
@@ -128,7 +129,7 @@ export async function getLatestMedia() {
   const { data, error } = await supabase
     .from('tune_media')
     .select(`
-      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at, hidden,
+      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at, hidden, bpm,
       tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure )
     `)
     .eq('hidden', false)
@@ -146,7 +147,7 @@ export async function getPendingVideos() {
   const { data, error } = await supabase
     .from('tune_media')
     .select(`
-      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at,
+      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at, bpm,
       tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure )
     `)
     .in('status', ['new', 'llm_guess'])
@@ -172,7 +173,7 @@ export async function getVideosByTune(tuneId) {
   const { data, error: e2 } = await supabase
     .from('tune_media')
     .select(`
-      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at,
+      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at, bpm,
       tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure )
     `)
     .in('id', mediaIds)
@@ -197,11 +198,11 @@ export async function deleteVideo(videoId) {
   if (error) throw error;
 }
 
-export async function updateVideoWithEntries(videoId, { source_type, title, channel, thesession_recording_id, unavailable, entries }) {
+export async function updateVideoWithEntries(videoId, { source_type, title, channel, thesession_recording_id, unavailable, bpm, entries }) {
   // NOTE: delete+insert is not transactional — if inserts fail the video
   // is left without entries. A Postgres RPC would fix this properly.
   const { error: ve } = await supabase
-    .from('tune_media').update({ source_type, title: title ?? null, channel: channel ?? null, thesession_recording_id: thesession_recording_id ?? null, unavailable: unavailable ?? false }).eq('id', videoId);
+    .from('tune_media').update({ source_type, title: title ?? null, channel: channel ?? null, thesession_recording_id: thesession_recording_id ?? null, bpm: bpm ?? null, unavailable: unavailable ?? false }).eq('id', videoId);
   if (ve) throw ve;
 
   const { error: de } = await supabase
@@ -356,7 +357,7 @@ export async function getVideoById(videoId) {
   const { data, error } = await supabase
     .from('tune_media')
     .select(`
-      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, created_at,
+      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, created_at, bpm,
       tune_media_entries (
         id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure
       )

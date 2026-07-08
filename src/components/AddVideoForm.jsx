@@ -70,6 +70,7 @@ function AddVideoForm(props) {
   const [skippedTuneNames, setSkippedTuneNames] = createSignal([]);
   const [recordingId, setRecordingId] = createSignal(props.editVideo?.thesession_recording_id ?? null);
   const [unavailable, setUnavailable] = createSignal(props.editVideo?.unavailable ?? false);
+  const [bpm, setBpm] = createSignal(props.editVideo?.bpm ?? '');
   const [autoMatchedCount, setAutoMatchedCount] = createSignal(0);
   const [openInstrumentDropdown, setOpenInstrumentDropdown] = createSignal(null);
   const [videoDuration, setVideoDuration] = createSignal(0);
@@ -237,6 +238,7 @@ function AddVideoForm(props) {
           channel: channel().trim() || null,
           thesession_recording_id: recordingId(),
           unavailable: unavailable(),
+          bpm: bpm() ? parseInt(bpm(), 10) : null,
           entries: entryPayload,
         });
       } else {
@@ -246,6 +248,7 @@ function AddVideoForm(props) {
           title: title().trim() || null,
           channel: channel().trim() || null,
           thesession_recording_id: recordingId(),
+          bpm: bpm() ? parseInt(bpm(), 10) : null,
           entries: entryPayload,
         });
       }
@@ -457,6 +460,22 @@ function AddVideoForm(props) {
             </div>
           </label>
         </Show>
+
+        {/* ── BPM ─────────────────────────────────────────────────────── */}
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">
+            {t('addVideo.bpm')}
+          </label>
+          <input
+            type="number"
+            placeholder={t('addVideo.bpmPlaceholder')}
+            value={bpm()}
+            onInput={e => setBpm(e.target.value)}
+            min="1"
+            max="999"
+            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
+          />
+        </div>
 
         {/* ── TheSession recording import ──────────────────────────────── */}
         <div class="flex flex-col gap-2">

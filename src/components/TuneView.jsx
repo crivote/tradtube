@@ -476,6 +476,11 @@ function TuneView() {
                       <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-border)] text-[var(--color-muted)] w-fit">
                         {label}
                       </span>
+                      <Show when={entry.tune_media?.bpm}>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] w-fit font-medium">
+                          {entry.tune_media.bpm} BPM
+                        </span>
+                      </Show>
                       <Show when={entry.key}>
                         <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)] w-fit font-medium">
                           {entry.key}

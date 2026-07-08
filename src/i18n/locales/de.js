@@ -132,6 +132,8 @@ const de = {
     thesessionRecordingId: 'TheSession-Aufnahme-ID',
     thesessionRecordingIdPlaceholder: 'Numerische ID (z.B. 158)',
     removed: '"{{name}}" entfernt',
+    bpm: 'BPM (Schläge pro Minute)',
+    bpmPlaceholder: 'z.B. 120',
   },
   theSession: {
     title: 'Von TheSession importieren',

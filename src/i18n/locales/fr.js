@@ -132,6 +132,8 @@ const fr = {
     thesessionRecordingId: 'ID d\u2019enregistrement TheSession',
     thesessionRecordingIdPlaceholder: 'ID num\u00e9rique (ex. 158)',
     removed: '\u00ab\u00a0{{name}}\u00a0\u00bb supprim\u00e9',
+    bpm: 'BPM (battements par minute)',
+    bpmPlaceholder: 'ex. 120',
   },
   theSession: {
     title: 'Importer depuis TheSession',
