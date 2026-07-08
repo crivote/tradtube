@@ -134,6 +134,16 @@ const fr = {
     removed: '\u00ab\u00a0{{name}}\u00a0\u00bb supprim\u00e9',
     bpm: 'BPM (battements par minute)',
     bpmPlaceholder: 'ex. 120',
+    key: 'Tonalité',
+  },
+  key: {
+    notes: {
+      C: 'Do', Db: 'Ré♭', D: 'Ré', Eb: 'Mi♭', E: 'Mi', F: 'Fa',
+      Gb: 'Sol♭', G: 'Sol', Ab: 'La♭', A: 'La', Bb: 'Si♭', B: 'Si',
+    },
+    modes: {
+      major: 'Majeur', minor: 'Mineur', dorian: 'Dorien', mixolydian: 'Mixolydien',
+    },
   },
   theSession: {
     title: 'Importer depuis TheSession',

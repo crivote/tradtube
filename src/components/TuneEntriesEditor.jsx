@@ -25,6 +25,7 @@ export default function TuneEntriesEditor(props) {
   const instrumentLabel = (key) => t(`instruments.${key}`) ?? key;
   const [tuneSearch, setTuneSearch] = createSignal('');
   const [openInstrumentDropdown, setOpenInstrumentDropdown] = createSignal(null);
+  const [openKeyPopup, setOpenKeyPopup] = createSignal(null);
   const [dragIndex, setDragIndex] = createSignal(null);
 
   const moveEntry = (i, dir) => {
@@ -35,10 +36,14 @@ export default function TuneEntriesEditor(props) {
 
   createEffect(() => {
     const idx = openInstrumentDropdown();
-    if (idx == null) return;
+    const keyIdx = openKeyPopup();
+    if (idx == null && keyIdx == null) return;
     const handler = (e) => {
       if (!e.target.closest('[data-instrument-dropdown]')) {
         setOpenInstrumentDropdown(null);
+      }
+      if (!e.target.closest('[data-key-dropdown]')) {
+        setOpenKeyPopup(null);
       }
     };
     document.addEventListener('click', handler);
@@ -58,18 +63,31 @@ export default function TuneEntriesEditor(props) {
     setOpenInstrumentDropdown(null);
   };
 
-  // Lista estatica de tonalidades, ordenada por frecuencia real de uso en
-  // el corpus completo de TheSession (23 combinaciones nota+modo -- solo
-  // Major/Minor/Dorian/Mixolydian aparecen en el repertorio tradicional).
-  // Stopgap hasta que el selector abierto nota+modo este maduro (issue #33).
-  // Mismo formato que usaba antes settings.key, para no romper entradas
-  // ya guardadas (issue #31).
-  const KEY_OPTIONS = [
-    'Gmajor', 'Dmajor', 'Amajor', 'Adorian', 'Eminor', 'Edorian', 'Bminor',
-    'Amixolydian', 'Aminor', 'Dmixolydian', 'Cmajor', 'Fmajor', 'Gminor',
-    'Dminor', 'Ddorian', 'Gdorian', 'Emajor', 'Gmixolydian', 'Bdorian',
-    'Cdorian', 'Fdorian', 'Emixolydian', 'Bmixolydian'
-  ];
+  // --- Tonalidad: selector abierto nota (12 cromaticas con bemoles) × modo ---
+  // Formato almacenado (compatible con entradas existentes de #31):
+  //   {nota}{modo}  ej: Cmajor, Dbdorian, Ebminor, Gbmixolydian
+  // Notas: C Db D Eb E F Gb G Ab A Bb B  (sin sostenidos, solo bemoles)
+  // Modos: major minor dorian mixolydian  (solo los 4 presentes en TheSession)
+  // UX: badge con abreviatura inglesa. Click → popup con dos selects traducidos.
+  const NOTES = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B'];
+  const NOTE_STORAGE = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+  const MODES = ['major', 'minor', 'dorian', 'mixolydian'];
+  const MODE_ABBR = { major: 'MAJ', minor: 'MIN', dorian: 'DOR', mixolydian: 'MIX' };
+
+  const parseKey = (key) => {
+    if (!key || typeof key !== 'string') return null;
+    const note = key.length > 1 && key[1] === 'b' ? key.slice(0, 2) : key[0];
+    const mode = key.slice(note.length);
+    if (MODES.includes(mode) && NOTE_STORAGE.includes(note)) return { note, mode };
+    return null;
+  };
+
+  const formatKeyBadge = (key) => {
+    const p = parseKey(key);
+    if (!p) return '—';
+    const ni = NOTE_STORAGE.indexOf(p.note);
+    return `${ni >= 0 ? NOTES[ni] : p.note} ${MODE_ABBR[p.mode]}`;
+  };
 
   const getEndError = (entry, i) => {
     const se = validateTimestamp(entry.startSec);
@@ -275,18 +293,58 @@ export default function TuneEntriesEditor(props) {
                   </div>
                 </Show>
 
-                {/* Key */}
+                {/* Key — badge con abreviatura + popup de doble selector */}
                 <Show when={!props.readOnly}>
-                  <select
-                    value={entry.key ?? ''}
-                    onChange={e => props.onUpdate(i(), 'key', e.target.value || null)}
-                    class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-1.5 py-0.5 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-                  >
-                    <option value="">—</option>
-                    <For each={KEY_OPTIONS}>
-                      {(k) => <option value={k}>{k}</option>}
-                    </For>
-                  </select>
+                  <div class="relative flex-shrink-0" data-key-dropdown>
+                    <button
+                      type="button"
+                      onClick={() => setOpenKeyPopup(openKeyPopup() === i() ? null : i())}
+                      aria-expanded={openKeyPopup() === i()}
+                      aria-haspopup="listbox"
+                      class="text-[10px] font-mono font-semibold bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 cursor-pointer hover:border-[var(--color-primary)] transition-colors whitespace-nowrap"
+                      title={t('addVideo.key')}
+                    >
+                      {formatKeyBadge(entry.key)}
+                    </button>
+                    <Show when={openKeyPopup() === i()}>
+                      <div class="absolute top-full left-0 mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl z-30 p-2.5 flex gap-2">
+                        <select
+                          value={parseKey(entry.key)?.note ?? ''}
+                          onChange={e => {
+                            const note = e.target.value;
+                            if (!note) { props.onUpdate(i(), 'key', null); return; }
+                            const curMode = parseKey(entry.key)?.mode ?? 'major';
+                            props.onUpdate(i(), 'key', note + curMode);
+                          }}
+                          class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+                        >
+                          <option value="">—</option>
+                          <For each={NOTE_STORAGE}>
+                            {(note, ni) => (
+                              <option value={note}>{t(`key.notes.${note}`) ?? NOTES[ni()]}</option>
+                            )}
+                          </For>
+                        </select>
+                        <select
+                          value={parseKey(entry.key)?.mode ?? ''}
+                          onChange={e => {
+                            const mode = e.target.value;
+                            if (!mode) { props.onUpdate(i(), 'key', null); return; }
+                            const curNote = parseKey(entry.key)?.note ?? 'C';
+                            props.onUpdate(i(), 'key', curNote + mode);
+                          }}
+                          class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+                        >
+                          <option value="">—</option>
+                          <For each={MODES}>
+                            {(mode) => (
+                              <option value={mode}>{t(`key.modes.${mode}`) ?? mode}</option>
+                            )}
+                          </For>
+                        </select>
+                      </div>
+                    </Show>
+                  </div>
                 </Show>
 
                 {/* Structure */}

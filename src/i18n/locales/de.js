@@ -134,6 +134,16 @@ const de = {
     removed: '"{{name}}" entfernt',
     bpm: 'BPM (Schläge pro Minute)',
     bpmPlaceholder: 'z.B. 120',
+    key: 'Tonart',
+  },
+  key: {
+    notes: {
+      C: 'C', Db: 'Des', D: 'D', Eb: 'Es', E: 'E', F: 'F',
+      Gb: 'Ges', G: 'G', Ab: 'As', A: 'A', Bb: 'B', B: 'H',
+    },
+    modes: {
+      major: 'Dur', minor: 'Moll', dorian: 'Dorisch', mixolydian: 'Mixolydisch',
+    },
   },
   theSession: {
     title: 'Von TheSession importieren',

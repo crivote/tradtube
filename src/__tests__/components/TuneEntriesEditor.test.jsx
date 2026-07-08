@@ -145,17 +145,46 @@ describe('TuneEntriesEditor', () => {
     expect(onUpdate).toHaveBeenCalledWith(0, 'structure', 'ABAB');
   });
 
-  it('shows key selector with static frequency-ordered options', async () => {
-    renderEditor({ entries: [entryA] });
+  it('shows key badge with abbreviation and popup on click', async () => {
+    const onUpdate = vi.fn();
+    renderEditor({ entries: [{ ...entryA, key: 'Dmajor' }], onUpdate });
 
     await waitFor(() => {
       expect(screen.getByText('The Wind')).toBeDefined();
     });
 
-    // Lista estatica (issue #31) -- ya no depende de settings por tune.
-    expect(screen.getByText('Gmajor')).toBeDefined();
-    expect(screen.getByText('Dmajor')).toBeDefined();
-    expect(screen.getByText('Bmixolydian')).toBeDefined();
+    // Badge muestra abreviatura en notación inglesa: "D MAJ"
+    const badge = screen.getByText('D MAJ');
+    expect(badge).toBeDefined();
+
+    // Abrir popup
+    fireEvent.click(badge);
+
+    // Ver select de nota con valor 'D'
+    const noteSelect = screen.getAllByRole('combobox')[0];
+    expect(noteSelect).toBeDefined();
+    expect(noteSelect.value).toBe('D');
+
+    // Ver select de modo con valor 'major'
+    const modeSelect = screen.getAllByRole('combobox')[1];
+    expect(modeSelect).toBeDefined();
+    expect(modeSelect.value).toBe('major');
+
+    // Cambiar modo
+    fireEvent.change(modeSelect, { target: { value: 'minor' } });
+    expect(onUpdate).toHaveBeenCalledWith(0, 'key', 'Dminor');
+  });
+
+  it('shows dash for null key', async () => {
+    renderEditor({ entries: [{ ...entryA, key: null }] });
+
+    await waitFor(() => {
+      expect(screen.getByText('The Wind')).toBeDefined();
+    });
+
+    // Both instrument and key show dash when empty — verify at least 2
+    const dashes = screen.getAllByText('—');
+    expect(dashes.length).toBeGreaterThanOrEqual(2);
   });
 
   it('does not show search or edit controls in readOnly mode', async () => {

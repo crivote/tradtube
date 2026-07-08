@@ -134,6 +134,16 @@ const en = {
     removed: '"{{name}}" removed',
     bpm: 'BPM (beats per minute)',
     bpmPlaceholder: 'e.g. 120',
+    key: 'Key',
+  },
+  key: {
+    notes: {
+      C: 'C', Db: 'D♭', D: 'D', Eb: 'E♭', E: 'E', F: 'F',
+      Gb: 'G♭', G: 'G', Ab: 'A♭', A: 'A', Bb: 'B♭', B: 'B',
+    },
+    modes: {
+      major: 'Major', minor: 'Minor', dorian: 'Dorian', mixolydian: 'Mixolydian',
+    },
   },
   theSession: {
     title: 'Import from TheSession',
