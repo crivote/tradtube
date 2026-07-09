@@ -23,6 +23,19 @@ export function extractYoutubeId(input) {
   return null;
 }
 
+/**
+ * Convierte un valor de timestamp a segundos enteros.
+ * Acepta segundos como número o string ("227"), o formato m:ss ("3:47").
+ *
+ * @param {number|string|null} val - Valor a parsear: segundos ("227"), m:ss ("3:47"), o null/undefined.
+ * @returns {number|null} Segundos como entero, o null si la entrada es inválida o vacía.
+ *
+ * @example
+ * parseSec(227)     // => 227
+ * parseSec('3:47')  // => 227
+ * parseSec('')      // => null
+ * parseSec('abc')   // => null
+ */
 export function parseSec(val) {
   const s = String(val ?? '').trim();
   if (!s) return null;
