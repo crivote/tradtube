@@ -35,7 +35,8 @@ function buildAbc(setting, tune) {
   const type  = tune?.type  ?? '';
   const name  = tune?.name  ?? '';
   const L     = defaultNoteLen(meter);
-  return `X:1\nT:${name}\nR:${type}\nM:${meter}\nL:${L}\nK:${key}\n${setting.abc}`;
+  const abc   = setting.abc.replace(/!/g, '\n');
+  return `X:1\nT:${name}\nR:${type}\nM:${meter}\nL:${L}\nK:${key}\n${abc}`;
 }
 
 async function fetchSettings(tuneId, signal) {
@@ -56,7 +57,7 @@ async function fetchSettings(tuneId, signal) {
 }
 
 function SheetMusic(props) {
-  let containerRef;
+  const [containerRef, setContainerRef] = createSignal(null);
 
   const [settings, setSettings] = createSignal(null);
   const [loading, setLoading] = createSignal(true);
@@ -117,9 +118,10 @@ function SheetMusic(props) {
     if (!s) return;
     const idx = activeIdx();
     const setting = s[idx];
-    if (!setting || !containerRef) return;
+    const ref = containerRef();
+    if (!setting || !ref) return;
 
-    abcjs.renderAbc(containerRef, buildAbc(setting, props.tune), {
+    abcjs.renderAbc(ref, buildAbc(setting, props.tune), {
       responsive: 'resize',
       add_classes: true,
       paddingright: 0,
@@ -171,7 +173,7 @@ function SheetMusic(props) {
           </Show>
 
           <div class="px-3 py-1">
-            <div ref={containerRef} class="w-full [&_svg]:w-full [&_svg]:h-auto" />
+            <div ref={setContainerRef} class="w-full [&_svg]:w-full [&_svg]:h-auto" />
           </div>
 
         </div>
