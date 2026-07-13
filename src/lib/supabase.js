@@ -640,19 +640,20 @@ export async function deleteComment(commentId) {
 // ── Favorites ──────────────────────────────────────────────────────────────────
 
 /**
- * Toggle favorito para un tune. Upsert si no existe, delete si existe.
+ * Toggle favorito para un entry (tune_media_entries.id).
+ * Upsert si no existe, delete si existe.
  * Devuelve el nuevo estado (true = favorited, false = unfavorited).
  */
-export async function toggleFavorite(tuneId) {
+export async function toggleFavorite(entryId) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Must be logged in');
 
   // Check current state
   const { data: existing } = await supabase
     .from('user_favorites')
-    .select('tune_id')
+    .select('entry_id')
     .eq('user_id', user.id)
-    .eq('tune_id', tuneId)
+    .eq('entry_id', entryId)
     .maybeSingle();
 
   if (existing) {
@@ -661,21 +662,22 @@ export async function toggleFavorite(tuneId) {
       .from('user_favorites')
       .delete()
       .eq('user_id', user.id)
-      .eq('tune_id', tuneId);
+      .eq('entry_id', entryId);
     if (error) throw error;
     return false;
   } else {
     // Favorite: insert
     const { error } = await supabase
       .from('user_favorites')
-      .insert({ user_id: user.id, tune_id: tuneId });
+      .insert({ user_id: user.id, entry_id: entryId });
     if (error) throw error;
     return true;
   }
 }
 
 /**
- * Obtiene todos los tune_ids favoritos del usuario autenticado.
+ * Obtiene todas las entries favoritas del usuario autenticado,
+ * con datos de tune_media_entries + tune_media para mostrar en FavoritesView.
  */
 export async function getFavorites() {
   const { data: { user } } = await supabase.auth.getUser();
@@ -683,26 +685,50 @@ export async function getFavorites() {
 
   const { data, error } = await supabase
     .from('user_favorites')
-    .select('tune_id, created_at')
+    .select(`entry_id, created_at,
+      tune_media_entries!inner(
+        id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure,
+        tune_media!inner(
+          id, media_uri, source_type, status, unavailable, title, channel
+        )
+      )
+    `)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
-  if (error) { console.error(error); return []; }
-  return data ?? [];
+  if (error) { console.error('[supabase] getFavorites error:', error); return []; }
+
+  // Flatten: merge tune_media_entries fields into top level
+  return (data || []).map(f => {
+    const e = f.tune_media_entries;
+    return {
+      entry_id: f.entry_id,
+      created_at: f.created_at,
+      tune_id: e.tune_id,
+      setting_id: e.setting_id,
+      start_sec: e.start_sec,
+      end_sec: e.end_sec,
+      position: e.position,
+      instruments: e.instruments,
+      key: e.key,
+      structure: e.structure,
+      tune_media: e.tune_media,
+    };
+  });
 }
 
 /**
- * Comprueba si un tune es favorito del usuario autenticado.
+ * Comprueba si un entry es favorito del usuario autenticado.
  */
-export async function isFavorite(tuneId) {
+export async function isFavorite(entryId) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
 
   const { count, error } = await supabase
     .from('user_favorites')
-    .select('tune_id', { count: 'exact', head: true })
+    .select('entry_id', { count: 'exact', head: true })
     .eq('user_id', user.id)
-    .eq('tune_id', tuneId);
+    .eq('entry_id', entryId);
 
   if (error) { console.error(error); return false; }
   return (count ?? 0) > 0;

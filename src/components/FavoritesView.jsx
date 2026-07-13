@@ -1,14 +1,16 @@
 /**
  * FavoritesView.jsx
- * Vista de tunes favoritas del usuario autenticado.
+ * Vista de entries favoritas del usuario autenticado.
+ * Muestra cada entry con su vídeo/audio, timestamp, y nombre del tune.
  */
 
-import { For, Show, createEffect, createSignal, onMount } from 'solid-js';
+import { For, Show, createEffect, createSignal } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { ExternalLink, Play, ListPlus } from 'lucide-solid';
+import { ExternalLink, Play } from 'lucide-solid';
 import { useAppStore } from '../store/appStore';
 import { getFavorites } from '../lib/supabase';
 import { getTuneById } from '../lib/db';
+import { extractYoutubeId, formatTime } from '../lib/utils';
 import { useI18n } from '../i18n';
 import { loginWithGoogle } from '../lib/supabase';
 
@@ -27,8 +29,9 @@ function FavoritesView() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const {
-    dbReady, videoCountsByTune, videoDataReady,
+    dbReady,
     authUser, authInitialized, loggingIn, setLoggingIn,
+    showToast,
   } = useAppStore();
 
   const [favorites, setFavorites] = createSignal([]);
@@ -41,13 +44,18 @@ function FavoritesView() {
     setError(null);
     try {
       const favs = await getFavorites();
-      // Resolve tune data from SQLite for each favorite
-      const resolved = favs
-        .map(f => {
-          const tune = getTuneById(f.tune_id);
-          return tune ? { ...tune, favorited_at: f.created_at } : null;
-        })
-        .filter(Boolean);
+      // Resolve tune name + type from SQLite for each favorite entry
+      const resolved = favs.map(f => {
+        const tune = getTuneById(f.tune_id);
+        const youtubeId = extractYoutubeId(f.tune_media?.media_uri);
+        return {
+          ...f,
+          tune,
+          youtubeId,
+          startFmt: formatTime(f.start_sec),
+          endFmt: formatTime(f.end_sec),
+        };
+      });
       setFavorites(resolved);
     } catch (err) {
       console.error('Failed to load favorites:', err);
@@ -156,91 +164,100 @@ function FavoritesView() {
         </div>
       </Show>
 
-      {/* Results */}
+      {/* Results — entries with video info */}
       <Show when={!loading() && favorites().length > 0}>
         <div class="w-full flex flex-col gap-1.5">
           <For each={favorites()}>
-            {(tune) => {
-              const clipCount = () => videoCountsByTune().get(tune.tune_id) ?? 0;
-              const hasVideos = () => videoDataReady() && clipCount() > 0;
-              const typeColor = TYPE_COLOR[tune.type] ?? 'text-[var(--color-muted)]';
+            {(fav) => {
+              const tune = fav.tune;
+              const typeColor = TYPE_COLOR[tune?.type] ?? 'text-[var(--color-muted)]';
+              const mediaTitle = fav.tune_media?.title;
+              const isUnavailable = fav.tune_media?.unavailable;
+              const isRecording = fav.tune_media?.source_type === 'user_recording';
 
               return (
                 <div
-                  onClick={() => navigate('/tune/' + tune.tune_id)}
+                  onClick={() => navigate('/tune/' + fav.tune_id)}
                   class={`w-full border rounded-xl px-4 py-3 text-left transition-all group cursor-pointer
-                    ${hasVideos()
+                    ${!isUnavailable
                       ? 'bg-green-500/10 border-green-500/20 hover:border-[var(--color-primary)]'
-                      : 'bg-[var(--color-surface)] border-[var(--color-border)] hover:border-[var(--color-muted)]/40'
+                      : 'bg-[var(--color-surface)] border-[var(--color-border)] hover:border-[var(--color-muted)]/40 opacity-60'
                     }`}
                 >
                   <div class="flex items-center justify-between gap-3">
                     <div class="flex items-start gap-2.5 min-w-0">
 
-                      {/* Dot indicator */}
-                      <div class={`w-2 h-2 rounded-full mt-[5px] flex-shrink-0 transition-colors
-                        ${hasVideos()
-                          ? 'bg-[var(--color-primary)]'
-                          : videoDataReady() ? 'bg-[var(--color-border)]' : 'bg-[var(--color-border)]/50'
-                        }`}
-                      />
+                      {/* Thumbnail or audio icon */}
+                      <div class="w-16 h-9 rounded overflow-hidden flex-shrink-0 bg-black flex items-center justify-center">
+                        <Show
+                          when={!isRecording && fav.youtubeId}
+                          fallback={
+                            <span class="text-lg">🎵</span>
+                          }
+                        >
+                          <img
+                            src={`https://img.youtube.com/vi/${fav.youtubeId}/default.jpg`}
+                            alt=""
+                            class="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        </Show>
+                      </div>
 
-                      {/* Name + metadata */}
+                      {/* Info */}
                       <div class="min-w-0">
                         <div class="flex items-center gap-1.5">
                           <span class={`font-semibold leading-snug truncate transition-colors
-                            ${hasVideos()
+                            ${!isUnavailable
                               ? 'text-[var(--color-text)] group-hover:text-[var(--color-primary)]'
                               : 'text-[var(--color-muted)]'
                             }`}
                           >
-                            {tune.name}
+                            {tune?.name || `Tune #${fav.tune_id}`}
                           </span>
-                          <a
-                            href={`https://thesession.org/tunes/${tune.tune_id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={e => e.stopPropagation()}
-                            class="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors flex-shrink-0 leading-none"
-                            title={`TheSession #${tune.tune_id}`}
-                          >
-                            <ExternalLink size={16} />
-                          </a>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); navigate('/tune/' + tune.tune_id); }}
-                            class="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors flex-shrink-0 leading-none"
-                            title="Add to playlist"
-                          >
-                            <ListPlus size={14} />
-                          </button>
+                          <Show when={tune}>
+                            <a
+                              href={`https://thesession.org/tunes/${tune.tune_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={e => e.stopPropagation()}
+                              class="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors flex-shrink-0 leading-none"
+                              title={`TheSession #${tune.tune_id}`}
+                            >
+                              <ExternalLink size={16} />
+                            </a>
+                          </Show>
                         </div>
                         <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                          <span class={`text-[10px] font-bold uppercase tracking-widest ${typeColor}`}>
-                            {tune.type}
-                          </span>
-                          <Show when={tune.meter}>
-                            <span class="text-[10px] text-[var(--color-border)]">·</span>
-                            <span class="text-[10px] text-[var(--color-muted)]">{tune.meter}</span>
+                          <Show when={tune?.type}>
+                            <span class={`text-[10px] font-bold uppercase tracking-widest ${typeColor}`}>
+                              {tune.type}
+                            </span>
                           </Show>
-                          <Show when={tune.composer}>
-                            <span class="text-[10px] text-[var(--color-border)]">·</span>
-                            <span class="text-[10px] text-[var(--color-muted)]">{tune.composer}</span>
+                          <Show when={mediaTitle}>
+                            <span class="text-[10px] text-[var(--color-muted)] max-w-[200px] truncate">
+                              {mediaTitle}
+                            </span>
+                          </Show>
+                          <Show when={fav.startFmt}>
+                            <span class="text-[10px] text-[var(--color-muted)] font-mono">
+                              {fav.startFmt}{fav.endFmt ? ` – ${fav.endFmt}` : ''}
+                            </span>
+                          </Show>
+                          <Show when={isRecording}>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--color-border)] text-[var(--color-muted)]">
+                              recording
+                            </span>
                           </Show>
                         </div>
                       </div>
                     </div>
 
                     {/* Video badge */}
-                    <Show when={videoDataReady()}>
-                      <Show when={hasVideos()} fallback={
-                        <span class="text-[10px] text-[var(--color-muted)]/40 whitespace-nowrap flex-shrink-0">
-                          {t('search.noVideos')}
-                        </span>
-                      }>
-                        <span class="text-[10px] font-semibold whitespace-nowrap flex-shrink-0 px-2 py-0.5 rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)]">
-                          ♫ {clipCount()} {clipCount() === 1 ? t('search.clip') : t('search.clips')}
-                        </span>
-                      </Show>
+                    <Show when={!isUnavailable}>
+                      <span class="text-[10px] font-semibold whitespace-nowrap flex-shrink-0 px-2 py-0.5 rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)]">
+                        ♫ clip
+                      </span>
                     </Show>
                   </div>
                 </div>

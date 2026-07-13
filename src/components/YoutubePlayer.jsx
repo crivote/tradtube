@@ -7,10 +7,11 @@
  * Props: { youtubeId, startSec, endSec, autoplay, onEnd }
  */
 
-import { createEffect, createSignal, onCleanup } from 'solid-js';
-import { RotateCcw, Repeat, Play, Pause } from 'lucide-solid';
+import { createEffect, createSignal, onCleanup, Show } from 'solid-js';
+import { RotateCcw, Repeat, Play, Pause, Heart } from 'lucide-solid';
 import { useI18n } from '../i18n';
 import { formatTime, normalizeMediaTimestamps } from '../lib/utils';
+import AddToPlaylistButton from './AddToPlaylistButton';
 
 // ── IFrame API loader (singleton global) ────────────────────────────────────
 let ytApiReady = false;
@@ -280,6 +281,29 @@ function YoutubePlayer(props) {
             <span class="text-[var(--color-primary)] font-semibold">{speed()}x</span>
           </div>
         </div>
+
+        {/* Favorite button — only shown when onToggleFavorite is provided */}
+        <Show when={props.onToggleFavorite}>
+          <button
+            onClick={() => props.onToggleFavorite?.()}
+            aria-label={props.isFav?.() ? t('favorites.unfavorite') : t('favorites.favorite')}
+            title={props.isFav?.() ? t('favorites.unfavorite') : t('favorites.favorite')}
+            class={`p-1.5 rounded flex-shrink-0 transition-colors ${
+              props.isFav?.()
+                ? 'text-red-500 hover:text-red-400'
+                : 'text-[var(--color-muted)] hover:text-red-400'
+            }`}
+          >
+            <Heart size={18} fill={props.isFav?.() ? 'currentColor' : 'none'} stroke-width="1.5" />
+          </button>
+        </Show>
+
+        {/* Add to playlist button — only shown when entryId is provided */}
+        <Show when={props.entryId}>
+          <div class="flex-shrink-0 flex items-center">
+            <AddToPlaylistButton entryId={props.entryId} />
+          </div>
+        </Show>
       </div>
     </div>
   );

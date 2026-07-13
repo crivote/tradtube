@@ -7,12 +7,16 @@
  */
 
 import { createEffect, createSignal, onCleanup, Show } from 'solid-js';
+import { Heart } from 'lucide-solid';
 import { normalizeMediaTimestamps } from '../lib/utils';
+import { useI18n } from '../i18n';
+import AddToPlaylistButton from './AddToPlaylistButton';
 
 export default function AudioPlayer(props) {
   let audioEl = null;
   const [currentTime, setCurrentTime] = createSignal(0);
   const [duration, setDuration] = createSignal(null);
+  const { t } = useI18n();
 
   const effectiveTimestamps = () => normalizeMediaTimestamps(props.startSec, props.endSec, duration());
   const effectiveStartSec = () => effectiveTimestamps().startSec;
@@ -116,6 +120,30 @@ export default function AudioPlayer(props) {
           </Show>
           <Show when={currentTime() > 0}>
             <span class="text-[var(--color-primary)]">| now: {fmt(currentTime())}</span>
+          </Show>
+        </div>
+      </Show>
+
+      {/* Controls bar: favorite + playlist — only shown when props are provided */}
+      <Show when={props.onToggleFavorite || props.entryId}>
+        <div class="flex items-center gap-2 mt-1">
+          <Show when={props.onToggleFavorite}>
+            <button
+              onClick={() => props.onToggleFavorite?.()}
+              aria-label={props.isFav?.() ? t('favorites.unfavorite') : t('favorites.favorite')}
+              title={props.isFav?.() ? t('favorites.unfavorite') : t('favorites.favorite')}
+              class={`p-1.5 rounded transition-colors ${
+                props.isFav?.()
+                  ? 'text-red-500 hover:text-red-400'
+                  : 'text-[var(--color-muted)] hover:text-red-400'
+              }`}
+            >
+              <Heart size={16} fill={props.isFav?.() ? 'currentColor' : 'none'} stroke-width="1.5" />
+            </button>
+          </Show>
+
+          <Show when={props.entryId}>
+            <AddToPlaylistButton entryId={props.entryId} />
           </Show>
         </div>
       </Show>

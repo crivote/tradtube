@@ -5,7 +5,7 @@
 
 import { Show, For, createEffect, createSignal, onCleanup } from 'solid-js';
 import { useParams, useNavigate } from '@solidjs/router';
-import { ExternalLink, Heart, Mic, ThumbsUp } from 'lucide-solid';
+import { ExternalLink, Mic, ThumbsUp } from 'lucide-solid';
 import { useAppStore } from '../store/appStore';
 import { castVote, loginWithGoogle, getVideoById, toggleFavorite, isFavorite } from '../lib/supabase';
 import { formatTime, extractYoutubeId } from '../lib/utils';
@@ -19,7 +19,6 @@ import AddRecordingFlow from './AddRecordingFlow';
 import AudioPlayer from './AudioPlayer';
 import ReportForm from './ReportForm';
 import TuneComments from './TuneComments';
-import AddToPlaylistButton from './AddToPlaylistButton';
 
 function TuneView() {
   const params = useParams();
@@ -104,13 +103,13 @@ function TuneView() {
   const [isFav, setIsFav] = createSignal(false);
   const [favLoading, setFavLoading] = createSignal(false);
 
-  // Check favorite state when tune or auth changes
+  // Check favorite state when active entry or auth changes
   createEffect(() => {
-    const tune = selectedTune();
+    const entry = activeEntry();
     const user = authUser();
-    if (!tune) { setIsFav(false); return; }
+    if (!entry) { setIsFav(false); return; }
     if (!user) { setIsFav(false); return; }
-    isFavorite(tune.tune_id).then(setIsFav).catch(() => {});
+    isFavorite(entry.id).then(setIsFav).catch(() => {});
   });
 
   const handleEditVideo = async (entry) => {
@@ -121,16 +120,16 @@ function TuneView() {
   };
 
   const handleFavorite = async (e) => {
-    e.stopPropagation();
-    const tune = selectedTune();
-    if (!tune) return;
+    e?.stopPropagation();
+    const entry = activeEntry();
+    if (!entry) return;
     if (!authUser()) { loginWithGoogle(); return; }
 
     const prev = isFav();
     setIsFav(!prev);
     setFavLoading(true);
     try {
-      const newState = await toggleFavorite(tune.tune_id);
+      const newState = await toggleFavorite(entry.id);
       // Sync with server result in case of race
       setIsFav(newState);
     } catch (err) {
@@ -254,20 +253,6 @@ function TuneView() {
             >
               <ExternalLink size={20} />
             </a>
-            <button
-              onClick={handleFavorite}
-              disabled={favLoading()}
-              class={`transition-colors disabled:opacity-50 ${
-                isFav()
-                  ? 'text-red-500 hover:text-red-400'
-                  : authUser()
-                    ? 'text-[var(--color-muted)] hover:text-red-400'
-                    : 'text-[var(--color-muted)]/50'
-              }`}
-              title={isFav() ? t('favorites.unfavorite') : t('favorites.favorite')}
-            >
-              <Heart size={20} fill={isFav() ? 'currentColor' : 'none'} stroke-width="1.5" />
-            </button>
           </div>
           <p class="text-sm text-[var(--color-muted)] capitalize">
             {selectedTune()?.type}
@@ -327,6 +312,9 @@ function TuneView() {
                   endSec={activeEntry()?.end_sec}
                   autoplay={true}
                   onEnd={handleVideoEnd}
+                  entryId={activeEntry()?.id}
+                  isFav={isFav}
+                  onToggleFavorite={handleFavorite}
                 />
               }
             >
@@ -339,6 +327,9 @@ function TuneView() {
                   onEnd={handleVideoEnd}
                   performerName={activeEntry()?.tune_media?.performer_name}
                   notes={activeEntry()?.tune_media?.recording_notes}
+                  entryId={activeEntry()?.id}
+                  isFav={isFav}
+                  onToggleFavorite={handleFavorite}
                 />
               </div>
             </Show>
@@ -562,9 +553,6 @@ function TuneView() {
                       Edit
                     </button>
                   </Show>
-
-                  {/* Add to playlist — temporalmente desactivado para diagnosticar bug #39 */}
-                  {/* <AddToPlaylistButton entryId={entry.id} /> */}
 
                   {/* Votos */}
                   <div class="flex items-center gap-1 flex-shrink-0">
