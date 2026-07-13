@@ -19,6 +19,7 @@ import AddRecordingFlow from './AddRecordingFlow';
 import AudioPlayer from './AudioPlayer';
 import ReportForm from './ReportForm';
 import TuneComments from './TuneComments';
+import AddToPlaylistButton from './AddToPlaylistButton';
 
 function TuneView() {
   const params = useParams();
@@ -561,6 +562,9 @@ function TuneView() {
                       Edit
                     </button>
                   </Show>
+
+                  {/* Add to playlist */}
+                  <AddToPlaylistButton entryId={entry.id} />
 
                   {/* Votos */}
                   <div class="flex items-center gap-1 flex-shrink-0">
