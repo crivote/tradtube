@@ -115,6 +115,7 @@ function YoutubePlayer(props) {
         start: Math.floor(startSec ?? 0),
         autoplay: autoplay ? 1 : 0,
         rel: 0,
+        origin: window.location.origin,
       },
       events: {
         onReady() {
