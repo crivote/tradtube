@@ -153,6 +153,16 @@ function App(props) {
               </button>
               </Show>
               <button
+                onClick={() => navigate('/playlists')}
+                class={`text-xs px-3 py-1.5 rounded-lg border transition-colors
+                  ${location.pathname.startsWith('/playlist')
+                    ? 'border-[var(--color-primary)]/50 bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                    : 'border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-primary)] hover:border-[var(--color-primary)]/50'
+                  }`}
+              >
+                My Playlists
+              </button>
+              <button
                 onClick={() => navigate('/favorites')}
                 class={`text-xs px-3 py-1.5 rounded-lg border transition-colors
                   ${location.pathname === '/favorites'
