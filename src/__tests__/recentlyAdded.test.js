@@ -60,9 +60,9 @@ describe('recentlyAdded', () => {
         return null;
       });
 
-      const result = await loadRecentlyAdded('2026-06-20T00:00:00Z');
+      const result = await loadRecentlyAdded(10);
 
-      expect(getRecentlyAddedTunes).toHaveBeenCalledWith('2026-06-20T00:00:00Z');
+      expect(getRecentlyAddedTunes).toHaveBeenCalledWith(null, 10);
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual({
         tune_id: 1, name: 'Tune One', type: 'reel',

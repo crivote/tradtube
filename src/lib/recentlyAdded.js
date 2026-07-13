@@ -20,8 +20,8 @@ export function setLastVisit(timestamp = new Date().toISOString()) {
   document.cookie = `${COOKIE_NAME}=${encoded}; path=/; max-age=${ONE_YEAR_SECONDS}; samesite=lax`;
 }
 
-export async function loadRecentlyAdded(since = null) {
-  const added = await getRecentlyAddedTunes(since);
+export async function loadRecentlyAdded(limit = 10) {
+  const added = await getRecentlyAddedTunes(null, limit);
   const seen = new Set();
   const tunes = [];
   for (const item of added) {

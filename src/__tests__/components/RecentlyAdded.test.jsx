@@ -11,17 +11,14 @@ vi.mock('@solidjs/router', () => ({
 }));
 
 vi.mock('../../lib/recentlyAdded', () => ({
-  getLastVisit: vi.fn(),
-  setLastVisit: vi.fn(),
   loadRecentlyAdded: vi.fn(),
 }));
 
-import { getLastVisit, setLastVisit, loadRecentlyAdded } from '../../lib/recentlyAdded';
+import { loadRecentlyAdded } from '../../lib/recentlyAdded';
 
 describe('RecentlyAdded', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getLastVisit.mockReturnValue('2026-06-20T00:00:00Z');
     loadRecentlyAdded.mockResolvedValue([]);
   });
 
@@ -40,8 +37,7 @@ describe('RecentlyAdded', () => {
       expect(screen.getByText('New additions')).toBeDefined();
     });
     expect(screen.getByText('New Tune')).toBeDefined();
-    expect(loadRecentlyAdded).toHaveBeenCalledWith('2026-06-20T00:00:00Z');
-    expect(setLastVisit).toHaveBeenCalled();
+    expect(loadRecentlyAdded).toHaveBeenCalledWith(10);
   });
 
   it('renders nothing when there are no recent additions', async () => {

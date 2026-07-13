@@ -1,7 +1,7 @@
 import { createSignal, onMount, For, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { ChevronLeft, ChevronRight, Music } from 'lucide-solid';
-import { getLastVisit, setLastVisit, loadRecentlyAdded } from '../lib/recentlyAdded';
+import { loadRecentlyAdded } from '../lib/recentlyAdded';
 import { useI18n } from '../i18n';
 
 const TYPE_COLOR = {
@@ -24,10 +24,8 @@ function RecentlyAdded() {
 
   onMount(async () => {
     try {
-      const since = getLastVisit();
-      const recent = await loadRecentlyAdded(since);
+      const recent = await loadRecentlyAdded(10);
       setTunes(recent);
-      setLastVisit();
     } catch (err) {
       console.error('Failed to load recently added tunes:', err);
     }
