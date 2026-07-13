@@ -684,3 +684,243 @@ export async function isFavorite(tuneId) {
   if (error) { console.error(error); return false; }
   return (count ?? 0) > 0;
 }
+
+// ── Playlists ─────────────────────────────────────────────────────────────────
+
+/**
+ * Crea una playlist y devuelve la fila creada.
+ */
+export async function createPlaylist({ name, is_public = false }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Must be logged in');
+
+  const { data, error } = await supabase
+    .from('user_playlists')
+    .insert({ user_id: user.id, name, is_public })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Obtiene todas las playlists del usuario autenticado.
+ */
+export async function getMyPlaylists() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('user_playlists')
+    .select('id, name, is_public, created_at, updated_at, user_playlist_items(count)')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) { console.error(error); return []; }
+  return (data || []).map(p => ({
+    ...p,
+    item_count: p.user_playlist_items?.[0]?.count ?? 0,
+  }));
+}
+
+/**
+ * Obtiene una playlist con sus items resueltos (join tune_media_entries → tune_media).
+ */
+export async function getPlaylist(playlistId) {
+  const { data: playlist, error: plError } = await supabase
+    .from('user_playlists')
+    .select('id, name, is_public, created_at, updated_at, user_id')
+    .eq('id', playlistId)
+    .single();
+
+  if (plError) throw plError;
+  if (!playlist) throw new Error('Playlist not found');
+
+  const { data: items, error: itemsError } = await supabase
+    .from('user_playlist_items')
+    .select(`
+      id, position, added_at,
+      tune_media_entries!inner(
+        id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure,
+        tune_media!inner(
+          id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, created_at, hidden, bpm,
+          performer_name, recording_notes
+        )
+      )
+    `)
+    .eq('playlist_id', playlistId)
+    .order('position', { ascending: true });
+
+  if (itemsError) { console.error(itemsError); return { ...playlist, items: [] }; }
+
+  const resolvedItems = (items || []).map(i => ({
+    id: i.id,
+    position: i.position,
+    added_at: i.added_at,
+    ...i.tune_media_entries,
+    tune_media: i.tune_media_entries?.tune_media,
+  }));
+
+  return { ...playlist, items: resolvedItems };
+}
+
+/**
+ * Actualiza nombre o visibilidad de una playlist.
+ */
+export async function updatePlaylist(playlistId, { name, is_public }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Must be logged in');
+
+  const updates = {};
+  if (name !== undefined) updates.name = name;
+  if (is_public !== undefined) updates.is_public = is_public;
+  updates.updated_at = new Date().toISOString();
+
+  const { error } = await supabase
+    .from('user_playlists')
+    .update(updates)
+    .eq('id', playlistId)
+    .eq('user_id', user.id);
+
+  if (error) throw error;
+}
+
+/**
+ * Elimina una playlist (cascade borra sus items).
+ */
+export async function deletePlaylist(playlistId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Must be logged in');
+
+  const { error } = await supabase
+    .from('user_playlists')
+    .delete()
+    .eq('id', playlistId)
+    .eq('user_id', user.id);
+
+  if (error) throw error;
+}
+
+/**
+ * Añade un entry a una playlist al final (position = max+1).
+ */
+export async function addToPlaylist(playlistId, entryId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Must be logged in');
+
+  // Verificar propiedad
+  const { data: pl, error: plError } = await supabase
+    .from('user_playlists')
+    .select('id')
+    .eq('id', playlistId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (plError || !pl) throw new Error('Playlist not found or not yours');
+
+  // Obtener posición máxima actual
+  const { data: maxItems, error: maxError } = await supabase
+    .from('user_playlist_items')
+    .select('position')
+    .eq('playlist_id', playlistId)
+    .order('position', { ascending: false })
+    .limit(1);
+
+  const maxPos = maxError ? 0 : (maxItems?.[0]?.position ?? -1);
+
+  const { error } = await supabase
+    .from('user_playlist_items')
+    .insert({ playlist_id: playlistId, entry_id: entryId, position: maxPos + 1 });
+
+  if (error) {
+    if (error.code === '23505') return; // duplicate, silently ignore
+    throw error;
+  }
+
+  // Actualizar updated_at de la playlist
+  await supabase
+    .from('user_playlists')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', playlistId);
+}
+
+/**
+ * Elimina un entry de una playlist.
+ */
+export async function removeFromPlaylist(playlistId, entryId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Must be logged in');
+
+  const { error } = await supabase
+    .from('user_playlist_items')
+    .delete()
+    .eq('playlist_id', playlistId)
+    .eq('entry_id', entryId);
+
+  if (error) throw error;
+}
+
+/**
+ * Reordena los items de una playlist (recibe array ordenado de entry_ids).
+ */
+export async function reorderPlaylist(playlistId, entryIds) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Must be logged in');
+
+  // Verificar propiedad
+  const { data: pl, error: plError } = await supabase
+    .from('user_playlists')
+    .select('id')
+    .eq('id', playlistId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (plError || !pl) throw new Error('Playlist not found or not yours');
+
+  // Update positions in bulk — one update per entry
+  const updates = entryIds.map((entryId, idx) =>
+    supabase
+      .from('user_playlist_items')
+      .update({ position: idx })
+      .eq('playlist_id', playlistId)
+      .eq('entry_id', entryId)
+  );
+
+  await Promise.all(updates);
+}
+
+/**
+ * Obtiene playlists públicas para explorar.
+ */
+export async function getPublicPlaylists(limit = 20) {
+  const { data, error } = await supabase
+    .from('user_playlists')
+    .select('id, name, user_id, created_at, updated_at, user_playlist_items(count)')
+    .eq('is_public', true)
+    .order('updated_at', { ascending: false })
+    .limit(limit);
+
+  if (error) { console.error(error); return []; }
+  return (data || []).map(p => ({
+    ...p,
+    item_count: p.user_playlist_items?.[0]?.count ?? 0,
+  }));
+}
+
+/**
+ * Verifica si un entry ya está en una playlist.
+ */
+export async function isEntryInPlaylist(playlistId, entryId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { count, error } = await supabase
+    .from('user_playlist_items')
+    .select('id', { count: 'exact', head: true })
+    .eq('playlist_id', playlistId)
+    .eq('entry_id', entryId);
+
+  if (error) { console.error(error); return false; }
+  return (count ?? 0) > 0;
+}
