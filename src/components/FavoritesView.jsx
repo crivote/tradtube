@@ -5,7 +5,7 @@
 
 import { For, Show, createEffect, createSignal, onMount } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { ExternalLink } from 'lucide-solid';
+import { ExternalLink, Play, ListPlus } from 'lucide-solid';
 import { useAppStore } from '../store/appStore';
 import { getFavorites } from '../lib/supabase';
 import { getTuneById } from '../lib/db';
@@ -78,9 +78,20 @@ function FavoritesView() {
       </button>
 
       {/* Title */}
-      <div>
-        <h2 class="text-2xl font-black text-[var(--color-text)]">{t('favorites.title')}</h2>
-        <p class="text-sm text-[var(--color-muted)] mt-1">{t('favorites.subtitle')}</p>
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-[var(--color-text)]">{t('favorites.title')}</h2>
+          <p class="text-sm text-[var(--color-muted)] mt-1">{t('favorites.subtitle')}</p>
+        </div>
+        <Show when={favorites().length > 0}>
+          <button
+            onClick={() => navigate('/tune/' + favorites()[0].tune_id)}
+            class="inline-flex items-center gap-1.5 text-xs px-4 py-1.5 rounded-lg font-semibold bg-[var(--color-primary)] text-black hover:opacity-90 transition-opacity flex-shrink-0 mt-1"
+          >
+            <Play size={14} fill="currentColor" />
+            Play All
+          </button>
+        </Show>
       </div>
 
       {/* Loading */}
@@ -195,6 +206,13 @@ function FavoritesView() {
                           >
                             <ExternalLink size={16} />
                           </a>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate('/tune/' + tune.tune_id); }}
+                            class="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors flex-shrink-0 leading-none"
+                            title="Add to playlist"
+                          >
+                            <ListPlus size={14} />
+                          </button>
                         </div>
                         <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
                           <span class={`text-[10px] font-bold uppercase tracking-widest ${typeColor}`}>
