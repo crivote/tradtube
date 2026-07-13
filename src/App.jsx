@@ -129,6 +129,14 @@ function App(props) {
                 class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 transition-colors"
               >My Recordings</button>
               <button
+                onClick={() => navigate('/my-submissions')}
+                class={`text-xs px-3 py-1.5 rounded-lg border transition-colors
+                  ${location.pathname === '/my-submissions'
+                    ? 'border-[var(--color-primary)]/50 bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                    : 'border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50'
+                  }`}
+              >My Submissions</button>
+              <button
                 onClick={() => setShowMyReports(true)}
                 class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 transition-colors"
               >My Reports</button>

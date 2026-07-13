@@ -448,6 +448,26 @@ export async function getUserRecordings(userId) {
   return data ?? [];
 }
 
+/**
+ * Obtiene todos los vídeos enviados por el usuario autenticado (YouTube + grabaciones).
+ * Incluye status, entries asociadas, ordenado por created_at desc.
+ */
+export async function getMySubmissions() {
+  await supabase.auth.refreshSession();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('tune_media')
+    .select(`id, media_uri, source_type, status, title, channel, performer_name, created_at,
+      tune_media_entries(tune_id, setting_id, start_sec, end_sec, position)`)
+    .eq('added_by', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) { console.error(error); return []; }
+  return data ?? [];
+}
+
 export async function toggleHidden(mediaId, hidden) {
   const { error } = await supabase
     .from('tune_media')
