@@ -247,6 +247,7 @@ export function useAppStore() {
     const tune = selectedTune();
     if (!tune) { setTuneEntries([]); setActiveEntry(null); return; }
 
+    console.log('[appStore] Loading entries for tune:', tune.tune_id, tune.name);
     setLoadingEntries(true);
     setTuneEntries([]);
     setActiveEntry(null);
@@ -254,12 +255,14 @@ export function useAppStore() {
     setUserVotes(new Map());
 
     let cancelled = false;
-    onCleanup(() => { cancelled = true; });
+    onCleanup(() => { cancelled = true; console.log('[appStore] Effect cancelled for tune:', tune.tune_id); });
 
     const load = async () => {
       try {
+        console.log('[appStore] Calling getEntriesForTune...');
         const entries = await getEntriesForTune(tune.tune_id);
-        if (cancelled) return;
+        console.log('[appStore] getEntriesForTune returned:', entries.length, 'entries');
+        if (cancelled) { console.log('[appStore] Cancelled after fetch'); return; }
 
         const scores = new Map();
         const votes = new Map();
@@ -274,7 +277,7 @@ export function useAppStore() {
 
         if (entries.length > 0) setActiveEntry(entries[0]);
       } catch (err) {
-        if (cancelled) return;
+        if (cancelled) { console.log('[appStore] Cancelled during error'); return; }
         console.error('Tune entries effect error:', err);
         setTuneEntries([]);
       } finally {

@@ -563,8 +563,8 @@ function TuneView() {
                     </button>
                   </Show>
 
-                  {/* Add to playlist */}
-                  <AddToPlaylistButton entryId={entry.id} />
+                  {/* Add to playlist — temporalmente desactivado para diagnosticar bug #39 */}
+                  {/* <AddToPlaylistButton entryId={entry.id} /> */}
 
                   {/* Votos */}
                   <div class="flex items-center gap-1 flex-shrink-0">

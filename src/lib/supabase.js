@@ -15,7 +15,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
  * Ordenadas por score descendente.
  */
 export async function getEntriesForTune(tuneId) {
+  console.log('[supabase] getEntriesForTune called with tuneId:', tuneId);
   const { data: { user } } = await supabase.auth.getUser();
+  console.log('[supabase] auth.getUser returned:', user ? 'logged in' : 'anonymous');
 
   const { data, error } = await supabase
     .from('tune_media_entries')
@@ -31,7 +33,8 @@ export async function getEntriesForTune(tuneId) {
     .neq('tune_media.status', 'llm_guess')
     .order('position', { ascending: true });
 
-  if (error) { console.error(error); return []; }
+  if (error) { console.error('[supabase] getEntriesForTune error:', error); return []; }
+  console.log('[supabase] getEntriesForTune success, entries:', (data || []).length);
 
   const available = (data || []).filter(e => !e.tune_media?.unavailable);
 
