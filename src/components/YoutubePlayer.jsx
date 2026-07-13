@@ -14,21 +14,35 @@ import { formatTime, normalizeMediaTimestamps } from '../lib/utils';
 
 // ── IFrame API loader (singleton global) ────────────────────────────────────
 let ytApiReady = false;
+let ytApiFailed = false;
 const ytCallbacks = [];
 
 function ensureYTApi(cb) {
   if (ytApiReady) { cb(); return; }
+  if (ytApiFailed) {
+    // If the API previously failed, retry by reloading the script
+    const oldScript = document.getElementById('yt-iframe-api');
+    if (oldScript) oldScript.remove();
+    ytApiFailed = false;
+  }
   ytCallbacks.push(cb);
   if (document.getElementById('yt-iframe-api')) return;
 
   window.onYouTubeIframeAPIReady = () => {
     ytApiReady = true;
+    ytApiFailed = false;
     ytCallbacks.splice(0).forEach(fn => fn());
   };
 
   const script = document.createElement('script');
   script.id = 'yt-iframe-api';
   script.src = 'https://www.youtube.com/iframe_api';
+  script.onerror = () => {
+    console.error('[TradTube] YouTube IFrame API script failed to load. Check network or ad-blocker.');
+    ytApiFailed = true;
+    // Reject pending callbacks so they don't hang forever
+    ytCallbacks.splice(0).forEach(fn => fn());
+  };
   document.head.appendChild(script);
 }
 
@@ -96,6 +110,7 @@ function YoutubePlayer(props) {
       videoId: youtubeId,
       width: '100%',
       height: '100%',
+      host: 'https://www.youtube-nocookie.com',
       playerVars: {
         start: Math.floor(startSec ?? 0),
         autoplay: autoplay ? 1 : 0,
