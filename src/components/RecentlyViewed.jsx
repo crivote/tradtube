@@ -1,4 +1,4 @@
-import { For, Show } from 'solid-js';
+import { For, Show, onMount } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { ChevronLeft, ChevronRight, Music } from 'lucide-solid';
 import { getRecentlyViewed } from '../lib/recentlyViewed';
@@ -20,30 +20,84 @@ function RecentlyViewed() {
   const { t } = useI18n();
   const recentlyViewed = () => getRecentlyViewed();
 
+  // Triple copy for seamless infinite scroll
+  const allItems = () => {
+    const list = recentlyViewed();
+    return list.length > 1 ? [...list, ...list, ...list] : list;
+  };
+
   let carouselRef;
+  let isButtonScrolling = false;
+
+  // Center on the middle copy once the DOM is laid out
+  onMount(() => {
+    centerCarousel();
+  });
+
+  const centerCarousel = () => {
+    const container = carouselRef;
+    if (!container) return;
+    const list = recentlyViewed();
+    if (list.length <= 1) return;
+    const firstCard = container.firstElementChild;
+    if (!firstCard) return;
+    const cardWidth = firstCard.offsetWidth + 12;
+    container.scrollLeft = cardWidth * list.length;
+  };
+
+  const singleSetWidth = () => {
+    const container = carouselRef;
+    if (!container) return 0;
+    const list = recentlyViewed();
+    if (list.length === 0) return 0;
+    const firstCard = container.firstElementChild;
+    if (!firstCard) return 0;
+    return (firstCard.offsetWidth + 12) * list.length;
+  };
+
+  const resetScrollIfNeeded = () => {
+    const container = carouselRef;
+    if (!container) return;
+    const sw = singleSetWidth();
+    if (sw === 0) return;
+
+    if (container.scrollLeft >= 2 * sw) {
+      container.scrollLeft -= sw;
+    } else if (container.scrollLeft < sw) {
+      container.scrollLeft += sw;
+    }
+  };
 
   const scrollCarousel = (direction) => {
     const container = carouselRef;
     if (!container) return;
+    const list = recentlyViewed();
+    if (list.length <= 1) return;
+
     const firstCard = container.firstElementChild;
     if (!firstCard) return;
     const gap = 12;
     const cardWidth = firstCard.offsetWidth + gap;
-    const maxScroll = container.scrollWidth - container.clientWidth;
+
+    isButtonScrolling = true;
 
     if (direction === 'left') {
-      if (container.scrollLeft <= 1) {
-        container.scrollTo({ left: maxScroll, behavior: 'smooth' });
-      } else {
-        container.scrollBy({ left: -cardWidth, behavior: 'smooth' });
-      }
+      container.scrollBy({ left: -cardWidth, behavior: 'smooth' });
     } else {
-      if (container.scrollLeft >= maxScroll - 1) {
-        container.scrollTo({ left: 0, behavior: 'smooth' });
-      } else {
-        container.scrollBy({ left: cardWidth, behavior: 'smooth' });
-      }
+      container.scrollBy({ left: cardWidth, behavior: 'smooth' });
     }
+
+    // After smooth scroll animation ends (~350ms), silently reset to middle copy
+    setTimeout(() => {
+      isButtonScrolling = false;
+      resetScrollIfNeeded();
+    }, 350);
+  };
+
+  // Handle manual scroll (touch) — silently reset when reaching duplicated boundaries
+  const handleScroll = () => {
+    if (isButtonScrolling) return;
+    resetScrollIfNeeded();
   };
 
   const thumbnailUrl = (youtubeId) =>
@@ -61,9 +115,10 @@ function RecentlyViewed() {
         <div class="relative group/carousel">
           <div
             ref={el => { carouselRef = el; }}
-            class="flex gap-3 overflow-x-auto [&::-webkit-scrollbar]:hidden scroll-smooth snap-x snap-mandatory px-4"
+            class="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory px-4 scrollbar-none"
+            onScroll={handleScroll}
           >
-            <For each={recentlyViewed()}>
+            <For each={allItems()}>
               {(tune) => {
                 const thumb = thumbnailUrl(tune.youtubeId);
                 const typeBg = TYPE_COLOR[tune.type] ?? 'bg-[var(--color-muted)]';
@@ -103,21 +158,24 @@ function RecentlyViewed() {
             </For>
           </div>
 
-          <button
-            onClick={() => scrollCarousel('left')}
-            class="absolute left-2 top-[calc(50%-1rem)] -translate-y-1/2 w-8 h-8 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] shadow flex items-center justify-center text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 opacity-0 group-hover/carousel:opacity-100 transition-opacity"
-            aria-label="Scroll left"
-          >
-            <ChevronLeft size={18} />
-          </button>
+          {/* Only show buttons when more than 1 item */}
+          <Show when={recentlyViewed().length > 1}>
+            <button
+              onClick={() => scrollCarousel('left')}
+              class="absolute left-2 top-[calc(50%-1rem)] -translate-y-1/2 w-8 h-8 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] shadow flex items-center justify-center text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft size={18} />
+            </button>
 
-          <button
-            onClick={() => scrollCarousel('right')}
-            class="absolute right-2 top-[calc(50%-1rem)] -translate-y-1/2 w-8 h-8 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] shadow flex items-center justify-center text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 opacity-0 group-hover/carousel:opacity-100 transition-opacity"
-            aria-label="Scroll right"
-          >
-            <ChevronRight size={18} />
-          </button>
+            <button
+              onClick={() => scrollCarousel('right')}
+              class="absolute right-2 top-[calc(50%-1rem)] -translate-y-1/2 w-8 h-8 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] shadow flex items-center justify-center text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)]/50 opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+              aria-label="Scroll right"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </Show>
         </div>
       </section>
     </Show>

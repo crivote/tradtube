@@ -68,6 +68,15 @@ body {
   border: 2px solid var(--color-bg);
 }
 
+/* Utility: hide scrollbar cross-browser */
+.scrollbar-none {
+  scrollbar-width: none;           /* Firefox */
+  -ms-overflow-style: none;        /* IE/Edge legacy */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;                   /* Chrome/Safari/Edge */
+}
+
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
