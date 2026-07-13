@@ -11,6 +11,7 @@ import MyReports from './components/MyReports';
 import RecentlyViewed from './components/RecentlyViewed';
 import RecentlyAdded from './components/RecentlyAdded';
 import Toast from './components/Toast';
+import PublicPlaylists from './components/PublicPlaylists';
 
 function App(props) {
   const {
@@ -239,6 +240,7 @@ function App(props) {
           <RecentlyAdded />
         </Show>
         <RecentlyViewed />
+        <PublicPlaylists />
       </Show>
 
       <div class="max-w-6xl w-full mx-auto p-4 rounded-md flex justify-center bg-[var(--color-primary)] text-white/80">
