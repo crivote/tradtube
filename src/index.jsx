@@ -5,6 +5,7 @@ import App from './App';
 import SearchView from './components/SearchView';
 import TuneView from './components/TuneView';
 import AdminView from './components/AdminView';
+import FavoritesView from './components/FavoritesView';
 import { I18nProvider } from './i18n';
 
 render(() => (
@@ -12,6 +13,7 @@ render(() => (
     <Router root={App}>
       <Route path="/" component={SearchView} />
       <Route path="/tune/:tuneId" component={TuneView} />
+      <Route path="/favorites" component={FavoritesView} />
       <Route path="/admin" component={AdminView} />
     </Router>
   </I18nProvider>

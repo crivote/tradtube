@@ -152,6 +152,16 @@ function App(props) {
                 )}
               </button>
               </Show>
+              <button
+                onClick={() => navigate('/favorites')}
+                class={`text-xs px-3 py-1.5 rounded-lg border transition-colors
+                  ${location.pathname === '/favorites'
+                    ? 'border-[var(--color-primary)]/50 bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                    : 'border-[var(--color-border)] text-[var(--color-muted)] hover:text-red-400 hover:border-red-400/50'
+                  }`}
+              >
+                ♡ Favorites
+              </button>
               <span class="text-xs text-[var(--color-muted)] hidden sm:inline truncate max-w-[160px]">
                 {authUser()?.email}
               </span>

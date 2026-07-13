@@ -267,6 +267,20 @@ const es = {
     march: 'marcha',
     'slip jig': 'slip jig',
   },
+  favorites: {
+    title: 'Mis favoritos',
+    subtitle: 'Melodías que has marcado',
+    loading: 'Cargando favoritos\u2026',
+    error: 'Error al cargar favoritos',
+    retry: 'Reintentar',
+    empty: 'Aún no tienes favoritos',
+    emptyDesc: 'Marca una melodía con el corazón para guardarla aquí.',
+    explore: 'Explorar melodías',
+    loginCta: '¡Inicia sesión con Google para guardar tus melodías favoritas!',
+    favorite: 'Añadir a favoritos',
+    unfavorite: 'Quitar de favoritos',
+    toggleFailed: 'Error al actualizar favorito \u2014 inténtalo de nuevo',
+  },
 };
 
 export default es;

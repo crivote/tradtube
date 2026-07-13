@@ -267,6 +267,20 @@ const en = {
     march: 'march',
     'slip jig': 'slip jig',
   },
+  favorites: {
+    title: 'My Favorites',
+    subtitle: 'Tunes you\'ve bookmarked',
+    loading: 'Loading favorites\u2026',
+    error: 'Failed to load favorites',
+    retry: 'Retry',
+    empty: 'No favorites yet',
+    emptyDesc: 'Heart a tune to save it here for quick access.',
+    explore: 'Explore tunes',
+    loginCta: 'Log in with Google to save your favorite tunes!',
+    favorite: 'Add to favorites',
+    unfavorite: 'Remove from favorites',
+    toggleFailed: 'Failed to update favorite \u2014 try again',
+  },
 };
 
 export default en;

@@ -267,6 +267,20 @@ const de = {
     march: 'Marsch',
     'slip jig': 'Slip Jig',
   },
+  favorites: {
+    title: 'Meine Favoriten',
+    subtitle: 'Gespeicherte Melodien',
+    loading: 'Lade Favoriten\u2026',
+    error: 'Fehler beim Laden der Favoriten',
+    retry: 'Wiederholen',
+    empty: 'Noch keine Favoriten',
+    emptyDesc: 'Markiere eine Melodie mit dem Herz, um sie hier zu speichern.',
+    explore: 'Melodien entdecken',
+    loginCta: 'Melde dich mit Google an, um deine Lieblingsmelodien zu speichern!',
+    favorite: 'Zu Favoriten hinzufügen',
+    unfavorite: 'Aus Favoriten entfernen',
+    toggleFailed: 'Fehler beim Aktualisieren des Favoriten \u2014 erneut versuchen',
+  },
 };
 
 export default de;

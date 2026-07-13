@@ -5,9 +5,9 @@
 
 import { Show, For, createEffect, createSignal, onCleanup } from 'solid-js';
 import { useParams, useNavigate } from '@solidjs/router';
-import { ExternalLink, Mic, ThumbsUp } from 'lucide-solid';
+import { ExternalLink, Heart, Mic, ThumbsUp } from 'lucide-solid';
 import { useAppStore } from '../store/appStore';
-import { castVote, loginWithGoogle, getVideoById } from '../lib/supabase';
+import { castVote, loginWithGoogle, getVideoById, toggleFavorite, isFavorite } from '../lib/supabase';
 import { formatTime, extractYoutubeId } from '../lib/utils';
 import { useI18n } from '../i18n';
 import { recordView, updateViewYoutubeId } from '../lib/recentlyViewed';
@@ -100,12 +100,44 @@ function TuneView() {
   const [reportingEntry, setReportingEntry] = createSignal(null);
   const [showRecordingFlow, setShowRecordingFlow] = createSignal(false);
   const [mediaTab, setMediaTab] = createSignal('videos');
+  const [isFav, setIsFav] = createSignal(false);
+  const [favLoading, setFavLoading] = createSignal(false);
+
+  // Check favorite state when tune or auth changes
+  createEffect(() => {
+    const tune = selectedTune();
+    const user = authUser();
+    if (!tune) { setIsFav(false); return; }
+    if (!user) { setIsFav(false); return; }
+    isFavorite(tune.tune_id).then(setIsFav).catch(() => {});
+  });
 
   const handleEditVideo = async (entry) => {
     const videoId = entry.tune_media?.id;
     if (!videoId) return;
     const video = await getVideoById(videoId);
     if (video) setEditingVideo(video);
+  };
+
+  const handleFavorite = async (e) => {
+    e.stopPropagation();
+    const tune = selectedTune();
+    if (!tune) return;
+    if (!authUser()) { loginWithGoogle(); return; }
+
+    const prev = isFav();
+    setIsFav(!prev);
+    setFavLoading(true);
+    try {
+      const newState = await toggleFavorite(tune.tune_id);
+      // Sync with server result in case of race
+      setIsFav(newState);
+    } catch (err) {
+      setIsFav(prev);
+      showToast(t('favorites.toggleFailed'), 'error');
+    } finally {
+      setFavLoading(false);
+    }
   };
 
   const handleEditClose = () => {
@@ -221,6 +253,20 @@ function TuneView() {
             >
               <ExternalLink size={20} />
             </a>
+            <button
+              onClick={handleFavorite}
+              disabled={favLoading()}
+              class={`transition-colors disabled:opacity-50 ${
+                isFav()
+                  ? 'text-red-500 hover:text-red-400'
+                  : authUser()
+                    ? 'text-[var(--color-muted)] hover:text-red-400'
+                    : 'text-[var(--color-muted)]/50'
+              }`}
+              title={isFav() ? t('favorites.unfavorite') : t('favorites.favorite')}
+            >
+              <Heart size={20} fill={isFav() ? 'currentColor' : 'none'} stroke-width="1.5" />
+            </button>
           </div>
           <p class="text-sm text-[var(--color-muted)] capitalize">
             {selectedTune()?.type}

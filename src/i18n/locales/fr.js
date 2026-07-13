@@ -267,6 +267,20 @@ const fr = {
     march: 'marche',
     'slip jig': 'slip jig',
   },
+  favorites: {
+    title: 'Mes favoris',
+    subtitle: 'Mélodies que vous avez sauvegardées',
+    loading: 'Chargement des favoris\u2026',
+    error: 'Échec du chargement des favoris',
+    retry: 'Réessayer',
+    empty: 'Aucun favori pour le moment',
+    emptyDesc: 'Cliquez sur le cœur d\'une mélodie pour la sauvegarder ici.',
+    explore: 'Explorer les mélodies',
+    loginCta: 'Connectez-vous avec Google pour sauvegarder vos mélodies préférées !',
+    favorite: 'Ajouter aux favoris',
+    unfavorite: 'Retirer des favoris',
+    toggleFailed: 'Échec de la mise à jour du favori \u2014 réessayez',
+  },
 };
 
 export default fr;

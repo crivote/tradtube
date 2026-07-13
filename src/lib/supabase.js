@@ -613,3 +613,74 @@ export async function deleteComment(commentId) {
     .eq('id', commentId);
   if (error) throw error;
 }
+
+// ── Favorites ──────────────────────────────────────────────────────────────────
+
+/**
+ * Toggle favorito para un tune. Upsert si no existe, delete si existe.
+ * Devuelve el nuevo estado (true = favorited, false = unfavorited).
+ */
+export async function toggleFavorite(tuneId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Must be logged in');
+
+  // Check current state
+  const { data: existing } = await supabase
+    .from('user_favorites')
+    .select('tune_id')
+    .eq('user_id', user.id)
+    .eq('tune_id', tuneId)
+    .maybeSingle();
+
+  if (existing) {
+    // Unfavorite: delete
+    const { error } = await supabase
+      .from('user_favorites')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('tune_id', tuneId);
+    if (error) throw error;
+    return false;
+  } else {
+    // Favorite: insert
+    const { error } = await supabase
+      .from('user_favorites')
+      .insert({ user_id: user.id, tune_id: tuneId });
+    if (error) throw error;
+    return true;
+  }
+}
+
+/**
+ * Obtiene todos los tune_ids favoritos del usuario autenticado.
+ */
+export async function getFavorites() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('user_favorites')
+    .select('tune_id, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) { console.error(error); return []; }
+  return data ?? [];
+}
+
+/**
+ * Comprueba si un tune es favorito del usuario autenticado.
+ */
+export async function isFavorite(tuneId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { count, error } = await supabase
+    .from('user_favorites')
+    .select('tune_id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('tune_id', tuneId);
+
+  if (error) { console.error(error); return false; }
+  return (count ?? 0) > 0;
+}
