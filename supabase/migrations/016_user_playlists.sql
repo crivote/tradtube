@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS user_playlists (
 CREATE TABLE IF NOT EXISTS user_playlist_items (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   playlist_id uuid REFERENCES user_playlists(id) ON DELETE CASCADE NOT NULL,
-  entry_id integer REFERENCES tune_media_entries(id) ON DELETE CASCADE NOT NULL,
+  entry_id uuid REFERENCES tune_media_entries(id) ON DELETE CASCADE NOT NULL,
   position integer NOT NULL DEFAULT 0,
   added_at timestamptz DEFAULT now(),
   UNIQUE (playlist_id, entry_id)
