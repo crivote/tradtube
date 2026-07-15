@@ -804,10 +804,19 @@ export async function getPlaylist(playlistId) {
   if (itemsError) { console.error(itemsError); return { ...playlist, items: [] }; }
 
   const resolvedItems = (items || []).map(i => ({
-    id: i.id,
-    position: i.position,
+    entry_id: i.tune_media_entries.id,
+    id: i.tune_media_entries.id,               // backward compat — tune_media_entries.id
+    playlist_item_id: i.id,                    // user_playlist_items.id (para operaciones de playlist)
+    playlist_position: i.position,             // user_playlist_items.position
     added_at: i.added_at,
-    ...i.tune_media_entries,
+    tune_id: i.tune_media_entries.tune_id,
+    setting_id: i.tune_media_entries.setting_id,
+    start_sec: i.tune_media_entries.start_sec,
+    end_sec: i.tune_media_entries.end_sec,
+    entry_position: i.tune_media_entries.position,
+    instruments: i.tune_media_entries.instruments,
+    key: i.tune_media_entries.key,
+    structure: i.tune_media_entries.structure,
     tune_media: i.tune_media_entries?.tune_media,
   }));
 

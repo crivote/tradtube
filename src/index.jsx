@@ -19,7 +19,6 @@ render(() => (
       <Route path="/favorites" component={FavoritesView} />
       <Route path="/playlists" component={PlaylistManager} />
       <Route path="/playlist/:id" component={PlaylistView} />
-      <Route path="/playlist/:id/edit" component={PlaylistManager} />
       <Route path="/my-submissions" component={MySubmissionsView} />
       <Route path="/admin" component={AdminView} />
     </Router>
