@@ -22,9 +22,10 @@ export async function getEntriesForTune(tuneId) {
   const { data, error } = await supabase
     .from('tune_media_entries')
     .select(`
-      id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure,
+      id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, scale, bpm, structure,
       tune_media!inner(
-        id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, created_at, hidden, bpm
+        id, media_uri, source_type, status, unavailable, title, channel, album_id, album_track, created_at, hidden,
+        albums ( id, thesession_recording_id, title, artist, release_year )
       ),
       tune_media_votes ( vote, user_id )
     `)
@@ -48,9 +49,41 @@ export async function getEntriesForTune(tuneId) {
 }
 
 /**
+ * Busca o crea un registro en la tabla albums a partir de datos de thesession.org.
+ * @param {Object} albumData — { thesession_recording_id, title, artist, release_year, thesession_data }
+ * @returns {Promise<string>} — album UUID
+ */
+export async function upsertAlbum(albumData) {
+  // Buscar existente
+  const { data: existing } = await supabase
+    .from('albums')
+    .select('id')
+    .eq('thesession_recording_id', albumData.thesession_recording_id)
+    .single();
+
+  if (existing) return existing.id;
+
+  // Crear nuevo
+  const { data: created, error } = await supabase
+    .from('albums')
+    .insert([{
+      thesession_recording_id: albumData.thesession_recording_id,
+      title: albumData.title,
+      artist: albumData.artist ?? null,
+      release_year: albumData.release_year ?? null,
+      thesession_data: albumData.thesession_data ?? null,
+    }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return created.id;
+}
+
+/**
  * Añade un vídeo de YouTube con sus entries.
  */
-export async function addVideoWithEntries({ youtube_id, source_type, title, channel, thesession_recording_id, bpm, entries }) {
+export async function addVideoWithEntries({ youtube_id, source_type, title, channel, album_id, album_track, entries }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Must be logged in to add a video');
 
@@ -61,8 +94,7 @@ export async function addVideoWithEntries({ youtube_id, source_type, title, chan
     .insert([{
       media_uri, source_type,
       title: title ?? null, channel: channel ?? null,
-      thesession_recording_id: thesession_recording_id ?? null,
-      bpm: bpm ?? null,
+      album_id: album_id ?? null, album_track: album_track ?? null,
       added_by: user.id,
       status: 'new',
     }])
@@ -80,6 +112,8 @@ export async function addVideoWithEntries({ youtube_id, source_type, title, chan
     position: e.position ?? i,
     instruments: e.instruments?.length > 0 ? e.instruments : null,
     key: e.key ?? null,
+    scale: e.scale ?? null,
+    bpm: e.bpm ?? null,
     structure: e.structure ?? null,
   }));
 
@@ -132,8 +166,8 @@ export async function getLatestMedia() {
   const { data, error } = await supabase
     .from('tune_media')
     .select(`
-      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at, hidden, bpm,
-      tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure )
+      id, media_uri, source_type, status, unavailable, title, channel, album_id, album_track, added_by, created_at, hidden,
+      tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, scale, bpm, structure )
     `)
     .eq('hidden', false)
     .order('created_at', { ascending: false })
@@ -150,7 +184,7 @@ export async function getPendingVideos() {
   const { data, error } = await supabase
     .from('tune_media')
     .select(`
-      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at, bpm,
+      id, media_uri, source_type, status, unavailable, title, channel, album_id, album_track, added_by, created_at,
       tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure )
     `)
     .in('status', ['new', 'llm_guess'])
@@ -176,7 +210,7 @@ export async function getVideosByTune(tuneId) {
   const { data, error: e2 } = await supabase
     .from('tune_media')
     .select(`
-      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, added_by, created_at, bpm,
+      id, media_uri, source_type, status, unavailable, title, channel, album_id, album_track, added_by, created_at,
       tune_media_entries ( id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure )
     `)
     .in('id', mediaIds)
@@ -201,11 +235,11 @@ export async function deleteVideo(videoId) {
   if (error) throw error;
 }
 
-export async function updateVideoWithEntries(videoId, { source_type, title, channel, thesession_recording_id, unavailable, bpm, entries }) {
+export async function updateVideoWithEntries(videoId, { source_type, title, channel, album_id, album_track, unavailable, entries }) {
   // NOTE: delete+insert is not transactional — if inserts fail the video
   // is left without entries. A Postgres RPC would fix this properly.
   const { error: ve } = await supabase
-    .from('tune_media').update({ source_type, title: title ?? null, channel: channel ?? null, thesession_recording_id: thesession_recording_id ?? null, bpm: bpm ?? null, unavailable: unavailable ?? false }).eq('id', videoId);
+    .from('tune_media').update({ source_type, title: title ?? null, channel: channel ?? null, album_id: album_id ?? null, album_track: album_track ?? null, unavailable: unavailable ?? false }).eq('id', videoId);
   if (ve) throw ve;
 
   const { error: de } = await supabase
@@ -224,6 +258,8 @@ export async function updateVideoWithEntries(videoId, { source_type, title, chan
       position: i,
       instruments: e.instruments?.length > 0 ? e.instruments : null,
       key: e.key ?? null,
+      scale: e.scale ?? null,
+      bpm: e.bpm ?? null,
       structure: e.structure ?? null,
     })));
   if (ie) throw ie;
@@ -360,7 +396,7 @@ export async function getVideoById(videoId) {
   const { data, error } = await supabase
     .from('tune_media')
     .select(`
-      id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, created_at, bpm,
+      id, media_uri, source_type, status, unavailable, title, channel, album_id, album_track, created_at,
       tune_media_entries (
         id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure
       )
@@ -422,6 +458,8 @@ export async function addRecordingWithEntries({ blob, ext = 'ogg', performer_nam
       position: i,
       instruments: e.instruments?.length > 0 ? e.instruments : null,
       key: e.key ?? null,
+      scale: e.scale ?? null,
+      bpm: e.bpm ?? null,
       structure: e.structure ?? null,
     })));
 
@@ -791,10 +829,11 @@ export async function getPlaylist(playlistId) {
     .select(`
       id, position, added_at,
       tune_media_entries!inner(
-        id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, structure,
+        id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, scale, bpm, structure,
         tune_media!inner(
-          id, media_uri, source_type, status, unavailable, title, channel, thesession_recording_id, created_at, hidden, bpm,
-          performer_name, recording_notes
+          id, media_uri, source_type, status, unavailable, title, channel, album_id, album_track, created_at, hidden,
+          performer_name, recording_notes,
+          albums ( id, thesession_recording_id, title, artist, release_year )
         )
       )
     `)
