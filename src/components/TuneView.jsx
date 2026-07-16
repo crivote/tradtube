@@ -496,9 +496,9 @@ function TuneView() {
                         <span class="text-sm text-[var(--color-text)] font-medium truncate">
                           {entry.tune_media.title}
                         </span>
-                        <Show when={entry.tune_media?.thesession_recording_id}>
+                        <Show when={entry.tune_media?.albums?.thesession_recording_id}>
                           <a
-                            href={`https://thesession.org/recordings/${entry.tune_media.thesession_recording_id}`}
+                            href={`https://thesession.org/recordings/${entry.tune_media.albums.thesession_recording_id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             class="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors flex-shrink-0"
@@ -514,14 +514,14 @@ function TuneView() {
                       <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-border)] text-[var(--color-muted)] w-fit">
                         {label}
                       </span>
-                      <Show when={entry.tune_media?.bpm}>
+                      <Show when={entry?.bpm}>
                         <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] w-fit font-medium">
-                          {entry.tune_media.bpm} BPM
+                          {entry.bpm} BPM
                         </span>
                       </Show>
                       <Show when={entry.key}>
                         <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)] w-fit font-medium">
-                          {entry.key}
+                          {entry.key}{entry.scale ? ` ${entry.scale}` : ''}
                         </span>
                       </Show>
                       <Show when={entry.structure}>
