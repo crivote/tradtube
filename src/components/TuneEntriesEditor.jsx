@@ -82,11 +82,13 @@ export default function TuneEntriesEditor(props) {
     return null;
   };
 
-  const formatKeyBadge = (key) => {
-    const p = parseKey(key);
-    if (!p) return '—';
-    const ni = NOTE_STORAGE.indexOf(p.note);
-    return `${ni >= 0 ? NOTES[ni] : p.note} ${MODE_ABBR[p.mode]}`;
+  const formatKeyBadge = (entry) => {
+    const note = entry?.key;
+    const mode = entry?.scale;
+    if (!note || !mode) return '—';
+    const ni = NOTE_STORAGE.indexOf(note);
+    const noteLabel = ni >= 0 ? NOTES[ni] : note;
+    return `${noteLabel} ${MODE_ABBR[mode] ?? mode.toUpperCase()}`;
   };
 
   const getEndError = (entry, i) => {
@@ -304,17 +306,16 @@ export default function TuneEntriesEditor(props) {
                       class="text-[10px] font-mono font-semibold bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 cursor-pointer hover:border-[var(--color-primary)] transition-colors whitespace-nowrap"
                       title={t('addVideo.key')}
                     >
-                      {formatKeyBadge(entry.key)}
+                      {formatKeyBadge(entry)}
                     </button>
                     <Show when={openKeyPopup() === i()}>
                       <div class="absolute top-full left-0 mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl z-30 p-2.5 flex gap-2">
                         <select
-                          value={parseKey(entry.key)?.note ?? ''}
+                          value={entry.key ?? ''}
                           onChange={e => {
                             const note = e.target.value;
-                            if (!note) { props.onUpdate(i(), 'key', null); return; }
-                            const curMode = parseKey(entry.key)?.mode ?? 'major';
-                            props.onUpdate(i(), 'key', note + curMode);
+                            if (!note) { props.onUpdate(i(), 'key', null); props.onUpdate(i(), 'scale', null); return; }
+                            props.onUpdate(i(), 'key', note);
                           }}
                           class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
                         >
@@ -326,12 +327,11 @@ export default function TuneEntriesEditor(props) {
                           </For>
                         </select>
                         <select
-                          value={parseKey(entry.key)?.mode ?? ''}
+                          value={entry.scale ?? ''}
                           onChange={e => {
                             const mode = e.target.value;
-                            if (!mode) { props.onUpdate(i(), 'key', null); return; }
-                            const curNote = parseKey(entry.key)?.note ?? 'C';
-                            props.onUpdate(i(), 'key', curNote + mode);
+                            if (!mode) { props.onUpdate(i(), 'scale', null); return; }
+                            props.onUpdate(i(), 'scale', mode);
                           }}
                           class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
                         >
@@ -358,6 +358,22 @@ export default function TuneEntriesEditor(props) {
                       onInput={e => props.onUpdate(i(), 'structure', e.target.value || null)}
                       maxlength="10"
                       class="w-16 text-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                    />
+                  </div>
+                </Show>
+
+                {/* BPM */}
+                <Show when={!props.readOnly}>
+                  <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
+                    <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">BPM</span>
+                    <input
+                      type="number"
+                      placeholder="120"
+                      value={entry.bpm ?? ''}
+                      onInput={e => props.onUpdate(i(), 'bpm', e.target.value ? parseInt(e.target.value, 10) : null)}
+                      min="20"
+                      max="300"
+                      class="w-14 text-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none focus:border-[var(--color-primary)] transition-colors"
                     />
                   </div>
                 </Show>

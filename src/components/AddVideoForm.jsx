@@ -10,7 +10,7 @@ import { createSignal, createMemo, createEffect, onCleanup, Show } from 'solid-j
 import { createStore, produce } from 'solid-js/store';
 import { ExternalLink } from 'lucide-solid';
 import { searchTunes, getTuneById, getSettings, findMatchingTunes } from '../lib/db';
-import { addVideoWithEntries, updateVideoWithEntries, checkYoutubeIdExists } from '../lib/supabase';
+import { addVideoWithEntries, updateVideoWithEntries, checkYoutubeIdExists, upsertAlbum } from '../lib/supabase';
 import { resolveTrackTunes } from '../lib/thesession';
 import { extractYoutubeId, parseSec, formatSec, cleanTitleForDisplay } from '../lib/utils';
 import { useI18n } from '../i18n';
@@ -68,9 +68,8 @@ function AddVideoForm(props) {
   const [duplicate, setDuplicate] = createSignal(null); // null | { id, title, status }
   const [showImportModal, setShowImportModal] = createSignal(false);
   const [skippedTuneNames, setSkippedTuneNames] = createSignal([]);
-  const [recordingId, setRecordingId] = createSignal(props.editVideo?.thesession_recording_id ?? null);
+  const [recordingData, setRecordingData] = createSignal(null);
   const [unavailable, setUnavailable] = createSignal(props.editVideo?.unavailable ?? false);
-  const [bpm, setBpm] = createSignal(props.editVideo?.bpm ?? '');
   const [autoMatchedCount, setAutoMatchedCount] = createSignal(0);
   const [openInstrumentDropdown, setOpenInstrumentDropdown] = createSignal(null);
   const [videoDuration, setVideoDuration] = createSignal(0);
@@ -198,7 +197,7 @@ function AddVideoForm(props) {
     for (const r of resolved) {
       if (r.unresolvable) { skipped.push(r.name); continue; }
       if (existing.has(r.tune.tune_id)) continue;
-      setEntries(produce(e => e.push({ tune: r.tune, startSec: '', endSec: '', instruments: [], key: null, structure: null })));
+      setEntries(produce(e => e.push({ tune: r.tune, startSec: '', endSec: '', instruments: [], key: null, scale: null, bpm: null, structure: null })));
       existing.add(r.tune.tune_id);
     }
     setSkippedTuneNames(skipped);
@@ -209,7 +208,7 @@ function AddVideoForm(props) {
     const parts  = [artist, album, `Track ${trackIdx + 1}`].filter(Boolean);
     setTitle(parts.join(' - '));
     setSourceType('album');
-    setRecordingId(recordingData?.id ?? null);
+    setRecordingData(recordingData);
 
     setShowImportModal(false);
   };
@@ -228,17 +227,34 @@ function AddVideoForm(props) {
         position: i,
         instruments: e.instruments?.length > 0 ? e.instruments : null,
         key: e.key || null,
+        scale: e.scale || null,
+        bpm: e.bpm ?? null,
         structure: e.structure || null,
       }));
+
+      // Resolve album if recording data is set
+      let album_id = null;
+      let album_track = null;
+      const rd = recordingData();
+      if (rd?.id) {
+        album_id = await upsertAlbum({
+          thesession_recording_id: rd.id,
+          title: rd.name,
+          artist: rd.artist?.name ?? null,
+          thesession_data: rd,
+        });
+        // album_track is set when importing a specific track
+        // (stored in recordingData during import)
+      }
 
       if (isEdit()) {
         await updateVideoWithEntries(props.editVideo.id, {
           source_type: sourceType(),
           title: title().trim() || null,
           channel: channel().trim() || null,
-          thesession_recording_id: recordingId(),
+          album_id,
+          album_track,
           unavailable: unavailable(),
-          bpm: bpm() ? parseInt(bpm(), 10) : null,
           entries: entryPayload,
         });
       } else {
@@ -247,8 +263,8 @@ function AddVideoForm(props) {
           source_type: sourceType(),
           title: title().trim() || null,
           channel: channel().trim() || null,
-          thesession_recording_id: recordingId(),
-          bpm: bpm() ? parseInt(bpm(), 10) : null,
+          album_id,
+          album_track,
           entries: entryPayload,
         });
       }
@@ -268,7 +284,7 @@ function AddVideoForm(props) {
     setError('');
     setSuccess(false);
     setSkippedTuneNames([]);
-    setRecordingId(null);
+    setRecordingData(null);
     setDuplicate(null);
   };
 
@@ -422,13 +438,16 @@ function AddVideoForm(props) {
           <input
             type="text"
             placeholder={t('addVideo.thesessionRecordingIdPlaceholder')}
-            value={recordingId() ?? ''}
-            onInput={e => setRecordingId(e.target.value ? parseInt(e.target.value, 10) : null)}
+            value={recordingData()?.id ?? ''}
+            onInput={e => {
+              const val = e.target.value ? parseInt(e.target.value, 10) : null;
+              setRecordingData(val ? { id: val } : null);
+            }}
             class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
           />
-          <Show when={recordingId()}>
+          <Show when={recordingData()?.id}>
             <a
-              href={`https://thesession.org/recordings/${recordingId()}`}
+              href={`https://thesession.org/recordings/${recordingData().id}`}
               target="_blank"
               rel="noopener noreferrer"
               class="text-xs text-[var(--color-primary)] hover:underline flex items-center gap-1 w-fit"
@@ -460,22 +479,6 @@ function AddVideoForm(props) {
             </div>
           </label>
         </Show>
-
-        {/* ── BPM ─────────────────────────────────────────────────────── */}
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">
-            {t('addVideo.bpm')}
-          </label>
-          <input
-            type="number"
-            placeholder={t('addVideo.bpmPlaceholder')}
-            value={bpm()}
-            onInput={e => setBpm(e.target.value)}
-            min="1"
-            max="999"
-            class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
-          />
-        </div>
 
         {/* ── TheSession recording import ──────────────────────────────── */}
         <div class="flex flex-col gap-2">
