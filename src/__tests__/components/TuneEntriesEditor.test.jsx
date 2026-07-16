@@ -147,7 +147,7 @@ describe('TuneEntriesEditor', () => {
 
   it('shows key badge with abbreviation and popup on click', async () => {
     const onUpdate = vi.fn();
-    renderEditor({ entries: [{ ...entryA, key: 'Dmajor' }], onUpdate });
+    renderEditor({ entries: [{ ...entryA, key: 'D', scale: 'major' }], onUpdate });
 
     await waitFor(() => {
       expect(screen.getByText('The Wind')).toBeDefined();
@@ -172,7 +172,7 @@ describe('TuneEntriesEditor', () => {
 
     // Cambiar modo
     fireEvent.change(modeSelect, { target: { value: 'minor' } });
-    expect(onUpdate).toHaveBeenCalledWith(0, 'key', 'Dminor');
+    expect(onUpdate).toHaveBeenCalledWith(0, 'scale', 'minor');
   });
 
   it('shows dash for null key', async () => {
