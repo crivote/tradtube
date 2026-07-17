@@ -832,7 +832,6 @@ export async function getPlaylist(playlistId) {
         id, tune_id, setting_id, start_sec, end_sec, position, instruments, key, scale, bpm, structure,
         tune_media!inner(
           id, media_uri, source_type, status, unavailable, title, channel, album_id, album_track, created_at, hidden,
-          performer_name, recording_notes,
           albums ( id, thesession_recording_id, title, artist, release_year )
         )
       )
