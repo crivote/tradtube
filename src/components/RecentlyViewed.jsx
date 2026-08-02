@@ -112,7 +112,7 @@ function RecentlyViewed() {
           </h3>
         </div>
 
-        <div class="relative group/carousel">
+        <div class="relative group/carousel carousel-fade">
           <div
             ref={el => { carouselRef = el; }}
             class="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory px-4 scrollbar-none"
@@ -128,7 +128,7 @@ function RecentlyViewed() {
                     onClick={() => navigate('/tune/' + tune.tune_id)}
                     class="flex-shrink-0 w-56 sm:w-64 cursor-pointer snap-start group/card"
                   >
-                    <div class="relative aspect-video rounded-xl overflow-hidden bg-[var(--color-bg)] border border-[var(--color-border)] transition-all group-hover/card:border-[var(--color-primary)]/50">
+                    <div class="relative aspect-video rounded-xl overflow-hidden bg-[var(--color-bg)] shadow-sm transition-all group-hover/card:shadow-md group-hover/card:scale-[1.02]">
                       <Show
                         when={thumb}
                         fallback={(

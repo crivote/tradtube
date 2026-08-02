@@ -244,11 +244,11 @@ function App(props) {
       </main>
 
       <Show when={location.pathname === '/'}>
+        <PublicPlaylists />
         <Show when={dbReady()}>
           <RecentlyAdded />
         </Show>
         <RecentlyViewed />
-        <PublicPlaylists />
       </Show>
 
       <div class="max-w-6xl w-full mx-auto p-4 rounded-md flex justify-center bg-[var(--color-primary)] text-white/80">

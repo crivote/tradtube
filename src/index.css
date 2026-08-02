@@ -77,6 +77,29 @@ body {
   display: none;                   /* Chrome/Safari/Edge */
 }
 
+/* Fade edges on horizontal carousels */
+.carousel-fade {
+  position: relative;
+}
+.carousel-fade::before,
+.carousel-fade::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  z-index: 10;
+  pointer-events: none;
+}
+.carousel-fade::before {
+  left: 0;
+  background: linear-gradient(to right, var(--color-surface), transparent);
+}
+.carousel-fade::after {
+  right: 0;
+  background: linear-gradient(to left, var(--color-surface), transparent);
+}
+
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }

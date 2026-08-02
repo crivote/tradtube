@@ -29,7 +29,7 @@ export async function loadRecentlyAdded(limit = 10) {
     seen.add(item.tune_id);
     const tune = getTuneById(item.tune_id);
     if (tune) {
-      tunes.push({ ...tune, youtubeId: item.youtubeId, created_at: item.created_at });
+      tunes.push({ ...tune, youtubeId: item.youtubeId, updated_at: item.updated_at });
     }
   }
   return tunes;
