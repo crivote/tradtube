@@ -73,11 +73,6 @@ export default function UserRecordingsView(props) {
 
   return (
     <div class="flex flex-col gap-5">
-      <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-black text-[var(--color-text)]">My Recordings</h2>
-        <button onClick={props.onClose} class="text-sm text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors">✕ Close</button>
-      </div>
-
       <Show when={loading()}>
         <div class="flex items-center gap-3 py-16 justify-center">
           <div class="w-5 h-5 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />

@@ -9,6 +9,8 @@ import FavoritesView from './components/FavoritesView';
 import PlaylistManager from './components/PlaylistManager';
 import PlaylistView from './components/PlaylistView';
 import MySubmissionsView from './components/MySubmissionsView';
+import MyRecordingsView from './components/MyRecordingsView';
+import MyReportsView from './components/MyReportsView';
 import { I18nProvider } from './i18n';
 
 render(() => (
@@ -20,6 +22,8 @@ render(() => (
       <Route path="/playlists" component={PlaylistManager} />
       <Route path="/playlist/:id" component={PlaylistView} />
       <Route path="/my-submissions" component={MySubmissionsView} />
+      <Route path="/my-recordings" component={MyRecordingsView} />
+      <Route path="/my-reports" component={MyReportsView} />
       <Route path="/admin" component={AdminView} />
     </Router>
   </I18nProvider>
