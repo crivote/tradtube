@@ -315,6 +315,8 @@ function TuneView() {
                   entryId={activeEntry()?.id}
                   isFav={isFav}
                   onToggleFavorite={handleFavorite}
+                  mediaId={activeEntry()?.tune_media?.id}
+                  mediaUnavailable={activeEntry()?.tune_media?.unavailable}
                 />
               }
             >

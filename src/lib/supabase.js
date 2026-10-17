@@ -546,6 +546,94 @@ export async function deleteRecording(mediaId) {
   }
 }
 
+// ── Media availability (pasivo, desde el reproductor) ───────────────────────
+
+/**
+ * Registra un check de disponibilidad para un vídeo (disparado por el player).
+ * Sin media_id no hace nada.
+ */
+export async function recordMediaCheck({ media_id, ok, error_code }) {
+  if (!media_id) return;
+  const { error } = await supabase
+    .from('tune_media_checks')
+    .insert({ media_id, ok: !!ok, error_code: ok ? null : (error_code ?? null) });
+  if (error) console.error('[supabase] recordMediaCheck error:', error);
+}
+
+/**
+ * Calcula las propuestas de disponibilidad para el admin.
+ * Reglas (ramas del «no» del issue #48):
+ *  - proponer MARCAR: requiere >=2 onError en momentos separados en el tiempo
+ *    (>5 min entre la primera y la última caída). Un fallo aislado no basta
+ *    (evita falsos positivos que esconden el vídeo de los listados).
+ *  - proponer DESMARCAR: vídeo marcado unavailable=true cuyo ÚLTIMO check fue
+ *    OK (reprodujo). Desmarcar no esconde nada, un solo acierto basta.
+ * Devuelve un array de { media_id, media_uri, title, unavailable, verdict,
+ *   last_error_code, last_check_at, tune_ids } — SOLO REPORTES, sin aplicar nada.
+ */
+export async function getMediaAvailabilityProposals(minTrustErrorGapMs = 5 * 60 * 1000) {
+  const { data: rows, error } = await supabase
+    .from('tune_media')
+    .select(`
+      id, media_uri, source_type, status, unavailable, title, channel,
+      tune_media_checks ( id, ok, error_code, checked_at ),
+      tune_media_entries ( tune_id )
+    `);
+
+  if (error) { console.error('[supabase] getMediaAvailabilityProposals error:', error); return []; }
+
+  const proposals = [];
+  for (const m of rows || []) {
+    if (m.source_type === 'user_recording') continue;
+    const checks = (m.tune_media_checks || [])
+      .map(c => ({ ...c, ts: new Date(c.checked_at).getTime() }))
+      .sort((a, b) => a.ts - b.ts);
+    if (checks.length === 0) continue;
+
+    // Último check (más reciente)
+    const last = checks[checks.length - 1];
+    const tune_ids = (m.tune_media_entries || []).map(e => e.tune_id);
+
+    if (m.unavailable) {
+      // Marcado: si el último check fue OK, proponer desmarcar.
+      if (last.ok) {
+        proposals.push({
+          media_id: m.id, media_uri: m.media_uri, source_type: m.source_type,
+          title: m.title, unavailable: true, verdict: 'unmark',
+          last_error_code: null, last_check_at: last.checked_at, tune_ids,
+        });
+      }
+      continue;
+    }
+
+    // No marcado: proponer marcar solo si hay >=2 errores separados > gap.
+    const errors = checks.filter(c => !c.ok);
+    if (errors.length < 2) continue;
+    const gap = errors[errors.length - 1].ts - errors[0].ts;
+    const spreadAcrossTime = gap > minTrustErrorGapMs
+      || new Set(errors.map(e => new Date(e.checked_at).toISOString().slice(0, 10))).size >= 2;
+    if (!spreadAcrossTime) continue;
+
+    proposals.push({
+      media_id: m.id, media_uri: m.media_uri, source_type: m.source_type,
+      title: m.title, unavailable: false, verdict: 'mark',
+      last_error_code: errors[errors.length - 1].error_code, last_check_at: last.checked_at,
+      tune_ids,
+    });
+  }
+
+  return proposals;
+}
+
+/** Aplica (confirma) un cambio de flag de disponibilidad. */
+export async function setMediaUnavailable(mediaId, unavailable) {
+  const { error } = await supabase
+    .from('tune_media')
+    .update({ unavailable: !!unavailable })
+    .eq('id', mediaId);
+  if (error) throw error;
+}
+
 // ── Reports ──────────────────────────────────────────────────────────────────
 
 export async function createReport({ media_id, tune_id, issue_type, description, email }) {

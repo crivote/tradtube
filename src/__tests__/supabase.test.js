@@ -584,3 +584,180 @@ describe('Phase 3 — Tune comments', () => {
     });
   });
 });
+
+describe('Media availability (A — señal pasiva)', () => {
+  let mockFrom;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFrom = mockClient.from;
+  });
+
+  describe('recordMediaCheck', () => {
+    it('inserts an ok check without error_code', async () => {
+      const mockQB = createMockQueryBuilder().setResult(null);
+      mockFrom.mockReturnValue(mockQB);
+
+      await supabaseModule.recordMediaCheck({ media_id: 'm1', ok: true, error_code: 150 });
+
+      expect(mockFrom).toHaveBeenCalledWith('tune_media_checks');
+      const insert = mockQB.insert.mock.calls[0][0];
+      expect(insert.media_id).toBe('m1');
+      expect(insert.ok).toBe(true);
+      expect(insert.error_code).toBeNull();
+    });
+
+    it('inserts an error check with error_code', async () => {
+      const mockQB = createMockQueryBuilder().setResult(null);
+      mockFrom.mockReturnValue(mockQB);
+
+      await supabaseModule.recordMediaCheck({ media_id: 'm1', ok: false, error_code: 150 });
+
+      const insert = mockQB.insert.mock.calls[0][0];
+      expect(insert.ok).toBe(false);
+      expect(insert.error_code).toBe(150);
+    });
+
+    it('does nothing without media_id', async () => {
+      const mockQB = createMockQueryBuilder().setResult(null);
+      mockFrom.mockReturnValue(mockQB);
+
+      await supabaseModule.recordMediaCheck({ ok: false, error_code: 150 });
+
+      expect(mockFrom).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getMediaAvailabilityProposals', () => {
+    it('proposes unmark when a marked video last played OK', async () => {
+      const mockQB = createMockQueryBuilder().setResult([
+        {
+          id: 'm1', media_uri: 'https://www.youtube.com/watch?v=abc', source_type: 'youtube',
+          unavailable: true, title: 'Recovered',
+          tune_media_checks: [
+            { ok: false, error_code: 150, checked_at: '2026-10-01T00:00:00Z' },
+            { ok: true, error_code: null, checked_at: '2026-10-17T00:00:00Z' },
+          ],
+          tune_media_entries: [{ tune_id: 20 }],
+        },
+      ]);
+      mockFrom.mockReturnValue(mockQB);
+
+      const proposals = await supabaseModule.getMediaAvailabilityProposals();
+
+      expect(proposals).toHaveLength(1);
+      expect(proposals[0].media_id).toBe('m1');
+      expect(proposals[0].verdict).toBe('unmark');
+      expect(proposals[0].tune_ids).toEqual([20]);
+    });
+
+    it('does not propose anything when a marked video last errored', async () => {
+      const mockQB = createMockQueryBuilder().setResult([
+        {
+          id: 'm1', media_uri: 'https://www.youtube.com/watch?v=abc', source_type: 'youtube',
+          unavailable: true, title: 'Still down',
+          tune_media_checks: [
+            { ok: false, error_code: 150, checked_at: '2026-10-17T00:00:00Z' },
+            { ok: false, error_code: 150, checked_at: '2026-10-17T01:00:00Z' },
+          ],
+          tune_media_entries: [],
+        },
+      ]);
+      mockFrom.mockReturnValue(mockQB);
+
+      const proposals = await supabaseModule.getMediaAvailabilityProposals();
+
+      expect(proposals).toHaveLength(0);
+    });
+
+    it('proposes mark only after >=2 errors spread across time (rama del no)', async () => {
+      const mockQB = createMockQueryBuilder().setResult([
+        {
+          id: 'm1', media_uri: 'https://www.youtube.com/watch?v=abc', source_type: 'youtube',
+          unavailable: false, title: 'Suspect',
+          tune_media_checks: [
+            { ok: false, error_code: 150, checked_at: '2026-10-16T00:00:00Z' },
+            { ok: false, error_code: 150, checked_at: '2026-10-17T00:00:00Z' },
+          ],
+          tune_media_entries: [{ tune_id: 3 }],
+        },
+      ]);
+      mockFrom.mockReturnValue(mockQB);
+
+      const proposals = await supabaseModule.getMediaAvailabilityProposals();
+
+      expect(proposals).toHaveLength(1);
+      expect(proposals[0].verdict).toBe('mark');
+      expect(proposals[0].last_error_code).toBe(150);
+    });
+
+    it('does NOT propose mark for a single isolated error', async () => {
+      const mockQB = createMockQueryBuilder().setResult([
+        {
+          id: 'm1', media_uri: 'https://www.youtube.com/watch?v=abc', source_type: 'youtube',
+          unavailable: false, title: 'Single error',
+          tune_media_checks: [
+            { ok: false, error_code: 5, checked_at: '2026-10-17T00:00:00Z' },
+          ],
+          tune_media_entries: [],
+        },
+      ]);
+      mockFrom.mockReturnValue(mockQB);
+
+      const proposals = await supabaseModule.getMediaAvailabilityProposals();
+
+      expect(proposals).toHaveLength(0);
+    });
+
+    it('does NOT propose mark when two errors come from the same instant (same burst)', async () => {
+      const mockQB = createMockQueryBuilder().setResult([
+        {
+          id: 'm1', media_uri: 'https://www.youtube.com/watch?v=abc', source_type: 'youtube',
+          unavailable: false, title: 'Burst',
+          tune_media_checks: [
+            { ok: false, error_code: 150, checked_at: '2026-10-17T00:00:00Z' },
+            { ok: false, error_code: 150, checked_at: '2026-10-17T00:00:01Z' },
+          ],
+          tune_media_entries: [],
+        },
+      ]);
+      mockFrom.mockReturnValue(mockQB);
+
+      const proposals = await supabaseModule.getMediaAvailabilityProposals();
+
+      expect(proposals).toHaveLength(0);
+    });
+
+    it('skips user recordings', async () => {
+      const mockQB = createMockQueryBuilder().setResult([
+        {
+          id: 'm1', media_uri: 'https://example.com/rec.ogg', source_type: 'user_recording',
+          unavailable: false, title: 'A recording',
+          tune_media_checks: [
+            { ok: false, error_code: 150, checked_at: '2026-10-16T00:00:00Z' },
+            { ok: false, error_code: 150, checked_at: '2026-10-17T00:00:00Z' },
+          ],
+          tune_media_entries: [{ tune_id: 1 }],
+        },
+      ]);
+      mockFrom.mockReturnValue(mockQB);
+
+      const proposals = await supabaseModule.getMediaAvailabilityProposals();
+
+      expect(proposals).toHaveLength(0);
+    });
+  });
+
+  describe('setMediaUnavailable', () => {
+    it('updates the unavailable flag by media id', async () => {
+      const mockQB = createMockQueryBuilder().setResult(null);
+      mockFrom.mockReturnValue(mockQB);
+
+      await supabaseModule.setMediaUnavailable('m1', true);
+
+      expect(mockFrom).toHaveBeenCalledWith('tune_media');
+      expect(mockQB.update).toHaveBeenCalledWith({ unavailable: true });
+      expect(mockQB.eq).toHaveBeenCalledWith('id', 'm1');
+    });
+  });
+});

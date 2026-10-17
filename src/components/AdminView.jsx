@@ -13,6 +13,7 @@ import {
   getLatestMedia, getVideosByTune,
   reviewVideo, deleteVideo,
   getReports, updateReport, getPendingReportsCount,
+  getMediaAvailabilityProposals, setMediaUnavailable,
   supabase,
 } from '../lib/supabase';
 import { getTuneById, searchTunes } from '../lib/db';
@@ -137,7 +138,12 @@ function PendingTab(props) {
     if (expandedId() === video.id) { setExpandedId(null); setPreviewEntry(null); return; }
     setExpandedId(video.id);
     const first = video.tune_media_entries[0];
-    setPreviewEntry(first ? { ...first, youtube_id: extractYoutubeId(video.media_uri) } : null);
+    setPreviewEntry(first ? {
+      ...first,
+      youtube_id: extractYoutubeId(video.media_uri),
+      media_id: video.id,
+      unavailable: video.unavailable,
+    } : null);
   };
 
   const handleReview = async (video) => {
@@ -269,6 +275,8 @@ function PendingTab(props) {
                           startSec={previewEntry().start_sec}
                           endSec={previewEntry().end_sec}
                           autoplay={true}
+                          mediaId={previewEntry().media_id}
+                          mediaUnavailable={previewEntry().unavailable}
                         />
                       </Show>
                     </div>
@@ -444,6 +452,122 @@ function SearchByTuneTab(props) {
                 actionId={actionId}
               />
             )}
+          </For>
+        </div>
+      </Show>
+    </div>
+  );
+}
+
+// ── Tab: Disponibilidad (propuestas de vídeos caídos / recuperados) ─────────
+const AVAILABILITY_VERDICT = {
+  mark:   { label: 'admin.unavailableProposed', style: 'text-[var(--color-warning)] border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10' },
+  unmark: { label: 'admin.availableRestored',   style: 'text-green-400 border-green-400/30 bg-green-400/10' },
+};
+
+function AvailabilityTab(props) {
+  const { t } = useI18n();
+  const [proposals, setProposals] = createSignal([]);
+  const [loading, setLoading] = createSignal(true);
+  const [actionId, setActionId] = createSignal(null);
+
+  const load = async () => {
+    setLoading(true);
+    setProposals(await getMediaAvailabilityProposals());
+    setLoading(false);
+  };
+  onMount(load);
+  props.onRegisterRefresh?.(load);
+
+  const applyProposal = async (p, unavailable) => {
+    setActionId(p.media_id);
+    try {
+      await setMediaUnavailable(p.media_id, unavailable);
+      setProposals(prev => prev.filter(x => x.media_id !== p.media_id));
+    } catch { /* ignore */ }
+    finally { setActionId(null); }
+  };
+
+  return (
+    <div class="flex flex-col gap-4">
+      {/* Acciones globales */}
+      <Show when={!loading() && proposals().length > 0}>
+        <div class="flex gap-2 flex-wrap">
+          <button
+            onClick={() => Promise.all(
+              proposals().filter(p => p.verdict === 'mark').map(p => setMediaUnavailable(p.media_id, true))
+            ).then(load)}
+            class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-error)]/40 text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors"
+          >{t('admin.applyAllUnavailable')}</button>
+          <button
+            onClick={() => Promise.all(
+              proposals().filter(p => p.verdict === 'unmark').map(p => setMediaUnavailable(p.media_id, false))
+            ).then(load)}
+            class="text-xs px-3 py-1.5 rounded-lg border border-green-400/40 text-green-400 hover:bg-green-400/10 transition-colors"
+          >{t('admin.applyAllRestored')}</button>
+        </div>
+      </Show>
+
+      <Show when={loading()}>
+        <div class="flex items-center gap-3 py-16 justify-center">
+          <div class="w-5 h-5 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+          <span class="text-sm text-[var(--color-muted)]">{t('admin.loading')}</span>
+        </div>
+      </Show>
+
+      <Show when={!loading() && proposals().length === 0}>
+        <div class="text-center py-16 border border-dashed border-[var(--color-border)] rounded-xl">
+          <p class="text-2xl mb-2">✓</p>
+          <p class="text-[var(--color-muted)] text-sm">{t('admin.noAvailabilityProposals')}</p>
+        </div>
+      </Show>
+
+      <Show when={!loading()}>
+        <div class="flex flex-col gap-2">
+          <For each={proposals()}>
+            {(p) => {
+              const isBusy = () => actionId() === p.media_id;
+              const v = AVAILABILITY_VERDICT[p.verdict];
+              return (
+                <div class="flex items-start gap-3 p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl">
+                  <img
+                    src={`https://img.youtube.com/vi/${extractYoutubeId(p.media_uri)}/mqdefault.jpg`}
+                    alt="" class="w-24 h-14 object-cover rounded-lg flex-shrink-0 bg-[var(--color-border)]"
+                  />
+                  <div class="flex-grow min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class={`text-[10px] px-2 py-0.5 rounded-full border ${v.style}`}>{t(v.label)}</span>
+                      <Show when={!p.unavailable && p.last_error_code != null}>
+                        <span class="text-[10px] font-mono text-[var(--color-muted)]">error {p.last_error_code} · {formatDate(p.last_check_at)}</span>
+                      </Show>
+                      <Show when={p.unavailable}>
+                        <span class="text-[10px] text-[var(--color-muted)]">{t('admin.lastCheck')} {formatDate(p.last_check_at)}</span>
+                      </Show>
+                    </div>
+                    <Show when={p.title}>
+                      <p class="text-sm text-[var(--color-text)] font-semibold truncate mt-1">{p.title}</p>
+                    </Show>
+                    <div class="flex items-center gap-2 flex-wrap mt-0.5">
+                      <span class="text-xs font-mono text-[var(--color-muted)]">{extractYoutubeId(p.media_uri)}</span>
+                      <For each={p.tune_ids}>
+                        {(tid) => (
+                          <a href={`/tune/${tid}`} class="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-primary)] hover:underline">
+                            {getTuneById(tid)?.name ?? `tune #${tid}`}
+                          </a>
+                        )}
+                      </For>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => applyProposal(p, p.verdict === 'mark')}
+                      disabled={isBusy()}
+                      class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-primary)]/50 bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20 transition-colors disabled:opacity-30"
+                    >{isBusy() ? '…' : t('admin.confirm')}</button>
+                  </div>
+                </div>
+              );
+            }}
           </For>
         </div>
       </Show>
@@ -645,6 +769,7 @@ function AdminView() {
   let refreshLatest = () => {};
   let refreshByTune = () => {};
   let refreshReports = () => {};
+  let refreshAvailability = () => {};
 
   const handleEditClose = () => {
     const wasEditing = editingVideo();
@@ -660,6 +785,7 @@ function AdminView() {
     ['pending', t('admin.pending')],
     ['latest', t('admin.latestMedia')],
     ['byTune', t('admin.searchByTune')],
+    ['availability', t('admin.availability')],
     ['reports', t('admin.reports')],
   ];
 
@@ -727,6 +853,9 @@ function AdminView() {
         </Show>
         <Show when={tab() === 'reports'}>
           <ReportsTab onEdit={setEditingVideo} onCountLoaded={setPendingReportsCount} onRegisterRefresh={(fn) => { refreshReports = fn; }} />
+        </Show>
+        <Show when={tab() === 'availability'}>
+          <AvailabilityTab onRegisterRefresh={(fn) => { refreshAvailability = fn; }} />
         </Show>
 
       </div>

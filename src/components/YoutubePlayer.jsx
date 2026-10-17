@@ -11,6 +11,7 @@ import { createEffect, createSignal, onCleanup, Show } from 'solid-js';
 import { RotateCcw, Repeat, Play, Pause, Heart } from 'lucide-solid';
 import { useI18n } from '../i18n';
 import { formatTime, normalizeMediaTimestamps } from '../lib/utils';
+import { recordMediaCheck } from '../lib/supabase';
 import AddToPlaylistButton from './AddToPlaylistButton';
 
 // ── IFrame API loader (singleton global) ────────────────────────────────────
@@ -52,6 +53,7 @@ function YoutubePlayer(props) {
   let containerRef;
   let player = null;
   let pollInterval = null;
+  let reportedOkForId = null; // evita re-reportar el mismo vídeo en una sesión
 
   const { t } = useI18n();
   const [speed, setSpeed] = createSignal(1);
@@ -126,11 +128,27 @@ function YoutubePlayer(props) {
         onStateChange(event) {
           if (event.data === window.YT.PlayerState.PLAYING) {
             setIsPlaying(true);
+            // A: señal pasiva — si este vídeo está marcado unavailable y
+            // realmente reproduce desde el origen de la app, se registra un
+            // check OK (permite proponer DESMARCAR). Se reporta una vez por vídeo.
+            if (props.mediaId && props.mediaUnavailable && reportedOkForId !== youtubeId) {
+              reportedOkForId = youtubeId;
+              recordMediaCheck({ media_id: props.mediaId, ok: true });
+            }
           } else if (event.data === window.YT.PlayerState.ENDED) {
             setIsPlaying(false);
             props.onEnd?.();
           } else {
             setIsPlaying(false);
+          }
+        },
+        onError(event) {
+          // A: señal pasiva — registrar el fallo con código. La propuesta de
+          // marcar unavailable solo se materializa (en AdminView) tras >=2
+          // errores separados en el tiempo; aquí solo se deja constancia.
+          console.warn('[TradTube] YouTube player error', event.data, 'vídeo:', youtubeId);
+          if (props.mediaId) {
+            recordMediaCheck({ media_id: props.mediaId, ok: false, error_code: event.data });
           }
         },
       },
