@@ -14,12 +14,13 @@ import {
   reviewVideo, deleteVideo,
   getReports, updateReport, getPendingReportsCount,
   getMediaAvailabilityProposals, setMediaUnavailable,
+  getUnavailableMedia, recordMediaCheck,
   supabase,
 } from '../lib/supabase';
 import { getTuneById, searchTunes } from '../lib/db';
 import { formatTime, extractYoutubeId } from '../lib/utils';
 import { useI18n } from '../i18n';
-import YoutubePlayer from './YoutubePlayer';
+import YoutubePlayer, { checkVideoEmbed } from './YoutubePlayer';
 import AddVideoForm from './AddVideoForm';
 import { useAppStore } from '../store/appStore';
 
@@ -575,6 +576,151 @@ function AvailabilityTab(props) {
   );
 }
 
+// ── Tab: No disponibles (vídeos marcados) ────────────────────────────────────
+// El chequeo se lanza AQUÍ porque es el único sitio donde el vídeo marcado está
+// presente (getEntriesForTune los filtra en la vista pública). Solo lectura del
+// flag; el desmarcado es un clic explícito del administrador con confirmación.
+function UnavailableTab(props) {
+  const { t } = useI18n();
+  const { loadVideoData } = useAppStore();
+  const [rows, setRows] = createSignal([]);
+  const [loading, setLoading] = createSignal(true);
+  const [checkingId, setCheckingId] = createSignal(null);
+  const [actionId, setActionId] = createSignal(null);
+  const [verdict, setVerdict] = createSignal({}); // media_id -> { status, code }
+
+  const load = async () => {
+    setLoading(true);
+    const data = await getUnavailableMedia();
+    setRows(data);
+    props.onCountLoaded?.(data.length);
+    setLoading(false);
+  };
+  onMount(load);
+  props.onRegisterRefresh?.(load);
+
+  const handleCheck = async (row) => {
+    setCheckingId(row.media_id);
+    setVerdict(prev => ({ ...prev, [row.media_id]: { status: 'checking' } }));
+    try {
+      const v = await checkVideoEmbed(extractYoutubeId(row.media_uri));
+      // Registro del chequeo: ok solo si reprodujo; error con su código;
+      // timeout (no concluyente) se guarda también como ok=false (sin código)
+      // para no sugerir desmarcar, dejando constancia de la tentativa.
+      await recordMediaCheck({
+        media_id: row.media_id,
+        ok: v.status === 'ok',
+        error_code: v.status === 'error' ? v.code : null,
+      });
+      setVerdict(prev => ({ ...prev, [row.media_id]: v }));
+    } catch {
+      setVerdict(prev => ({ ...prev, [row.media_id]: { status: 'timeout' } }));
+    } finally {
+      setCheckingId(null);
+    }
+  };
+
+  const handleMarkAvailable = async (row) => {
+    if (!confirm(t('admin.confirmMarkAvailable'))) return;
+    setActionId(row.media_id);
+    try {
+      await setMediaUnavailable(row.media_id, false);
+      const next = rows().filter(r => r.media_id !== row.media_id);
+      setRows(next);
+      props.onCountLoaded?.(next.length);
+      loadVideoData();
+    } catch { /* la fila se queda si falla */ }
+    finally { setActionId(null); }
+  };
+
+  const verdictMeta = (mediaId) => {
+    const v = verdict()[mediaId];
+    if (!v) return null;
+    if (v.status === 'checking') return { text: t('admin.checking'), cls: 'text-[var(--color-muted)] animate-pulse' };
+    if (v.status === 'ok') return { text: t('admin.verdictReproducible'), cls: 'text-green-400' };
+    if (v.status === 'error') return { text: t('admin.verdictNotEmbeddable', { code: v.code }), cls: 'text-[var(--color-error)]' };
+    return { text: t('admin.verdictInconclusive'), cls: 'text-[var(--color-muted)]' };
+  };
+
+  return (
+    <div class="flex flex-col gap-4">
+      <Show when={loading()}>
+        <div class="flex items-center gap-3 py-16 justify-center">
+          <div class="w-5 h-5 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+          <span class="text-sm text-[var(--color-muted)]">{t('admin.loading')}</span>
+        </div>
+      </Show>
+
+      <Show when={!loading() && rows().length === 0}>
+        <div class="text-center py-16 border border-dashed border-[var(--color-border)] rounded-xl">
+          <p class="text-2xl mb-2">✓</p>
+          <p class="text-[var(--color-muted)] text-sm">{t('admin.noUnavailableMedia')}</p>
+        </div>
+      </Show>
+
+      <Show when={!loading() && rows().length > 0}>
+        <div class="flex flex-col gap-2">
+          <For each={rows()}>
+            {(row) => {
+              const isChecking = () => checkingId() === row.media_id;
+              const isBusy = () => actionId() === row.media_id;
+              const vm = () => verdictMeta(row.media_id);
+              return (
+                <div class="flex items-start gap-4 p-4 bg-[var(--color-surface)] border border-[var(--color-warning)]/30 rounded-xl">
+                  <img
+                    src={`https://img.youtube.com/vi/${extractYoutubeId(row.media_uri)}/mqdefault.jpg`}
+                    alt="" class="w-24 h-14 object-cover rounded-lg flex-shrink-0 bg-[var(--color-border)]"
+                  />
+                  <div class="flex-grow min-w-0">
+                    <Show when={row.title}>
+                      <p class="text-sm text-[var(--color-text)] font-semibold truncate">{row.title}</p>
+                    </Show>
+                    <div class="flex items-center gap-2 flex-wrap mt-0.5">
+                      <span class="text-xs font-mono text-[var(--color-muted)]">{extractYoutubeId(row.media_uri)}</span>
+                      <a href={row.media_uri} target="_blank" rel="noopener noreferrer"
+                        class="text-[var(--color-primary)] hover:underline text-xs">{t('report.viewVideo')}</a>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap mt-0.5">
+                      <span class="text-[10px] text-[var(--color-muted)] uppercase tracking-wider">{t('admin.affectedTunes')}</span>
+                      <For each={row.tune_ids}>
+                        {(tid) => (
+                          <a href={`/tune/${tid}`} class="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-primary)] hover:underline">
+                            {getTuneById(tid)?.name ?? `tune #${tid}`}
+                          </a>
+                        )}
+                      </For>
+                    </div>
+                    <Show when={row.last_check_at}>
+                      <p class="text-[10px] text-[var(--color-muted)] mt-0.5">
+                        {t('admin.lastCheck')} {formatDate(row.last_check_at)}
+                      </p>
+                    </Show>
+                    <Show when={vm()}>
+                      <p class={`text-xs mt-0.5 ${vm().cls}`}>{vm().text}</p>
+                    </Show>
+                  </div>
+                  <div class="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => handleCheck(row)}
+                      disabled={isChecking() || isBusy()}
+                      class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-primary)]/50 bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20 transition-colors disabled:opacity-30"
+                    >{isChecking() ? '…' : t('admin.checkStatus')}</button>
+                    <button
+                      onClick={() => handleMarkAvailable(row)}
+                      disabled={isChecking() || isBusy()}
+                      class="text-xs px-3 py-1.5 rounded-lg border border-green-400/40 text-green-400 hover:bg-green-400/10 transition-colors disabled:opacity-30"
+                    >{isBusy() ? '…' : t('admin.markAvailable')}</button>
+                  </div>
+                </div>
+              );
+            }}
+          </For>
+        </div>
+      </Show>
+    </div>
+  );
+}
+
 // ── Tab: Reports ─────────────────────────────────────────────────────────────
 function ReportsTab(props) {
   const { t } = useI18n();
@@ -757,6 +903,7 @@ function AdminView() {
   const [editingVideo, setEditingVideo] = createSignal(null);
   const [pendingCount, setPendingCount] = createSignal(null);
   const [pendingReportsCount, setPendingReportsCount] = createSignal(null);
+  const [unavailableCount, setUnavailableCount] = createSignal(null);
 
   createEffect(() => {
     if (authInitialized() && !authUser()?.isAdmin) navigate('/', { replace: true });
@@ -786,6 +933,7 @@ function AdminView() {
     ['latest', t('admin.latestMedia')],
     ['byTune', t('admin.searchByTune')],
     ['availability', t('admin.availability')],
+    ['unavailable', t('admin.unavailableTab')],
     ['reports', t('admin.reports')],
   ];
 
@@ -827,6 +975,11 @@ function AdminView() {
                     {pendingReportsCount()}
                   </span>
                 </Show>
+                <Show when={key === 'unavailable' && unavailableCount() !== null && unavailableCount() > 0}>
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30 leading-none">
+                    {unavailableCount()}
+                  </span>
+                </Show>
               </button>
             )}
           </For>
@@ -856,6 +1009,9 @@ function AdminView() {
         </Show>
         <Show when={tab() === 'availability'}>
           <AvailabilityTab onRegisterRefresh={(fn) => { refreshAvailability = fn; }} />
+        </Show>
+        <Show when={tab() === 'unavailable'}>
+          <UnavailableTab onCountLoaded={setUnavailableCount} onRegisterRefresh={(fn) => { refreshAvailability = fn; }} />
         </Show>
 
       </div>

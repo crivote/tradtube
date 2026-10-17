@@ -48,6 +48,67 @@ function ensureYTApi(cb) {
   document.head.appendChild(script);
 }
 
+/**
+ * Comprueba si un vídeo es embebible cargándolo con la IFrame Player API
+ * desde el ORIGEN DE LA APP (misma config que el reproductor: host
+ * youtube-nocookie.com, playerVars.origin = location.origin).
+ * Devuelve una promesa con el veredicto, SIN tocar ningún flag:
+ *   { status: 'ok' }          → reprodujo (player llegó a PLAYING)
+ *   { status: 'error', code } → no embebible (código de la IFrame API)
+ *   { status: 'timeout' }     → sin respuesta en `timeoutMs` (no concluyente)
+ * No representa UI: es puro chequeo, crea un player desechable y lo destruye.
+ */
+export async function checkVideoEmbed(youtubeId, { timeoutMs = 12000 } = {}) {
+  if (!youtubeId) return { status: 'timeout' };
+  return new Promise((resolve) => {
+    ensureYTApi(() => {
+      const container = document.createElement('div');
+      const el = document.createElement('div');
+      container.appendChild(el);
+      document.body.appendChild(container);
+
+      let player = null;
+      let finished = false;
+      const cleanup = () => {
+        try { player?.destroy?.(); } catch (_) { /* ignore */ }
+        container.remove();
+      };
+      const finish = (result) => {
+        if (finished) return;
+        finished = true;
+        cleanup();
+        resolve(result);
+      };
+
+      try {
+        if (!window.YT) { finish({ status: 'timeout' }); return; }
+        player = new window.YT.Player(el, {
+          videoId: youtubeId,
+          width: '100%',
+          height: '100%',
+          host: 'https://www.youtube-nocookie.com',
+          playerVars: {
+            autoplay: 1,
+            rel: 0,
+            origin: window.location.origin,
+          },
+          events: {
+            onReady() { player?.playVideo?.(); },
+            onStateChange(e) {
+              if (e.data === window.YT.PlayerState.PLAYING) finish({ status: 'ok' });
+            },
+            onError(e) { finish({ status: 'error', code: e.data }); },
+          },
+        });
+      } catch (_) {
+        finish({ status: 'timeout' });
+        return;
+      }
+      setTimeout(() => finish({ status: 'timeout' }), timeoutMs);
+    });
+  });
+}
+
 // ── Componente ───────────────────────────────────────────────────────────────
 function YoutubePlayer(props) {
   let containerRef;

@@ -760,4 +760,52 @@ describe('Media availability (A — señal pasiva)', () => {
       expect(mockQB.eq).toHaveBeenCalledWith('id', 'm1');
     });
   });
+
+  describe('getUnavailableMedia', () => {
+    it('lists only unavailable=true videos with last check and affected tune ids', async () => {
+      const mockQB = createMockQueryBuilder().setResult([
+        {
+          id: 'm1', media_uri: 'https://www.youtube.com/watch?v=abc', source_type: 'youtube',
+          unavailable: true, title: 'Down video',
+          tune_media_checks: [
+            { ok: false, error_code: 150, checked_at: '2026-10-16T00:00:00Z' },
+            { ok: true, error_code: null, checked_at: '2026-10-17T00:00:00Z' },
+          ],
+          tune_media_entries: [{ tune_id: 5 }, { tune_id: 9 }],
+        },
+        {
+          id: 'm2', media_uri: 'https://www.youtube.com/watch?v=xyz', source_type: 'youtube',
+          unavailable: true, title: 'No checks', created_at: '2026-10-01T00:00:00Z',
+          tune_media_checks: [],
+          tune_media_entries: [],
+        },
+      ]);
+      mockFrom.mockReturnValue(mockQB);
+
+      const rows = await supabaseModule.getUnavailableMedia();
+
+      expect(mockFrom).toHaveBeenCalledWith('tune_media');
+      expect(mockQB.eq).toHaveBeenCalledWith('unavailable', true);
+      expect(rows).toHaveLength(2);
+      // m1 (con checks) primero: último check ok, el más reciente
+      expect(rows[0].media_id).toBe('m1');
+      expect(rows[0].last_ok).toBe(true);
+      expect(rows[0].last_error_code).toBeNull();
+      expect(rows[0].last_check_at).toBe('2026-10-17T00:00:00Z');
+      expect(rows[0].tune_ids).toEqual([5, 9]);
+      // m2 sin checks al final
+      expect(rows[1].media_id).toBe('m2');
+      expect(rows[1].last_check_at).toBeNull();
+      expect(rows[1].tune_ids).toEqual([]);
+    });
+
+    it('returns [] on DB error', async () => {
+      const mockQB = createMockQueryBuilder().setResult(null, { message: 'DB error' });
+      mockFrom.mockReturnValue(mockQB);
+
+      const rows = await supabaseModule.getUnavailableMedia();
+
+      expect(rows).toEqual([]);
+    });
+  });
 });

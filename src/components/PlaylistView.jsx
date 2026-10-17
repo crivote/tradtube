@@ -301,6 +301,8 @@ function PlaylistView() {
                   startSec={activeItem()?.start_sec}
                   endSec={activeItem()?.end_sec}
                   autoplay={true}
+                  mediaId={activeItem()?.tune_media?.id}
+                  mediaUnavailable={activeItem()?.tune_media?.unavailable}
                   onEnd={handleVideoEnd}
                 />
               }

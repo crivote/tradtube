@@ -634,6 +634,48 @@ export async function setMediaUnavailable(mediaId, unavailable) {
   if (error) throw error;
 }
 
+/**
+ * Lista TODOS los vídeos marcados como no disponibles (unavailable = true),
+ * con sus fichas afectadas y el último check registrado. Alimenta el tab de
+ * administración «No disponibles». Solo lectura — no cambia ningún flag.
+ * Devuelve un array de { media_id, media_uri, source_type, title,
+ *   last_ok, last_error_code, last_check_at, tune_ids }.
+ */
+export async function getUnavailableMedia() {
+  const { data: rows, error } = await supabase
+    .from('tune_media')
+    .select(`
+      id, media_uri, source_type, status, unavailable, title, channel, created_at,
+      tune_media_checks ( ok, error_code, checked_at ),
+      tune_media_entries ( tune_id )
+    `)
+    .eq('unavailable', true);
+
+  if (error) { console.error('[supabase] getUnavailableMedia error:', error); return []; }
+
+  const out = (rows || []).map(m => {
+    const checks = (m.tune_media_checks || []).slice().sort((a, b) =>
+      new Date(b.checked_at).getTime() - new Date(a.checked_at).getTime());
+    const last = checks[0];
+    return {
+      media_id: m.id, media_uri: m.media_uri, source_type: m.source_type,
+      title: m.title, unavailable: true,
+      last_ok: last ? last.ok : null,
+      last_error_code: last ? last.error_code : null,
+      last_check_at: last ? last.checked_at : null,
+      tune_ids: (m.tune_media_entries || []).map(e => e.tune_id),
+    };
+  });
+
+  // Los más recientemente chequeados primero; sin checks al final.
+  out.sort((a, b) => {
+    const ta = a.last_check_at ? new Date(a.last_check_at).getTime() : 0;
+    const tb = b.last_check_at ? new Date(b.last_check_at).getTime() : 0;
+    return tb - ta;
+  });
+  return out;
+}
+
 // ── Reports ──────────────────────────────────────────────────────────────────
 
 export async function createReport({ media_id, tune_id, issue_type, description, email }) {
