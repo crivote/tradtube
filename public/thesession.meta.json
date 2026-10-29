@@ -6,14 +6,20 @@
     "date": "2026-10-25T09:19:16Z"
   },
   "top_up_added": 9,
+  "gap_fill": {
+    "from": 26210,
+    "probed": 96,
+    "added": 54,
+    "gone": 42
+  },
   "top_up_note": "los tunes traídos por API no traen `meter` (la API sirve el ABC sin cabecera M:); se rellena en la siguiente regeneración desde el dump",
   "composer_inherited": 9,
-  "bytes": 4890624,
-  "sha256": "995ce3265e5e00bfc3352e91343d31c373bfbd27b132db2d310f4ccc303624de",
-  "tunes": 23394,
-  "tunes_with_aliases": 8761,
+  "bytes": 4923392,
+  "sha256": "10c1665ec0deb1b434ab52a946d2639e1f9134ac31986e89e9b285f4c2d940fa",
+  "tunes": 23448,
+  "tunes_with_aliases": 8812,
   "max_tune_id": 26972,
-  "generated_at": "2026-10-29T17:10:35+01:00",
+  "generated_at": "2026-10-29T17:16:39+01:00",
   "columns": [
     "tune_id",
     "name",

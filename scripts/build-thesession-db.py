@@ -84,7 +84,8 @@ def fetch(url, timeout=180, retries=3):
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return resp.read()
         except urllib.error.HTTPError as exc:
-            if exc.code == 404:
+            # 410: TheSession responde «Gone» a los ids de tunes borradas.
+            if exc.code in (404, 410):
                 return None
             last = exc
         except Exception as exc:  # noqa: BLE001 - red inestable
@@ -178,6 +179,32 @@ def meter_from_abc(abc):
     return ""
 
 
+def _add_from_api(tid, tunes, popularity, aliases):
+    """Añade un tune consultando la API. Devuelve True si existe y se añadió."""
+    raw = fetch(API_TUNE % tid, timeout=60, retries=2)
+    if raw is None:
+        return False
+    data = json.loads(raw.decode("utf-8"))
+    settings = data.get("settings") or []
+    if not settings:
+        return False
+    tunes[tid] = {
+        "name": invert_name(data.get("name")),
+        "type": (data.get("type") or "").strip(),
+        "meter": meter_from_abc(settings[0].get("abc")),
+        "composer": (data.get("composer") or "").strip(),
+        "settings": len(settings),
+    }
+    tbk = int(data.get("tunebooks") or 0)
+    if tbk:
+        popularity[tid] = tbk
+    alias_list = [a.strip() for a in (data.get("aliases") or []) if a.strip()]
+    if alias_list:
+        aliases[tid] = alias_list
+    time.sleep(0.4)  # cortesía con la API pública
+    return True
+
+
 def top_up(tunes, popularity, aliases, limit):
     """Incorpora los tunes publicados después del dump consultando la API."""
     if limit <= 0 or not tunes:
@@ -186,33 +213,33 @@ def top_up(tunes, popularity, aliases, limit):
     added = 0
     misses = 0
     for tid in range(start, start + limit):
-        raw = fetch(API_TUNE % tid, timeout=60, retries=2)
-        if raw is None:
+        if _add_from_api(tid, tunes, popularity, aliases):
+            added += 1
+            misses = 0
+        else:
             misses += 1
             if misses >= 5:
                 break
-            continue
-        misses = 0
-        data = json.loads(raw.decode("utf-8"))
-        settings = data.get("settings") or []
-        if not settings:
-            continue
-        tunes[tid] = {
-            "name": invert_name(data.get("name")),
-            "type": (data.get("type") or "").strip(),
-            "meter": meter_from_abc(settings[0].get("abc")),
-            "composer": (data.get("composer") or "").strip(),
-            "settings": len(settings),
-        }
-        tbk = int(data.get("tunebooks") or 0)
-        if tbk:
-            popularity[tid] = tbk
-        alias_list = [a.strip() for a in (data.get("aliases") or []) if a.strip()]
-        if alias_list:
-            aliases[tid] = alias_list
-        added += 1
-        time.sleep(0.4)  # cortesía con la API pública
     return added
+
+
+def fill_gap(tunes, popularity, aliases, start):
+    """Sondea los ids ausentes del rango [start, max] y añade los que existen.
+
+    El dump **no es exhaustivo**: hay tunes vivas que no aparecen en `tunes.csv`
+    (medido 2026-10-29: de 6 ids ausentes del hueco 26210-26972, 2 existían en la
+    API y 4 devolvían 410 Gone). Los 410 son borrados de verdad; los demás se
+    recuperan aquí.
+    """
+    missing = [tid for tid in range(start, max(tunes) + 1) if tid not in tunes]
+    added = 0
+    gone = 0
+    for tid in missing:
+        if _add_from_api(tid, tunes, popularity, aliases):
+            added += 1
+        else:
+            gone += 1
+    return added, gone, len(missing)
 
 
 def popularity_scores(tunes, popularity):
@@ -314,6 +341,8 @@ def main():
     ap.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "..", "public", "thesession.db"))
     ap.add_argument("--meta", default=None, help="sidecar de procedencia (por defecto, junto al .db)")
     ap.add_argument("--top-up", type=int, default=0, help="ids a sondear en la API por encima del dump")
+    ap.add_argument("--fill-gap", type=int, default=0,
+                    help="primer id del hueco a sondear (p. ej. el max_tune_id de la copia anterior)")
     ap.add_argument("--old-db", default=None, help="copia anterior para heredar compositores que el dump omite")
     ap.add_argument("--no-download", action="store_true", help="reutiliza los CSV en --cache")
     args = ap.parse_args()
@@ -340,6 +369,13 @@ def main():
         added = top_up(tunes, popularity, aliases, args.top_up)
         log(f"  {added} tunes añadidos por API")
 
+    gap_stats = None
+    if args.fill_gap:
+        log(f"Rellenando huecos del rango {args.fill_gap}-{max(tunes)}…")
+        gap_added, gap_gone, gap_total = fill_gap(tunes, popularity, aliases, args.fill_gap)
+        gap_stats = {"from": args.fill_gap, "probed": gap_total, "added": gap_added, "gone": gap_gone}
+        log(f"  {gap_total} ids ausentes: {gap_added} existían, {gap_gone} no (410/deleted)")
+
     inherited = 0
     if args.old_db and os.path.exists(args.old_db):
         conn = sqlite3.connect(args.old_db)
@@ -355,6 +391,7 @@ def main():
         "source": "dump oficial de TheSession (CSV)",
         "dump": dump_commit(),
         "top_up_added": added,
+        "gap_fill": gap_stats,
         "top_up_note": "los tunes traídos por API no traen `meter` (la API sirve el ABC sin cabecera M:); se rellena en la siguiente regeneración desde el dump",
         "composer_inherited": inherited,
     }
