@@ -298,7 +298,7 @@ def build(dest, tunes, popularity, aliases, meta):
             "bytes": len(raw),
             "sha256": hashlib.sha256(raw).hexdigest(),
             "tunes": len(tunes),
-            "tunes_with_aliases": sum(1 for v in aliases.values() if v),
+            "tunes_with_aliases": sum(1 for tid in tunes if aliases.get(tid)),
             "max_tune_id": max(tunes),
             "generated_at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
             "columns": ["tune_id", "name", "type", "meter", "composer", "tunebooks", "popularity_score"],
