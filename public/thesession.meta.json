@@ -1,0 +1,27 @@
+{
+  "source": "dump oficial de TheSession (CSV)",
+  "dump": {
+    "repo": "adactio/TheSession-data",
+    "commit": "968bf73a9aa0a073286b6118b8cabacbcc7b6f20",
+    "date": "2026-10-25T09:19:16Z"
+  },
+  "top_up_added": 9,
+  "top_up_note": "los tunes traídos por API no traen `meter` (la API sirve el ABC sin cabecera M:); se rellena en la siguiente regeneración desde el dump",
+  "composer_inherited": 9,
+  "bytes": 4890624,
+  "sha256": "995ce3265e5e00bfc3352e91343d31c373bfbd27b132db2d310f4ccc303624de",
+  "tunes": 23394,
+  "tunes_with_aliases": 8762,
+  "max_tune_id": 26972,
+  "generated_at": "2026-10-29T17:08:49+01:00",
+  "columns": [
+    "tune_id",
+    "name",
+    "type",
+    "meter",
+    "composer",
+    "tunebooks",
+    "popularity_score"
+  ],
+  "popularity_note": "percentil 0-99 de tunebooks entre los tunes con >=1 tunebook; solo ordena, no se muestra"
+}
