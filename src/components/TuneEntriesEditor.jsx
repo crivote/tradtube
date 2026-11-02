@@ -57,6 +57,11 @@ export default function TuneEntriesEditor(props) {
     return searchTunes(q, 8).filter(t => !added.has(t.tune_id));
   });
 
+  // Desambiguador: hay tunes homónimos, así que el id de TheSession es la única
+  // forma de confirmar cuál se está vinculando.
+  const tuneUrl = (id) => `https://thesession.org/tunes/${id}`;
+  const tuneMeta = (tune) => [tune?.type, tune?.meter].filter(Boolean).join(' · ');
+
   const handleAdd = (tune) => {
     props.onAdd(tune);
     setTuneSearch('');
@@ -123,13 +128,27 @@ export default function TuneEntriesEditor(props) {
             <div class="absolute top-full mt-1 left-0 right-0 z-20 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden shadow-xl">
               <For each={tuneResults()}>
                 {(tune) => (
-                  <button
-                    onClick={() => handleAdd(tune)}
-                    class="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)] transition-colors flex items-center justify-between gap-3 border-b border-[var(--color-border)] last:border-0"
-                  >
-                    <span class="font-medium text-[var(--color-text)] truncate">{tune.name}</span>
-                    <span class="text-[10px] text-[var(--color-muted)] flex-shrink-0">{tune.type} · {tune.meter}</span>
-                  </button>
+                  <div class="flex items-center border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-primary)]/10 transition-colors">
+                    <button
+                      onClick={() => handleAdd(tune)}
+                      class="flex-grow min-w-0 px-4 py-2.5 text-left text-sm flex items-center justify-between gap-3 transition-colors hover:text-[var(--color-primary)]"
+                    >
+                      <span class="min-w-0 flex items-baseline gap-1.5">
+                        <span class="font-medium text-[var(--color-text)] truncate">{tune.name}</span>
+                        <Show when={tune.composer}>
+                          <span class="text-[10px] text-[var(--color-muted)] truncate">— {tune.composer}</span>
+                        </Show>
+                      </span>
+                      <span class="text-[10px] text-[var(--color-muted)] flex-shrink-0">{tuneMeta(tune)}</span>
+                    </button>
+                    <a
+                      href={tuneUrl(tune.tune_id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`TheSession #${tune.tune_id}`}
+                      class="flex-shrink-0 pr-3 pl-1 py-2.5 font-mono text-[10px] text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors"
+                    >#{tune.tune_id}</a>
+                  </div>
                 )}
               </For>
             </div>
@@ -177,10 +196,24 @@ export default function TuneEntriesEditor(props) {
                 {/* Position */}
                 <span class="text-xs text-[var(--color-muted)] w-4 flex-shrink-0 text-center">{i() + 1}</span>
 
-                {/* Tune name */}
+                {/* Tune name + TheSession id (desambiguador de homónimos) */}
                 <div class="flex-grow min-w-0">
                   <span class="text-sm font-semibold text-[var(--color-text)] block truncate">{entry.tune.name}</span>
-                  <span class="text-[10px] text-[var(--color-muted)]">{entry.tune.type} · {entry.tune.meter}</span>
+                  <span class="text-[10px] text-[var(--color-muted)] flex items-center gap-1.5">
+                    <Show when={tuneMeta(entry.tune)}>
+                      <span>{tuneMeta(entry.tune)}</span>
+                      <span class="text-[var(--color-border)]">·</span>
+                    </Show>
+                    <Show when={entry.tune.tune_id != null} fallback={<span>—</span>}>
+                      <a
+                        href={tuneUrl(entry.tune.tune_id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`TheSession #${entry.tune.tune_id}`}
+                        class="font-mono hover:text-[var(--color-primary)] hover:underline transition-colors"
+                      >#{entry.tune.tune_id}</a>
+                    </Show>
+                  </span>
                 </div>
 
                 {/* Timestamps */}

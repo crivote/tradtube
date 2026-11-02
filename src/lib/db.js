@@ -46,15 +46,29 @@ return _initPromise;
 }
 
 /**
+ * Construye la consulta FTS5 a partir del texto tecleado.
+ * Cada palabra alfanumérica se emite como prefijo y se unen con el AND implícito
+ * de FTS5. Antes se envolvía la consulta en comillas (`"…"*`), lo que exigía la
+ * frase CONTIGUA exacta y dejaba en cero variantes corrientes: «twilight portroe»
+ * (sin el «in»), «Twilight In Portroe (reel)» (el título tal y como lo titula
+ * TheSession) o «the kesh» (el catálogo guarda los nombres invertidos).
+ * Los separadores (paréntesis, comas, apóstrofos) se descartan igual que hace
+ * el tokenizer unicode61 del índice.
+ */
+export function buildFtsQuery(query) {
+  const tokens = (query ?? '').toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+  return tokens.map(tok => `${tok}*`).join(' ');
+}
+
+/**
  * Búsqueda FTS5 de tunes por nombre (o alias)
  * Devuelve array de { tune_id, name, type, meter, composer, tunebooks, popularity_score }
  */
 export function searchTunes(query, limit = 10) {
   if (!_db || !query?.trim()) return [];
 
-  // Escape double quotes for FTS5, wrap in quotes for phrase matching + prefix
-  const safe = query.trim().replace(/"/g, '""');
-  const ftsQuery = `"${safe}"*`;
+  const ftsQuery = buildFtsQuery(query);
+  if (!ftsQuery) return [];
 
   return _db.exec({
     sql: `

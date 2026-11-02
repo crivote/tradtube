@@ -75,6 +75,47 @@ describe('TuneEntriesEditor', () => {
     expect(screen.getByText('reel · 4/4')).toBeDefined();
   });
 
+  it('shows the TheSession id with a link on each entry (homonym disambiguator)', async () => {
+    renderEditor({ entries: [entryA] });
+
+    await waitFor(() => {
+      expect(screen.getByText('#1')).toBeDefined();
+    });
+    const link = screen.getByText('#1');
+    expect(link.getAttribute('href')).toBe('https://thesession.org/tunes/1');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toContain('noopener');
+  });
+
+  it('shows the TheSession id with a link on search results', async () => {
+    const tuneB = { tune_id: 4091, name: 'Twilight In Portroe', type: 'reel', meter: '4/4', composer: 'Sean Ryan' };
+    searchTunes.mockReturnValue([tuneB]);
+
+    renderEditor();
+
+    const input = screen.getByPlaceholderText('Search tune name…');
+    fireEvent.input(input, { target: { value: 'twilight portroe' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Twilight In Portroe')).toBeDefined();
+    });
+
+    expect(screen.getByText('— Sean Ryan')).toBeDefined();
+    const link = screen.getByText('#4091');
+    expect(link.getAttribute('href')).toBe('https://thesession.org/tunes/4091');
+    expect(link.getAttribute('rel')).toContain('noopener');
+  });
+
+  it('keeps the TheSession link even when the tune is missing from the catalogue', async () => {
+    const orphan = { tune: { tune_id: 4091, name: 'Tune #4091', type: '', meter: '' }, startSec: '', endSec: '', instruments: [], key: null, structure: null };
+    renderEditor({ entries: [orphan] });
+
+    await waitFor(() => {
+      expect(screen.getByText('Tune #4091')).toBeDefined();
+    });
+    expect(screen.getByText('#4091').getAttribute('href')).toBe('https://thesession.org/tunes/4091');
+  });
+
   it('searches tunes and adds one when clicked', async () => {
     const tuneB = { tune_id: 2, name: 'Silver Spear', type: 'reel', meter: '4/4' };
     searchTunes.mockReturnValue([tuneB]);
