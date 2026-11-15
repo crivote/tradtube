@@ -11,6 +11,11 @@
  *   audioDuration: number?   — duración total para validación de bounds
  *   readOnly: boolean        — deshabilita edición
  *   onSeekToTime(seconds: number|null): void  — opcional, seek en YouTube iframe
+ *
+ * Cada entry se pinta en dos filas: la identidad de la tune (nombre completo,
+ * tipo, id de TheSession, tonalidad) y sus datos de segmento (tiempos,
+ * structure, BPM e instrumentos). En una sola fila el nombre quedaba truncado
+ * a dos letras en cuanto se marcaban varios instrumentos.
  */
 
 import { createSignal, createMemo, createEffect, onCleanup, For, Show } from 'solid-js';
@@ -18,7 +23,7 @@ import { ChevronDown, SkipForward, GripVertical } from 'lucide-solid';
 import { searchTunes, getTuneById } from '../lib/db';
 import { parseSec, validateTimestamp } from '../lib/utils';
 import { useI18n } from '../i18n';
-import { INSTRUMENTS } from '../constants';
+import { INSTRUMENT_GROUPS } from '../constants';
 
 export default function TuneEntriesEditor(props) {
   const { t } = useI18n();
@@ -171,252 +176,278 @@ export default function TuneEntriesEditor(props) {
                   props.onReorder(from, i());
                 }}
                 onDragEnd={() => setDragIndex(null)}
-                class={`flex items-center gap-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 transition-opacity
+                class={`flex flex-col gap-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 transition-opacity
                   ${dragIndex() === i() ? 'opacity-50' : ''}`}
               >
-                {/* Reorder controls */}
-                <Show when={!props.readOnly}>
-                  <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
-                    <button
-                      onClick={() => moveEntry(i(), -1)}
-                      disabled={i() === 0}
-                      class="text-[var(--color-muted)] hover:text-[var(--color-text)] disabled:opacity-20 disabled:cursor-default leading-none text-xs"
-                    >▲</button>
-                    <div class="hidden sm:flex cursor-grab text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors">
-                      <GripVertical size={14} />
+                {/* ── Fila 1: identidad de la tune ─────────────────────── */}
+                <div class="flex items-start gap-3">
+                  <Show when={!props.readOnly}>
+                    <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
+                      <button
+                        onClick={() => moveEntry(i(), -1)}
+                        disabled={i() === 0}
+                        class="text-[var(--color-muted)] hover:text-[var(--color-text)] disabled:opacity-20 disabled:cursor-default leading-none text-xs"
+                      >▲</button>
+                      <div class="hidden sm:flex cursor-grab text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors">
+                        <GripVertical size={14} />
+                      </div>
+                      <button
+                        onClick={() => moveEntry(i(), 1)}
+                        disabled={i() === props.entries.length - 1}
+                        class="text-[var(--color-muted)] hover:text-[var(--color-text)] disabled:opacity-20 disabled:cursor-default leading-none text-xs"
+                      >▼</button>
                     </div>
-                    <button
-                      onClick={() => moveEntry(i(), 1)}
-                      disabled={i() === props.entries.length - 1}
-                      class="text-[var(--color-muted)] hover:text-[var(--color-text)] disabled:opacity-20 disabled:cursor-default leading-none text-xs"
-                    >▼</button>
+                  </Show>
+
+                  {/* Position */}
+                  <span class="text-xs text-[var(--color-muted)] w-4 flex-shrink-0 text-center mt-0.5">{i() + 1}</span>
+
+                  {/* Tune name (sin truncar) + TheSession id (desambiguador) */}
+                  <div class="flex-grow min-w-0">
+                    <span class="text-sm font-semibold text-[var(--color-text)] block break-words">{entry.tune.name}</span>
+                    <span class="text-[10px] text-[var(--color-muted)] flex items-center gap-1.5 flex-wrap">
+                      <Show when={tuneMeta(entry.tune)}>
+                        <span>{tuneMeta(entry.tune)}</span>
+                        <span class="text-[var(--color-border)]">·</span>
+                      </Show>
+                      <Show when={entry.tune.tune_id != null} fallback={<span>—</span>}>
+                        <a
+                          href={tuneUrl(entry.tune.tune_id)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={`TheSession #${entry.tune.tune_id}`}
+                          class="font-mono hover:text-[var(--color-primary)] hover:underline transition-colors"
+                        >#{entry.tune.tune_id}</a>
+                      </Show>
+                    </span>
                   </div>
-                </Show>
 
-                {/* Position */}
-                <span class="text-xs text-[var(--color-muted)] w-4 flex-shrink-0 text-center">{i() + 1}</span>
-
-                {/* Tune name + TheSession id (desambiguador de homónimos) */}
-                <div class="flex-grow min-w-0">
-                  <span class="text-sm font-semibold text-[var(--color-text)] block truncate">{entry.tune.name}</span>
-                  <span class="text-[10px] text-[var(--color-muted)] flex items-center gap-1.5">
-                    <Show when={tuneMeta(entry.tune)}>
-                      <span>{tuneMeta(entry.tune)}</span>
-                      <span class="text-[var(--color-border)]">·</span>
-                    </Show>
-                    <Show when={entry.tune.tune_id != null} fallback={<span>—</span>}>
-                      <a
-                        href={tuneUrl(entry.tune.tune_id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={`TheSession #${entry.tune.tune_id}`}
-                        class="font-mono hover:text-[var(--color-primary)] hover:underline transition-colors"
-                      >#{entry.tune.tune_id}</a>
-                    </Show>
-                  </span>
-                </div>
-
-                {/* Timestamps */}
-                <Show when={!props.readOnly}>
-                  <div class="flex items-start gap-2 flex-shrink-0">
-                    <div class="flex flex-col items-center gap-0.5">
-                      <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">{t('addVideo.start')}</span>
-                      <input
-                        type="text"
-                        placeholder="0:00"
-                        value={entry.startSec}
-                        onInput={e => props.onUpdate(i(), 'startSec', e.target.value)}
-                        class={`w-14 text-center bg-[var(--color-bg)] border rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none transition-colors
-                          ${entry.startSec && validateTimestamp(entry.startSec).error
-                            ? 'border-[var(--color-error)] focus:border-[var(--color-error)]'
-                            : 'border-[var(--color-border)] focus:border-[var(--color-primary)]'}`}
-                      />
-                    </div>
-                    <span class="text-[var(--color-border)] text-xs mt-3">–</span>
-                    <div class="flex flex-col items-center gap-0.5">
-                      <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">{t('addVideo.end')}</span>
-                      <input
-                        type="text"
-                        placeholder="—"
-                        value={entry.endSec}
-                        onInput={e => props.onUpdate(i(), 'endSec', e.target.value)}
-                        onBlur={() => {
-                          const endSec = props.entries[i()].endSec;
-                          if (endSec && i() + 1 < props.entries.length && !props.entries[i() + 1].startSec) {
-                            props.onUpdate(i() + 1, 'startSec', endSec);
-                          }
-                        }}
-                        class={`w-14 text-center bg-[var(--color-bg)] border rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none transition-colors
-                          ${entry.endSec && validateTimestamp(entry.endSec).error
-                            ? 'border-[var(--color-error)] focus:border-[var(--color-error)]'
-                            : 'border-[var(--color-border)] focus:border-[var(--color-primary)]'}`}
-                      />
-                    </div>
-                    <Show when={getEndError(entry, i())}>
-                      <span class="text-[9px] text-[var(--color-error)] mt-5 whitespace-nowrap">
-                        {(() => {
-                          const se = validateTimestamp(entry.startSec);
-                          const ee = validateTimestamp(entry.endSec);
-                          return validateTimestamp(entry.startSec).error
-                           || validateTimestamp(entry.endSec).error
-                           || (se.value != null && ee.value != null && ee.value <= se.value ? t('addVideo.endAfterStart') : '')
-                           || (props.audioDuration != null && ee.value != null && ee.value > props.audioDuration
-                             ? `End > ${Math.floor(props.audioDuration / 60)}:${String(props.audioDuration % 60).padStart(2, '0')}`
-                             : '');
-                        })()}
-                      </span>
-                    </Show>
-                    <Show when={props.onSeekToTime}>
+                  {/* Tonalidad — badge con abreviatura + popup de doble selector */}
+                  <Show when={!props.readOnly}>
+                    <div class="relative flex-shrink-0" data-key-dropdown>
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          const endVal = parseSec(entry.endSec);
-                          props.onSeekToTime(endVal != null ? Math.max(0, endVal - 2.5) : null);
-                        }}
-                        title="Seek to -2.5s before end"
-                        class="flex-shrink-0 mt-3 text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors"
+                        onClick={() => setOpenKeyPopup(openKeyPopup() === i() ? null : i())}
+                        aria-expanded={openKeyPopup() === i()}
+                        aria-haspopup="listbox"
+                        class="text-[10px] font-mono font-semibold bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 cursor-pointer hover:border-[var(--color-primary)] transition-colors whitespace-nowrap"
+                        title={t('addVideo.key')}
                       >
-                        <SkipForward size={15} />
+                        {formatKeyBadge(entry)}
                       </button>
-                    </Show>
-                  </div>
-                </Show>
+                      <Show when={openKeyPopup() === i()}>
+                        <div class="absolute top-full right-0 mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl z-30 p-2.5 flex gap-2">
+                          <select
+                            value={entry.key ?? ''}
+                            onChange={e => {
+                              const note = e.target.value;
+                              if (!note) { props.onUpdate(i(), 'key', null); props.onUpdate(i(), 'scale', null); return; }
+                              props.onUpdate(i(), 'key', note);
+                            }}
+                            class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+                          >
+                            <option value="">—</option>
+                            <For each={NOTE_STORAGE}>
+                              {(note, ni) => (
+                                <option value={note}>{t(`key.notes.${note}`) ?? NOTES[ni()]}</option>
+                              )}
+                            </For>
+                          </select>
+                          <select
+                            value={entry.scale ?? ''}
+                            onChange={e => {
+                              const mode = e.target.value;
+                              if (!mode) { props.onUpdate(i(), 'scale', null); return; }
+                              props.onUpdate(i(), 'scale', mode);
+                            }}
+                            class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+                          >
+                            <option value="">—</option>
+                            <For each={MODES}>
+                              {(mode) => (
+                                <option value={mode}>{t(`key.modes.${mode}`) ?? mode}</option>
+                              )}
+                            </For>
+                          </select>
+                        </div>
+                      </Show>
+                    </div>
 
-                {/* Instruments */}
-                <Show when={!props.readOnly}>
-                  <div class="relative flex-shrink-0" data-instrument-dropdown>
+                    {/* Remove */}
                     <button
-                      type="button"
-                      onClick={() => setOpenInstrumentDropdown(openInstrumentDropdown() === i() ? null : i())}
-                      aria-expanded={openInstrumentDropdown() === i()}
-                      aria-haspopup="listbox"
-                      class="flex items-center gap-1 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors cursor-pointer min-w-[80px]"
-                      title={t('addVideo.instruments')}
-                    >
-                      <span class={entry.instruments.length === 0 ? 'text-[var(--color-muted)]' : ''}>
-                        {entry.instruments.length === 0 ? '—' : entry.instruments.map(ins => instrumentLabel(ins)).join(', ')}
+                      onClick={() => props.onRemove(i())}
+                      class="text-[var(--color-muted)] hover:text-[var(--color-error)] transition-colors text-sm flex-shrink-0 mt-0.5"
+                    >✕</button>
+                  </Show>
+                </div>
+
+                {/* ── Fila 2: datos del segmento ───────────────────────── */}
+                <Show when={!props.readOnly}>
+                  <div class="flex flex-wrap items-start gap-x-4 gap-y-2 pl-7 sm:pl-10">
+
+                    {/* Timestamps */}
+                    <div class="flex items-start gap-2 flex-shrink-0">
+                      <div class="flex flex-col items-center gap-0.5">
+                        <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">{t('addVideo.start')}</span>
+                        <input
+                          type="text"
+                          placeholder="0:00"
+                          value={entry.startSec}
+                          onInput={e => props.onUpdate(i(), 'startSec', e.target.value)}
+                          class={`w-16 text-center bg-[var(--color-bg)] border rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none transition-colors
+                            ${entry.startSec && validateTimestamp(entry.startSec).error
+                              ? 'border-[var(--color-error)] focus:border-[var(--color-error)]'
+                              : 'border-[var(--color-border)] focus:border-[var(--color-primary)]'}`}
+                        />
+                      </div>
+                      <span class="text-[var(--color-border)] text-xs mt-3">–</span>
+                      <div class="flex flex-col items-center gap-0.5">
+                        <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">{t('addVideo.end')}</span>
+                        <input
+                          type="text"
+                          placeholder="—"
+                          value={entry.endSec}
+                          onInput={e => props.onUpdate(i(), 'endSec', e.target.value)}
+                          onBlur={() => {
+                            const endSec = props.entries[i()].endSec;
+                            if (endSec && i() + 1 < props.entries.length && !props.entries[i() + 1].startSec) {
+                              props.onUpdate(i() + 1, 'startSec', endSec);
+                            }
+                          }}
+                          class={`w-16 text-center bg-[var(--color-bg)] border rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none transition-colors
+                            ${entry.endSec && validateTimestamp(entry.endSec).error
+                              ? 'border-[var(--color-error)] focus:border-[var(--color-error)]'
+                              : 'border-[var(--color-border)] focus:border-[var(--color-primary)]'}`}
+                        />
+                      </div>
+                      <Show when={props.onSeekToTime}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const endVal = parseSec(entry.endSec);
+                            props.onSeekToTime(endVal != null ? Math.max(0, endVal - 2.5) : null);
+                          }}
+                          title="Seek to -2.5s before end"
+                          class="flex-shrink-0 mt-3 text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors"
+                        >
+                          <SkipForward size={15} />
+                        </button>
+                      </Show>
+                      <Show when={getEndError(entry, i())}>
+                        <span class="text-[9px] text-[var(--color-error)] mt-4 whitespace-nowrap">
+                          {(() => {
+                            const se = validateTimestamp(entry.startSec);
+                            const ee = validateTimestamp(entry.endSec);
+                            return validateTimestamp(entry.startSec).error
+                             || validateTimestamp(entry.endSec).error
+                             || (se.value != null && ee.value != null && ee.value <= se.value ? t('addVideo.endAfterStart') : '')
+                             || (props.audioDuration != null && ee.value != null && ee.value > props.audioDuration
+                               ? `End > ${Math.floor(props.audioDuration / 60)}:${String(props.audioDuration % 60).padStart(2, '0')}`
+                               : '');
+                          })()}
+                        </span>
+                      </Show>
+                    </div>
+
+                    {/* Structure */}
+                    <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
+                      <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">Structure</span>
+                      <input
+                        type="text"
+                        placeholder="AABB"
+                        value={entry.structure ?? ''}
+                        onInput={e => props.onUpdate(i(), 'structure', e.target.value || null)}
+                        maxlength="10"
+                        class="w-16 text-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                      />
+                    </div>
+
+                    {/* BPM */}
+                    <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
+                      <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">BPM</span>
+                      <input
+                        type="number"
+                        placeholder="120"
+                        value={entry.bpm ?? ''}
+                        onInput={e => props.onUpdate(i(), 'bpm', e.target.value ? parseInt(e.target.value, 10) : null)}
+                        min="20"
+                        max="300"
+                        class="w-16 text-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                      />
+                    </div>
+
+                    {/* Instruments — ancho propio; las etiquetas envuelven en vez
+                        de truncarse, que es lo que ocultaba la pista. */}
+                    <div class="relative flex-1 min-w-[15rem] basis-full sm:basis-auto" data-instrument-dropdown>
+                      <span class="block mb-0.5 text-[9px] text-[var(--color-muted)] uppercase tracking-wide">
+                        {t('addVideo.instruments')}
                       </span>
-                      <ChevronDown size={12} class={`text-[var(--color-muted)] transition-transform ${openInstrumentDropdown() === i() ? 'rotate-180' : ''}`} />
-                    </button>
-                    <Show when={openInstrumentDropdown() === i()}>
-                      <div class="absolute top-full left-0 mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl z-30 py-1 min-w-[140px]">
-                        <For each={Object.keys(INSTRUMENTS)}>
-                          {(key) => {
-                            const isSelected = () => entry.instruments.includes(key);
-                            return (
-                              <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-[var(--color-primary)]/10 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected()}
-                                  onChange={() => {
-                                    const current = entry.instruments;
-                                    const newInstruments = isSelected()
-                                      ? current.filter(ins => ins !== key)
-                                      : [...current, key];
-                                    props.onUpdate(i(), 'instruments', newInstruments);
+                      <button
+                        type="button"
+                        onClick={() => setOpenInstrumentDropdown(openInstrumentDropdown() === i() ? null : i())}
+                        aria-expanded={openInstrumentDropdown() === i()}
+                        aria-haspopup="listbox"
+                        title={t('addVideo.instruments')}
+                        class="w-full flex items-start justify-between gap-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1.5 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors cursor-pointer"
+                      >
+                        <span class="flex flex-wrap items-center gap-1">
+                          <Show
+                            when={entry.instruments.length > 0}
+                            fallback={<span class="text-[var(--color-muted)]">—</span>}
+                          >
+                            <For each={entry.instruments}>
+                              {(ins) => (
+                                <span class="text-[10px] leading-5 px-1.5 rounded-md bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 text-[var(--color-text)] whitespace-nowrap">
+                                  {instrumentLabel(ins)}
+                                </span>
+                              )}
+                            </For>
+                          </Show>
+                        </span>
+                        <ChevronDown
+                          size={12}
+                          class={`text-[var(--color-muted)] flex-shrink-0 mt-1 transition-transform ${openInstrumentDropdown() === i() ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                      <Show when={openInstrumentDropdown() === i()}>
+                        <div class="absolute top-full left-0 mt-1 w-64 max-h-72 overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl z-30 py-1">
+                          <For each={INSTRUMENT_GROUPS}>
+                            {(group) => (
+                              <div>
+                                <p class="px-3 pt-2 pb-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">
+                                  {t(`instrumentGroups.${group.key}`)}
+                                </p>
+                                <For each={group.keys}>
+                                  {(key) => {
+                                    const isSelected = () => entry.instruments.includes(key);
+                                    return (
+                                      <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-[var(--color-primary)]/10 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={isSelected()}
+                                          onChange={() => {
+                                            const current = entry.instruments;
+                                            const newInstruments = isSelected()
+                                              ? current.filter(ins => ins !== key)
+                                              : [...current, key];
+                                            props.onUpdate(i(), 'instruments', newInstruments);
+                                          }}
+                                          class="rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                                        />
+                                        <span class="text-xs text-[var(--color-text)]">{instrumentLabel(key)}</span>
+                                      </label>
+                                    );
                                   }}
-                                  class="rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
-                                />
-                                <span class="text-xs text-[var(--color-text)]">{instrumentLabel(key)}</span>
-                              </label>
-                            );
-                          }}
-                        </For>
-                      </div>
-                    </Show>
-                  </div>
-                </Show>
-
-                {/* Key — badge con abreviatura + popup de doble selector */}
-                <Show when={!props.readOnly}>
-                  <div class="relative flex-shrink-0" data-key-dropdown>
-                    <button
-                      type="button"
-                      onClick={() => setOpenKeyPopup(openKeyPopup() === i() ? null : i())}
-                      aria-expanded={openKeyPopup() === i()}
-                      aria-haspopup="listbox"
-                      class="text-[10px] font-mono font-semibold bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 cursor-pointer hover:border-[var(--color-primary)] transition-colors whitespace-nowrap"
-                      title={t('addVideo.key')}
-                    >
-                      {formatKeyBadge(entry)}
-                    </button>
-                    <Show when={openKeyPopup() === i()}>
-                      <div class="absolute top-full left-0 mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl z-30 p-2.5 flex gap-2">
-                        <select
-                          value={entry.key ?? ''}
-                          onChange={e => {
-                            const note = e.target.value;
-                            if (!note) { props.onUpdate(i(), 'key', null); props.onUpdate(i(), 'scale', null); return; }
-                            props.onUpdate(i(), 'key', note);
-                          }}
-                          class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-                        >
-                          <option value="">—</option>
-                          <For each={NOTE_STORAGE}>
-                            {(note, ni) => (
-                              <option value={note}>{t(`key.notes.${note}`) ?? NOTES[ni()]}</option>
+                                </For>
+                              </div>
                             )}
                           </For>
-                        </select>
-                        <select
-                          value={entry.scale ?? ''}
-                          onChange={e => {
-                            const mode = e.target.value;
-                            if (!mode) { props.onUpdate(i(), 'scale', null); return; }
-                            props.onUpdate(i(), 'scale', mode);
-                          }}
-                          class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-                        >
-                          <option value="">—</option>
-                          <For each={MODES}>
-                            {(mode) => (
-                              <option value={mode}>{t(`key.modes.${mode}`) ?? mode}</option>
-                            )}
-                          </For>
-                        </select>
-                      </div>
-                    </Show>
-                  </div>
-                </Show>
+                        </div>
+                      </Show>
+                    </div>
 
-                {/* Structure */}
-                <Show when={!props.readOnly}>
-                  <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
-                    <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">Structure</span>
-                    <input
-                      type="text"
-                      placeholder="AABB"
-                      value={entry.structure ?? ''}
-                      onInput={e => props.onUpdate(i(), 'structure', e.target.value || null)}
-                      maxlength="10"
-                      class="w-16 text-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none focus:border-[var(--color-primary)] transition-colors"
-                    />
                   </div>
-                </Show>
-
-                {/* BPM */}
-                <Show when={!props.readOnly}>
-                  <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
-                    <span class="text-[9px] text-[var(--color-muted)] uppercase tracking-wide">BPM</span>
-                    <input
-                      type="number"
-                      placeholder="120"
-                      value={entry.bpm ?? ''}
-                      onInput={e => props.onUpdate(i(), 'bpm', e.target.value ? parseInt(e.target.value, 10) : null)}
-                      min="20"
-                      max="300"
-                      class="w-14 text-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono focus:outline-none focus:border-[var(--color-primary)] transition-colors"
-                    />
-                  </div>
-                </Show>
-
-                {/* Remove */}
-                <Show when={!props.readOnly}>
-                  <button
-                    onClick={() => props.onRemove(i())}
-                    class="text-[var(--color-muted)] hover:text-[var(--color-error)] transition-colors text-sm flex-shrink-0 ml-1"
-                  >✕</button>
                 </Show>
               </div>
             )}

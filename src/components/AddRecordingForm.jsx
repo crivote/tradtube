@@ -78,7 +78,7 @@ export default function AddRecordingForm(props) {
   };
 
   return (
-    <div class="flex flex-col gap-6 max-w-2xl mx-auto">
+    <div class="flex flex-col gap-6 max-w-4xl mx-auto">
       {/* Header */}
       <div class="flex items-center justify-between">
         <div>

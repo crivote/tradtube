@@ -228,6 +228,40 @@ describe('TuneEntriesEditor', () => {
     expect(dashes.length).toBeGreaterThanOrEqual(2);
   });
 
+  // Invariante #52: los instrumentos marcados se leen ENTEROS (antes el botón
+  // truncaba la lista y el nombre de la pista quedaba invisible).
+  it('muestra completos todos los instrumentos seleccionados', async () => {
+    const entry = { ...entryA, instruments: ['gaita', 'piano_accordion', 'fiddle'] };
+    renderEditor({ entries: [entry] });
+
+    await waitFor(() => {
+      expect(screen.getByText('Gaita (Galician/Asturian)')).toBeDefined();
+    });
+    expect(screen.getByText('Piano accordion')).toBeDefined();
+    expect(screen.getByText('Fiddle')).toBeDefined();
+    // El nombre de la tune sigue a la vista junto a ellos.
+    expect(screen.getByText('The Wind')).toBeDefined();
+  });
+
+  it('ofrece en el desplegable las gaitas y el acordeón de piano, agrupados', async () => {
+    renderEditor({ entries: [entryA] });
+
+    await waitFor(() => {
+      expect(screen.getByText('The Wind')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByTitle('Instruments'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Great Highland bagpipe')).toBeDefined();
+    });
+    expect(screen.getByText('Piano accordion')).toBeDefined();
+    expect(screen.getByText('Uilleann pipes')).toBeDefined();
+    // Encabezados de familia
+    expect(screen.getByText('Pipes')).toBeDefined();
+    expect(screen.getByText('Free reed')).toBeDefined();
+  });
+
   it('does not show search or edit controls in readOnly mode', async () => {
     renderEditor({ readOnly: true, entries: [entryA] });
 
