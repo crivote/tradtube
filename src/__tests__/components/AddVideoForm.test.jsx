@@ -147,8 +147,9 @@ describe('AddVideoForm — borrado con salvaguarda', () => {
 
     fireEvent.click(button);
 
+    // El detalle técnico va a la consola; en pantalla, mensaje en el idioma de la UI.
     await waitFor(() => {
-      expect(screen.getByText('no se borró ninguna fila')).toBeDefined();
+      expect(screen.getByText('Could not delete the video')).toBeDefined();
     });
   });
 });

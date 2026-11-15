@@ -311,7 +311,10 @@ function AddVideoForm(props) {
       showToast(t('addVideo.deleted', { id: ytId }), 'success', 5000);
       props.onClose();
     } catch (err) {
-      setDeleteError(err.message ?? t('addVideo.deleteFailed'));
+      // El detalle técnico (RLS, red) va a la consola; al usuario se le da el
+      // mensaje en el idioma de la interfaz.
+      console.error('[AddVideoForm] delete failed:', err);
+      setDeleteError(t('addVideo.deleteFailed'));
     } finally {
       setDeleting(false);
     }
