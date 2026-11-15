@@ -134,6 +134,7 @@ function PendingTab(props) {
     setLoading(false);
   };
   onMount(load);
+  props.onRegisterRefresh?.(load);
 
   const togglePreview = (video) => {
     if (expandedId() === video.id) { setExpandedId(null); setPreviewEntry(null); return; }
@@ -917,14 +918,18 @@ function AdminView() {
   let refreshByTune = () => {};
   let refreshReports = () => {};
   let refreshAvailability = () => {};
+  let refreshPending = () => {};
 
   const handleEditClose = () => {
     const wasEditing = editingVideo();
     setEditingVideo(null);
     if (wasEditing) {
+      // El formulario de edición también borra: cualquier lista visible tiene
+      // que releerse, no sólo las que se editan desde su propio tab.
       if (tab() === 'latest') refreshLatest();
       else if (tab() === 'byTune') refreshByTune();
       else if (tab() === 'reports') refreshReports();
+      else if (tab() === 'pending') refreshPending();
     }
   };
 
@@ -990,6 +995,7 @@ function AdminView() {
           <PendingTab
             onEdit={setEditingVideo}
             onCountLoaded={setPendingCount}
+            onRegisterRefresh={(fn) => { refreshPending = fn; }}
           />
         </Show>
         <Show when={tab() === 'latest'}>

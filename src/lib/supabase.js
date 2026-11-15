@@ -229,10 +229,30 @@ export async function reviewVideo(videoId) {
   if (error) throw error;
 }
 
-export async function deleteVideo(videoId) {
-  const { error } = await supabase
-    .from('tune_media').delete().eq('id', videoId);
+/**
+ * Borra un vídeo (y en cascada sus entries, votos, informes y chequeos).
+ *
+ * Con `requireUnavailable`, la salvaguarda viaja en la PROPIA consulta: sólo
+ * borra la fila si está marcada como no disponible. No basta con deshabilitar
+ * el botón, porque cualquier otra ruta podría saltárselo.
+ *
+ * El efecto se verifica con `.select('id')`: con RLS activo y sin política de
+ * DELETE, PostgREST responde 204 con cero filas y el borrado fallaría en
+ * silencio; aquí se convierte en un error visible.
+ */
+export async function deleteVideo(videoId, { requireUnavailable = false } = {}) {
+  let query = supabase.from('tune_media').delete().eq('id', videoId);
+  if (requireUnavailable) query = query.eq('unavailable', true);
+  const { data, error } = await query.select('id');
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error(
+      requireUnavailable
+        ? 'Delete failed: the video is not marked as unavailable (or the admin lacks permission).'
+        : 'Delete failed: no row was removed (or the admin lacks permission).'
+    );
+  }
+  return data.length;
 }
 
 export async function updateVideoWithEntries(videoId, { source_type, title, channel, album_id, album_track, unavailable, entries }) {

@@ -10,7 +10,7 @@ import { createSignal, createMemo, createEffect, onCleanup, Show } from 'solid-j
 import { createStore, produce } from 'solid-js/store';
 import { ExternalLink } from 'lucide-solid';
 import { searchTunes, getTuneById, getSettings, findMatchingTunes } from '../lib/db';
-import { addVideoWithEntries, updateVideoWithEntries, checkYoutubeIdExists, upsertAlbum } from '../lib/supabase';
+import { addVideoWithEntries, updateVideoWithEntries, checkYoutubeIdExists, upsertAlbum, deleteVideo, setMediaUnavailable } from '../lib/supabase';
 import { resolveTrackTunes } from '../lib/thesession';
 import { extractYoutubeId, parseSec, formatSec, cleanTitleForDisplay } from '../lib/utils';
 import { useI18n } from '../i18n';
@@ -35,7 +35,7 @@ async function fetchYoutubeData(videoId) {
 }
 
 function AddVideoForm(props) {
-  const { showToast } = useAppStore();
+  const { showToast, loadVideoData } = useAppStore();
   const { t } = useI18n();
   const sourceTypeLabel = (key) => t(`sourceTypes.${key}`) ?? key;
   const instrumentLabel = (key) => t(`instruments.${key}`) ?? key;
@@ -73,6 +73,8 @@ function AddVideoForm(props) {
   const [autoMatchedCount, setAutoMatchedCount] = createSignal(0);
   const [openInstrumentDropdown, setOpenInstrumentDropdown] = createSignal(null);
   const [videoDuration, setVideoDuration] = createSignal(0);
+  const [deleting, setDeleting] = createSignal(false);
+  const [deleteError, setDeleteError] = createSignal('');
 
   let youtubeIframeRef;
 
@@ -286,6 +288,33 @@ function AddVideoForm(props) {
     setSkippedTuneNames([]);
     setRecordingData(null);
     setDuplicate(null);
+  };
+
+  // ── Borrado, con salvaguarda de dos pasos ─────────────────────────────────
+  // El vídeo tiene que estar marcado como no disponible: es la condición que
+  // impide borrar de un clic una referencia válida por error.
+  const canDelete = () => isEdit() && unavailable() && !deleting();
+
+  const handleDelete = async () => {
+    if (!props.editVideo || !unavailable() || deleting()) return;
+    const ytId = extractYoutubeId(props.editVideo.media_uri);
+    if (!confirm(t('addVideo.deleteConfirm', { id: ytId }))) return;
+
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      // El flag se persiste ANTES del borrado: si el DELETE falla, la ficha
+      // queda en el estado seguro (marcada como no disponible).
+      await setMediaUnavailable(props.editVideo.id, true);
+      await deleteVideo(props.editVideo.id, { requireUnavailable: true });
+      loadVideoData();
+      showToast(t('addVideo.deleted', { id: ytId }), 'success', 5000);
+      props.onClose();
+    } catch (err) {
+      setDeleteError(err.message ?? t('addVideo.deleteFailed'));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -563,6 +592,33 @@ function AddVideoForm(props) {
              entries.length === 0 ? t('addVideo.addOneTune') :
               !youtubeId() ? t('addVideo.enterValidUrl') : ''}
           </p>
+        </Show>
+
+        {/* ── Zona de peligro: borrado (sólo en edición) ───────────────── */}
+        <Show when={isEdit()}>
+          <div class="mt-4 flex flex-col gap-3 rounded-xl border border-[var(--color-error)]/30 bg-[var(--color-error)]/5 px-4 py-4">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-[var(--color-error)]">
+                {t('addVideo.dangerZone')}
+              </p>
+              <p class="text-xs text-[var(--color-muted)] mt-1">
+                {unavailable() ? t('addVideo.deleteHintReady') : t('addVideo.deleteHint')}
+              </p>
+            </div>
+            <div class="flex items-center gap-3 flex-wrap">
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={!canDelete()}
+                class="text-xs px-3 py-2 rounded-lg border border-[var(--color-error)]/40 text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                {deleting() ? t('addVideo.deleting') : t('addVideo.deleteVideo')}
+              </button>
+              <Show when={deleteError()}>
+                <span class="text-xs text-[var(--color-error)]">{deleteError()}</span>
+              </Show>
+            </div>
+          </div>
         </Show>
 
       </Show>

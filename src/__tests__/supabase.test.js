@@ -808,4 +808,47 @@ describe('Media availability (A — señal pasiva)', () => {
       expect(rows).toEqual([]);
     });
   });
+
+  // Invariante de #51: la salvaguarda del borrado viaja en la CONSULTA, no
+  // sólo en el `disabled` de un botón, y el efecto se verifica.
+  describe('deleteVideo — salvaguarda de «no disponible»', () => {
+    it('exige unavailable = true cuando se pide la salvaguarda', async () => {
+      const mockQB = createMockQueryBuilder().setResult([{ id: 'm1' }]);
+      mockFrom.mockReturnValue(mockQB);
+
+      const deleted = await supabaseModule.deleteVideo('m1', { requireUnavailable: true });
+
+      expect(mockFrom).toHaveBeenCalledWith('tune_media');
+      expect(mockQB.delete).toHaveBeenCalled();
+      expect(mockQB.eq).toHaveBeenCalledWith('id', 'm1');
+      expect(mockQB.eq).toHaveBeenCalledWith('unavailable', true);
+      expect(mockQB.select).toHaveBeenCalledWith('id');
+      expect(deleted).toBe(1);
+    });
+
+    it('sin salvaguarda no impone el flag (borrado directo del panel)', async () => {
+      const mockQB = createMockQueryBuilder().setResult([{ id: 'm1' }]);
+      mockFrom.mockReturnValue(mockQB);
+
+      await supabaseModule.deleteVideo('m1');
+
+      expect(mockQB.eq).not.toHaveBeenCalledWith('unavailable', true);
+    });
+
+    it('lanza si no se borró ninguna fila (RLS ausente o flag sin marcar)', async () => {
+      const mockQB = createMockQueryBuilder().setResult([]);
+      mockFrom.mockReturnValue(mockQB);
+
+      await expect(
+        supabaseModule.deleteVideo('m1', { requireUnavailable: true })
+      ).rejects.toThrow(/unavailable/);
+    });
+
+    it('propaga el error de PostgREST', async () => {
+      const mockQB = createMockQueryBuilder().setResult(null, { message: 'permission denied' });
+      mockFrom.mockReturnValue(mockQB);
+
+      await expect(supabaseModule.deleteVideo('m1')).rejects.toMatchObject({ message: 'permission denied' });
+    });
+  });
 });
